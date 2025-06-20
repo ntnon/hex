@@ -1,0 +1,93 @@
+#ifndef GAMESTATE_H
+#define GAMESTATE_H
+
+#include "raylib.h"
+#include "Types.h"
+#include <stdbool.h>
+
+//------------------------------------------------------------------------------------
+// GameState Structure Definition
+//------------------------------------------------------------------------------------
+
+typedef struct {
+    // Screen management
+    ScreenState currentScreen;
+    ScreenState previousScreen;
+    
+    // Game state flags
+    bool isPaused;
+    bool showTileInfo;
+    bool showDebugInfo;
+    
+    // Mouse and input state
+    Vector2 mouseWorldPos;
+    Vector2 mouseScreenPos;
+    bool isMousePressed;
+    bool isMouseReleased;
+    
+    // Selected tile information
+    void* selectedTile;  // HexTile* (using void* to avoid circular dependency)
+    int selectedTileCount;
+    
+    // Highlighted piece system
+    int highlightedPieceId;
+    
+    // Pool visualization settings
+    bool showPoolVisualization;    // Master toggle for pool effects
+    bool showPoolBorders;          // Show thick borders around pools
+    float poolBorderThickness;     // Thickness of pool borders (2.0-6.0)
+    bool showPoolInfoCard;         // Show enhanced info card on hover
+    Color poolBorderColor;         // Color for pool borders (default: BLACK)
+    float poolGlintIntensity;      // For future glint effects (0.0-1.0)
+    
+    // UI settings
+    Color backgroundColor;         // Background color
+    Color primaryTextColor;        // Primary text color
+    Color secondaryTextColor;      // Secondary text color
+    float infoCardPadding;         // Padding inside info cards
+    float infoCardBorderRadius;    // Rounded corners for info cards
+    
+    // Performance and debug
+    float frameTime;
+    int fps;
+    
+} GameState;
+
+//------------------------------------------------------------------------------------
+// GameState Functions Declaration
+//------------------------------------------------------------------------------------
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+// Core GameState functions
+void GameState_Init(GameState* state);
+void GameState_Update(GameState* state);
+void GameState_Free(GameState* state);
+
+// Input handling
+void GameState_HandleInput(GameState* state);
+void GameState_UpdateMouseInput(GameState* state);
+
+// Screen management
+void GameState_SwitchScreen(GameState* state, ScreenState newScreen);
+
+// Tile selection
+void GameState_SetSelectedTile(GameState* state, void* tile);
+void GameState_ClearSelection(GameState* state);
+
+// Pool visualization management
+void GameState_TogglePoolVisualization(GameState* state);
+void GameState_TogglePoolBorders(GameState* state);
+void GameState_TogglePoolInfoCard(GameState* state);
+
+// Utility functions for tile colors
+TileColorInfo GameState_GetTileColorInfo(TileColor color);
+void GameState_DrawDots(Vector2 center, float radius, int dotCount, Color dotColor);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // GAMESTATE_H

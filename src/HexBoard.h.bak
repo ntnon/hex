@@ -1,0 +1,146 @@
+#ifndef HEXBOARD_H
+#define HEXBOARD_H
+
+#include "raylib.h"
+#include "Types.h"
+#include <stdbool.h>
+
+//------------------------------------------------------------------------------------
+// HexBoard Types and Structures Definition
+//------------------------------------------------------------------------------------
+
+// Individual hex tile structure
+typedef struct {
+    int q, r;                      // axial coordinates
+    Vector2 center;                // pixel position
+    Color color;                   // tile color (RGB)
+    TileColor tileColor;           // tile color enum for dots/accessibility
+    int dotCount;                  // number of dots to draw (1-3)
+    TileState state;               // tile state/type
+    TileSource source;             // how this tile was created
+    int pieceId;                   // ID of the piece this hex belongs to (0 = no piece)
+    bool isReachableFromSpawn;     // Can this tile reach spawn/base tiles
+    int poolId;                    // Pool this tile belongs to (-1 if none)
+} HexTile;
+
+// Edge type enumeration
+typedef enum {
+    EDGE_GRID = 0,    // Thin grid edges, always visible
+    EDGE_POOL = 1     // Thick pool boundary edges
+} EdgeType;
+
+// Individual edge structure (first-class object)
+typedef struct {
+    int tileIndex1, tileIndex2;    // Two adjacent tiles (-1 if boundary/empty)
+    Vector2 startPoint, endPoint; // World coordinates of edge endpoints
+    bool shouldDraw;               // Whether to draw this edge
+    bool isActive;                 // Whether this edge is valid/used
+    EdgeType edgeType;             // Type of edge (grid or pool)
+    float edgeStrength;            // For potential edge-based mechanics
+} HexEdge;
+
+// Pool structure for connected tiles
+typedef struct {
+    int poolId;                    // Unique pool identifier
+    TileColor primaryColor;        // Primary color of pool
+    bool isActive;                 // Whether this pool is alive
+    int tileIndices[MAX_POOL_TILES]; // indices into board->tiles
+    int tileCount;                 // Number of tiles in pool
+    int colorCounts[TILE_COLOR_COUNT]; // Count of tiles by color
+    bool isMixedColor;             // Whether pool contains multiple colors
+    int bridgeTileCount;           // Number of bridge tiles in this pool
+    int lifeCounter;               // Counter that decreases, pool dies at 0
+    int centerTileIndex;           // Index of the center-most tile in pool
+    float powerLevel;              // Example: accumulated power
+    int lastUpdateTurn;            // Turn when pool was last modified
+} TilePool;
+
+// Main hex board structure
+typedef struct {
+    HexTile* tiles;                // Array of all tiles
+    int tileCount;                 // Number of tiles in board
+    float hexSize;                 // Size of each hexagon
+    Vector2 origin;                // Origin point for board positioning
+    
+    TilePool pools[MAX_POOLS];     // Array of all pools
+    int poolCount;                 // Number of active pools
+    
+    HexEdge edges[MAX_HEX_EDGES];  // Array of all edges
+    int edgeCount;                 // Number of edges in board
+} HexBoard;
+
+// Utility structure for distance calculations
+typedef struct {
+    HexTile* tile;
+    float distance;
+} TileDistance;
+
+//------------------------------------------------------------------------------------
+// HexBoard Functions Declaration
+//------------------------------------------------------------------------------------
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+// Core HexBoard functions
+void HexBoard_Init(HexBoard* board, int radius, float size, Vector2 offset);
+void HexBoard_Draw(HexBoard* board, void* gameState);
+void HexBoard_Free(HexBoard* board);
+
+// Hex utility functions
+void DrawHexagon(Vector2 center, float radius, Color fillColor, Color outlineColor);
+void DrawHexagonFill(Vector2 center, float radius, Color fillColor);
+void DrawTileDots(Vector2 center, float hexRadius, int dotCount, Color dotColor);
+
+// Hex coordinate and math functions
+void PixelToAxial(Vector2 pos, float hexSize, int* q, int* r);
+int HexDistance(int q1, int r1, int q2, int r2);
+HexTile* FindHoveredTile(HexBoard* board, int mouseQ, int mouseR);
+
+// Tile state management functions
+void SetTileState(HexTile* tile, TileState state);
+void SetTileStateWithSource(HexTile* tile, TileState state, TileSource source);
+Color GetTileStateColor(TileState state);
+const char* GetTileStateName(TileState state);
+void UpdateTileAppearance(HexTile* tile);
+
+// Render info derivation functions
+TileColor GetTileColor(HexTile* tile);
+int GetTileDotCount(HexTile* tile);
+Color GetTileRenderColor(HexTile* tile);
+
+// Tile filtering functions
+bool IsEmptyTile(HexTile* tile);
+bool IsWalkableTile(HexTile* tile);
+
+// Pool management functions
+void HexBoard_FindAllPools(HexBoard* board);
+void HexBoard_CalculateReachability(HexBoard* board);
+int HexBoard_CreatePool(HexBoard* board, TileColor color, int initialLifeCounter);
+void HexBoard_DestroyPool(HexBoard* board, int poolId);
+void HexBoard_AddTileToPool(HexBoard* board, int tileIndex, int poolId);
+void HexBoard_RemoveTileFromPool(HexBoard* board, int tileIndex);
+void HexBoard_MergePools(HexBoard* board, int keepPoolId, int removePoolId);
+void HexBoard_UpdatePoolCenter(HexBoard* board, int poolId);
+bool HexBoard_IsPoolActive(HexBoard* board, int poolId);
+
+// Edge management functions
+void HexBoard_InitializeEdges(HexBoard* board);
+void HexBoard_UpdateEdgeStates(HexBoard* board);
+void HexBoard_DrawGridEdges(HexBoard* board, void* gameState);
+void HexBoard_DrawPoolBorders(HexBoard* board, void* gameState);
+void HexBoard_CalculateEdgeEndpoints(HexBoard* board, int edgeIndex);
+
+// Piece ID functions
+int GetPieceHexes(HexBoard* board, int pieceId, HexTile* outTiles[], int maxTiles);
+void HighlightPiece(HexBoard* board, int pieceId);
+
+// Comparison function for sorting
+int compareTileDistance(const void* a, const void* b);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // HEXBOARD_H

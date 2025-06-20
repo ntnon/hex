@@ -1,0 +1,8 @@
+CompileFlags:
+  Add: [
+    -I../include,
+    -I.,
+    -I/opt/homebrew/include,
+    -I../external/raylib-master/src,
+    -I../external/raylib-master/src/external
+  ]
