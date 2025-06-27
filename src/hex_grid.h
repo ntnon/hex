@@ -19,7 +19,7 @@ typedef struct {
 // Hex coordinates (cube coordinates)
 typedef struct {
     int q;
-    int r; 
+    int r;
     int s;
 } Hex;
 
@@ -61,7 +61,23 @@ typedef struct {
     Hex* data;
     int count;
     int capacity;
-} HexArray;
+} hex_array;
+
+
+// Enum for named directions
+typedef enum HexGridDirection {
+    NORTH,
+    NORTHEAST,
+    SOUTHEAST,
+    SOUTH,
+    SOUTHWEST,
+    NORTHWEST,
+    NONE,
+    HEX_GRID_DIRECTION_COUNT
+} HexGridDirection;
+
+// Function to get the direction vector for a given direction
+Hex get_direction_vector(HexGridDirection direction);
 
 // Constants for offset coordinates
 extern const int EVEN;
@@ -79,6 +95,7 @@ Hex hex_scale(Hex a, int k);
 Hex hex_rotate_left(Hex a);
 Hex hex_rotate_right(Hex a);
 bool hex_equal(Hex a, Hex b);
+Hex hex_offset(Hex a, int direction, int offset);
 
 // Directions and neighbors
 Hex hex_direction(int direction);
@@ -95,7 +112,10 @@ Hex hex_round(FractionalHex h);
 FractionalHex hex_lerp(FractionalHex a, FractionalHex b, double t);
 
 // Line drawing
-HexArray hex_linedraw(Hex a, Hex b);
+hex_array hex_linedraw(Hex a, Hex b);
+
+// Hex drawing
+void draw_hex(Layout layout, Hex h, float scale, Color color);
 
 // Layout operations
 Point point_create(double x, double y);
@@ -105,7 +125,7 @@ FractionalHex pixel_to_hex_fractional(Layout layout, Point p);
 Hex pixel_to_hex_rounded(Layout layout, Point p);
 Point hex_corner_offset(Layout layout, int corner);
 void get_hex_corners(Layout layout, Hex h, Point corners[6]);
-HexArray polygon_corners(Layout layout, Hex h);
+hex_array polygon_corners(Layout layout, Hex h);
 
 // Offset coordinate conversions
 OffsetCoord qoffset_from_cube(int offset, Hex h);
@@ -120,9 +140,9 @@ DoubledCoord rdoubled_from_cube(Hex h);
 Hex rdoubled_to_cube(DoubledCoord h);
 
 // Dynamic array operations
-HexArray hex_array_create(void);
-void hex_array_push(HexArray* array, Hex hex);
-void hex_array_free(HexArray* array);
+hex_array hex_array_create(void);
+void hex_array_push(hex_array* array, Hex hex);
+void hex_array_free(hex_array* array);
 
 // Edge drawing functions
 void draw_hex_edge(Layout layout, Hex hex1, Hex hex2, float thickness, Color color);
@@ -135,13 +155,13 @@ void get_shared_edge_points(Layout layout, Hex hex1, Hex hex2, Point* edge_start
 
 // Advanced edge pattern functions
 void draw_hex_ring_edges(Layout layout, Hex center, int radius, float thickness, Color color);
-void draw_hex_path_edges(Layout layout, HexArray path, float thickness, Color color);
-void draw_hex_border_edges(Layout layout, HexArray hexes, float thickness, Color color);
+void draw_hex_path_edges(Layout layout, hex_array path, float thickness, Color color);
+void draw_hex_border_edges(Layout layout, hex_array hexes, float thickness, Color color);
 
 // Grid generation functions
-HexArray generate_hex_grid_radius(Hex center, int radius);
-HexArray generate_hex_grid_rectangle(int width, int height);
-HexArray generate_hex_grid_parallelogram(int q1, int q2, int r1, int r2);
+hex_array generate_hex_grid_radius(Hex center, int radius);
+hex_array generate_hex_grid_rectangle(int width, int height);
+hex_array generate_hex_grid_parallelogram(int q1, int q2, int r1, int r2);
 
 // Utility functions
 void print_hex(Hex h);

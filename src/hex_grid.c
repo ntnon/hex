@@ -1,4 +1,4 @@
-#include "hexgrid.h"
+#include "hex_grid.h"
 #include "raylib.h"
 #include <math.h>
 #include <stdio.h>
@@ -38,6 +38,18 @@ static const Hex hex_directions[6]
 static const Hex hex_diagonals[6]
     = { { 2, -1, -1 }, { 1, -2, 1 },  { -1, -1, 2 },
         { -2, 1, 1 },  { -1, 2, -1 }, { 1, 1, -2 } };
+
+// Function to get the direction vector for a given direction
+Hex
+get_direction_vector (enum HexGridDirection direction)
+{
+  if (direction >= 0 && direction < 6)
+    {
+      return hex_directions[direction];
+    }
+  // Return a default invalid Hex if the direction is out of range
+  return (Hex){ 0, 0, 0 };
+}
 
 // Basic hex operations
 Hex
@@ -172,14 +184,14 @@ hex_lerp (FractionalHex a, FractionalHex b, double t)
 }
 
 // Line drawing
-HexArray
+hex_array
 hex_linedraw (Hex a, Hex b)
 {
   int N = hex_distance (a, b);
   FractionalHex a_nudge = { a.q + 1e-06, a.r + 1e-06, a.s - 2e-06 };
   FractionalHex b_nudge = { b.q + 1e-06, b.r + 1e-06, b.s - 2e-06 };
 
-  HexArray results = hex_array_create ();
+  hex_array results = hex_array_create ();
   double step = 1.0 / fmax (N, 1);
 
   for (int i = 0; i <= N; i++)
@@ -252,10 +264,10 @@ get_hex_corners (Layout layout, Hex h, Point corners[6])
     }
 }
 
-HexArray
+hex_array
 polygon_corners (Layout layout, Hex h)
 {
-  HexArray corners = hex_array_create ();
+  hex_array corners = hex_array_create ();
   Point center = hex_to_pixel (layout, h);
 
   for (int i = 0; i < 6; i++)
@@ -357,10 +369,10 @@ rdoubled_to_cube (DoubledCoord h)
 }
 
 // Dynamic array operations
-HexArray
+hex_array
 hex_array_create (void)
 {
-  HexArray array = { 0 };
+  hex_array array = { 0 };
   array.capacity = 16;
   array.data = malloc (array.capacity * sizeof (Hex));
   array.count = 0;
@@ -368,7 +380,7 @@ hex_array_create (void)
 }
 
 void
-hex_array_push (HexArray *array, Hex hex)
+hex_array_push (hex_array *array, Hex hex)
 {
   if (!array)
     return;
@@ -382,7 +394,7 @@ hex_array_push (HexArray *array, Hex hex)
 }
 
 void
-hex_array_free (HexArray *array)
+hex_array_free (hex_array *array)
 {
   if (!array)
     return;
@@ -533,7 +545,7 @@ draw_hex_ring_edges (Layout layout, Hex center, int radius, float thickness,
     return;
 
   // Get all hexes in the ring
-  HexArray ring_hexes = hex_array_create ();
+  hex_array ring_hexes = hex_array_create ();
 
   // Start at one hex in the ring
   Hex current = center;
@@ -564,7 +576,7 @@ draw_hex_ring_edges (Layout layout, Hex center, int radius, float thickness,
 }
 
 void
-draw_hex_path_edges (Layout layout, HexArray path, float thickness,
+draw_hex_path_edges (Layout layout, hex_array path, float thickness,
                      Color color)
 {
   if (path.count < 2)
@@ -577,7 +589,7 @@ draw_hex_path_edges (Layout layout, HexArray path, float thickness,
 }
 
 void
-draw_hex_border_edges (Layout layout, HexArray hexes, float thickness,
+draw_hex_border_edges (Layout layout, hex_array hexes, float thickness,
                        Color color)
 {
   if (hexes.count == 0)
@@ -621,10 +633,10 @@ draw_hex_border_edges (Layout layout, HexArray hexes, float thickness,
 }
 
 // Grid generation functions
-HexArray
+hex_array
 generate_hex_grid_radius (Hex center, int radius)
 {
-  HexArray grid = hex_array_create ();
+  hex_array grid = hex_array_create ();
 
   // Add all hexes within radius distance from center
   for (int q = -radius; q <= radius; q++)
@@ -642,10 +654,10 @@ generate_hex_grid_radius (Hex center, int radius)
   return grid;
 }
 
-HexArray
+hex_array
 generate_hex_grid_rectangle (int width, int height)
 {
-  HexArray grid = hex_array_create ();
+  hex_array grid = hex_array_create ();
 
   for (int r = 0; r < height; r++)
     {
@@ -660,10 +672,10 @@ generate_hex_grid_rectangle (int width, int height)
   return grid;
 }
 
-HexArray
+hex_array
 generate_hex_grid_parallelogram (int q1, int q2, int r1, int r2)
 {
-  HexArray grid = hex_array_create ();
+  hex_array grid = hex_array_create ();
 
   for (int q = q1; q <= q2; q++)
     {
@@ -675,6 +687,35 @@ generate_hex_grid_parallelogram (int q1, int q2, int r1, int r2)
     }
 
   return grid;
+}
+void
+draw_hex (Layout layout, Hex h, float scale, Color color)
+{
+  Point center_pt = hex_to_pixel (layout, h);
+  Vector2 center = { center_pt.x, center_pt.y };
+
+  Point corners[6];
+  get_hex_corners (layout, h, corners);
+
+  Vector2 vertices[6];
+  for (int i = 0; i < 6; i++)
+    {
+      // Scale each corner from the center
+      float dx = (corners[i].x - center.x) * scale;
+      float dy = (corners[i].y - center.y) * scale;
+      vertices[i].x = center.x + dx;
+      vertices[i].y = center.y + dy;
+    }
+
+  // Draw filled hexagon
+  DrawTriangleFan (vertices, 6, color);
+
+  // Optionally, draw the outline
+  for (int i = 0; i < 6; i++)
+    {
+      int next = (i + 1) % 6;
+      DrawLineV (vertices[i], vertices[next], BLACK);
+    }
 }
 
 // Test functions (simplified versions of the C++ tests)
