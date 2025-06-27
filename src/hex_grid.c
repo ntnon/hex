@@ -10,7 +10,7 @@ const int EVEN = 1;
 const int ODD = -1;
 
 // Predefined orientations
-const Orientation layout_pointy = { .f0 = 1.732050808,
+const orientation layout_pointy = { .f0 = 1.732050808,
                                     .f1 = 0.866025404,
                                     .f2 = 0.0,
                                     .f3 = 1.5,
@@ -20,7 +20,7 @@ const Orientation layout_pointy = { .f0 = 1.732050808,
                                     .b3 = 0.666666667,
                                     .start_angle = 0.5 };
 
-const Orientation layout_flat = { .f0 = 1.5,
+const orientation layout_flat = { .f0 = 1.5,
                                   .f1 = 0.0,
                                   .f2 = 0.866025404,
                                   .f3 = 1.732050808,
@@ -31,93 +31,93 @@ const Orientation layout_flat = { .f0 = 1.5,
                                   .start_angle = 0.0 };
 
 // Direction vectors
-static const Hex hex_directions[6]
+static const hex hex_directions[6]
     = { { 1, 0, -1 }, { 1, -1, 0 }, { 0, -1, 1 },
         { -1, 0, 1 }, { -1, 1, 0 }, { 0, 1, -1 } };
 
-static const Hex hex_diagonals[6]
+static const hex hex_diagonals[6]
     = { { 2, -1, -1 }, { 1, -2, 1 },  { -1, -1, 2 },
         { -2, 1, 1 },  { -1, 2, -1 }, { 1, 1, -2 } };
 
 // Function to get the direction vector for a given direction
-Hex
-get_direction_vector (enum HexGridDirection direction)
+hex
+get_direction_vector (enum hexGridDirection direction)
 {
   if (direction >= 0 && direction < 6)
     {
       return hex_directions[direction];
     }
-  // Return a default invalid Hex if the direction is out of range
-  return (Hex){ 0, 0, 0 };
+  // Return a default invalid hex if the direction is out of range
+  return (hex){ 0, 0, 0 };
 }
 
 // Basic hex operations
-Hex
+hex
 hex_create (int q, int r, int s)
 {
   if (q + r + s != 0)
     {
       TraceLog (LOG_ERROR, "hex_create: q + r + s must be 0");
     }
-  return (Hex){ q, r, s };
+  return (hex){ q, r, s };
 }
 
-Hex
-hex_add (Hex a, Hex b)
+hex
+hex_add (hex a, hex b)
 {
-  return (Hex){ a.q + b.q, a.r + b.r, a.s + b.s };
+  return (hex){ a.q + b.q, a.r + b.r, a.s + b.s };
 }
 
-Hex
-hex_subtract (Hex a, Hex b)
+hex
+hex_subtract (hex a, hex b)
 {
-  return (Hex){ a.q - b.q, a.r - b.r, a.s - b.s };
+  return (hex){ a.q - b.q, a.r - b.r, a.s - b.s };
 }
 
-Hex
-hex_scale (Hex a, int k)
+hex
+hex_scale (hex a, int k)
 {
-  return (Hex){ a.q * k, a.r * k, a.s * k };
+  return (hex){ a.q * k, a.r * k, a.s * k };
 }
 
-Hex
-hex_rotate_left (Hex a)
+hex
+hex_rotate_left (hex a)
 {
-  return (Hex){ -a.s, -a.q, -a.r };
+  return (hex){ -a.s, -a.q, -a.r };
 }
 
-Hex
-hex_rotate_right (Hex a)
+hex
+hex_rotate_right (hex a)
 {
-  return (Hex){ -a.r, -a.s, -a.q };
+  return (hex){ -a.r, -a.s, -a.q };
 }
 
 bool
-hex_equal (Hex a, Hex b)
+hex_equal (hex a, hex b)
 {
   return a.q == b.q && a.r == b.r && a.s == b.s;
 }
 
 // Directions and neighbors
-Hex
+hex
 hex_direction (int direction)
 {
   if (direction < 0 || direction >= 6)
     {
       TraceLog (LOG_ERROR, "hex_direction: direction must be 0-5");
-      return (Hex){ 0, 0, 0 };
+      return (hex){ 0, 0, 0 };
     }
   return hex_directions[direction];
 }
 
-Hex
-hex_neighbor (Hex hex, int direction)
+hex
+hex_neighbor (hex hex, int direction)
 {
   return hex_add (hex, hex_direction (direction));
 }
 
-Hex
-hex_diagonal_neighbor (Hex hex, int direction)
+hex
+hex_diagonal_neighbor (hex hex, int direction)
 {
   if (direction < 0 || direction >= 6)
     {
@@ -129,30 +129,30 @@ hex_diagonal_neighbor (Hex hex, int direction)
 
 // Distance and length
 int
-hex_length (Hex hex)
+hex_length (hex hex)
 {
   return (abs (hex.q) + abs (hex.r) + abs (hex.s)) / 2;
 }
 
 int
-hex_distance (Hex a, Hex b)
+hex_distance (hex a, hex b)
 {
   return hex_length (hex_subtract (a, b));
 }
 
 // Fractional hex operations
-FractionalHex
+fractional_hex
 fractional_hex_create (double q, double r, double s)
 {
   if (round (q + r + s) != 0)
     {
       TraceLog (LOG_ERROR, "fractional_hex_create: q + r + s must be 0");
     }
-  return (FractionalHex){ q, r, s };
+  return (fractional_hex){ q, r, s };
 }
 
-Hex
-hex_round (FractionalHex h)
+hex
+hex_round (fractional_hex h)
 {
   int qi = (int)round (h.q);
   int ri = (int)round (h.r);
@@ -173,109 +173,110 @@ hex_round (FractionalHex h)
     {
       si = -qi - ri;
     }
-  return (Hex){ qi, ri, si };
+  return (hex){ qi, ri, si };
 }
 
-FractionalHex
-hex_lerp (FractionalHex a, FractionalHex b, double t)
+fractional_hex
+hex_lerp (fractional_hex a, fractional_hex b, double t)
 {
-  return (FractionalHex){ a.q * (1.0 - t) + b.q * t, a.r * (1.0 - t) + b.r * t,
-                          a.s * (1.0 - t) + b.s * t };
+  return (fractional_hex){ a.q * (1.0 - t) + b.q * t,
+                           a.r * (1.0 - t) + b.r * t,
+                           a.s * (1.0 - t) + b.s * t };
 }
 
 // Line drawing
 hex_array
-hex_linedraw (Hex a, Hex b)
+hex_linedraw (hex a, hex b)
 {
   int N = hex_distance (a, b);
-  FractionalHex a_nudge = { a.q + 1e-06, a.r + 1e-06, a.s - 2e-06 };
-  FractionalHex b_nudge = { b.q + 1e-06, b.r + 1e-06, b.s - 2e-06 };
+  fractional_hex a_nudge = { a.q + 1e-06, a.r + 1e-06, a.s - 2e-06 };
+  fractional_hex b_nudge = { b.q + 1e-06, b.r + 1e-06, b.s - 2e-06 };
 
   hex_array results = hex_array_create ();
   double step = 1.0 / fmax (N, 1);
 
   for (int i = 0; i <= N; i++)
     {
-      FractionalHex lerp_result = hex_lerp (a_nudge, b_nudge, step * i);
+      fractional_hex lerp_result = hex_lerp (a_nudge, b_nudge, step * i);
       hex_array_push (&results, hex_round (lerp_result));
     }
   return results;
 }
 
-// Layout operations
-Point
+// layout operations
+point
 point_create (double x, double y)
 {
-  return (Point){ x, y };
+  return (point){ x, y };
 }
 
-Layout
-layout_create (Orientation orientation, Point size, Point origin)
+layout
+layout_create (orientation orientation, point size, point origin)
 {
-  return (Layout){ orientation, size, origin };
+  return (layout){ orientation, size, origin };
 }
 
-Point
-hex_to_pixel (Layout layout, Hex h)
+point
+hex_to_pixel (layout layout, hex h)
 {
-  Orientation M = layout.orientation;
-  Point size = layout.size;
-  Point origin = layout.origin;
+  orientation M = layout.orientation;
+  point size = layout.size;
+  point origin = layout.origin;
   double x = (M.f0 * h.q + M.f1 * h.r) * size.x;
   double y = (M.f2 * h.q + M.f3 * h.r) * size.y;
-  return (Point){ x + origin.x, y + origin.y };
+  return (point){ x + origin.x, y + origin.y };
 }
 
-FractionalHex
-pixel_to_hex_fractional (Layout layout, Point p)
+fractional_hex
+pixel_to_hex_fractional (layout layout, point p)
 {
-  Orientation M = layout.orientation;
-  Point size = layout.size;
-  Point origin = layout.origin;
-  Point pt = { (p.x - origin.x) / size.x, (p.y - origin.y) / size.y };
+  orientation M = layout.orientation;
+  point size = layout.size;
+  point origin = layout.origin;
+  point pt = { (p.x - origin.x) / size.x, (p.y - origin.y) / size.y };
   double q = M.b0 * pt.x + M.b1 * pt.y;
   double r = M.b2 * pt.x + M.b3 * pt.y;
-  return (FractionalHex){ q, r, -q - r };
+  return (fractional_hex){ q, r, -q - r };
 }
 
-Hex
-pixel_to_hex_rounded (Layout layout, Point p)
+hex
+pixel_to_hex_rounded (layout layout, point p)
 {
   return hex_round (pixel_to_hex_fractional (layout, p));
 }
 
-Point
-hex_corner_offset (Layout layout, int corner)
+point
+hex_corner_offset (layout layout, int corner)
 {
-  Orientation M = layout.orientation;
-  Point size = layout.size;
+  orientation M = layout.orientation;
+  point size = layout.size;
   double angle = 2.0 * M_PI * (M.start_angle - corner) / 6.0;
-  return (Point){ size.x * cos (angle), size.y * sin (angle) };
+  return (point){ size.x * cos (angle), size.y * sin (angle) };
 }
 
 void
-get_hex_corners (Layout layout, Hex h, Point corners[6])
+get_hex_corners (layout layout, hex h, point corners[6])
 {
-  Point center = hex_to_pixel (layout, h);
+  point center = hex_to_pixel (layout, h);
   for (int i = 0; i < 6; i++)
     {
-      Point offset = hex_corner_offset (layout, i);
+      point offset = hex_corner_offset (layout, i);
       corners[i] = point_create (center.x + offset.x, center.y + offset.y);
     }
 }
 
 hex_array
-polygon_corners (Layout layout, Hex h)
+polygon_corners (layout layout, hex h)
 {
   hex_array corners = hex_array_create ();
-  Point center = hex_to_pixel (layout, h);
+  point center = hex_to_pixel (layout, h);
 
   for (int i = 0; i < 6; i++)
     {
-      Point offset = hex_corner_offset (layout, i);
+      point offset = hex_corner_offset (layout, i);
       // Store corner points as hex coordinates for simplicity
-      // In practice, you might want a PointArray type instead
-      Hex corner_as_hex
+      // In practice, you might want a pointArray type instead
+      hex corner_as_hex
           = { (int)(center.x + offset.x), (int)(center.y + offset.y), 0 };
       hex_array_push (&corners, corner_as_hex);
     }
@@ -283,8 +284,8 @@ polygon_corners (Layout layout, Hex h)
 }
 
 // Offset coordinate conversions
-OffsetCoord
-qoffset_from_cube (int offset, Hex h)
+offset_coord
+qoffset_from_cube (int offset, hex h)
 {
   if (offset != EVEN && offset != ODD)
     {
@@ -292,11 +293,11 @@ qoffset_from_cube (int offset, Hex h)
     }
   int col = h.q;
   int row = h.r + (int)((h.q + offset * (h.q & 1)) / 2);
-  return (OffsetCoord){ col, row };
+  return (offset_coord){ col, row };
 }
 
-Hex
-qoffset_to_cube (int offset, OffsetCoord h)
+hex
+qoffset_to_cube (int offset, offset_coord h)
 {
   if (offset != EVEN && offset != ODD)
     {
@@ -305,11 +306,11 @@ qoffset_to_cube (int offset, OffsetCoord h)
   int q = h.col;
   int r = h.row - (int)((h.col + offset * (h.col & 1)) / 2);
   int s = -q - r;
-  return (Hex){ q, r, s };
+  return (hex){ q, r, s };
 }
 
-OffsetCoord
-roffset_from_cube (int offset, Hex h)
+offset_coord
+roffset_from_cube (int offset, hex h)
 {
   if (offset != EVEN && offset != ODD)
     {
@@ -317,11 +318,11 @@ roffset_from_cube (int offset, Hex h)
     }
   int col = h.q + (int)((h.r + offset * (h.r & 1)) / 2);
   int row = h.r;
-  return (OffsetCoord){ col, row };
+  return (offset_coord){ col, row };
 }
 
-Hex
-roffset_to_cube (int offset, OffsetCoord h)
+hex
+roffset_to_cube (int offset, offset_coord h)
 {
   if (offset != EVEN && offset != ODD)
     {
@@ -330,42 +331,42 @@ roffset_to_cube (int offset, OffsetCoord h)
   int q = h.col - (int)((h.row + offset * (h.row & 1)) / 2);
   int r = h.row;
   int s = -q - r;
-  return (Hex){ q, r, s };
+  return (hex){ q, r, s };
 }
 
 // Doubled coordinate conversions
-DoubledCoord
-qdoubled_from_cube (Hex h)
+doubled_coord
+qdoubled_from_cube (hex h)
 {
   int col = h.q;
   int row = 2 * h.r + h.q;
-  return (DoubledCoord){ col, row };
+  return (doubled_coord){ col, row };
 }
 
-Hex
-qdoubled_to_cube (DoubledCoord h)
+hex
+qdoubled_to_cube (doubled_coord h)
 {
   int q = h.col;
   int r = (int)((h.row - h.col) / 2);
   int s = -q - r;
-  return (Hex){ q, r, s };
+  return (hex){ q, r, s };
 }
 
-DoubledCoord
-rdoubled_from_cube (Hex h)
+doubled_coord
+rdoubled_from_cube (hex h)
 {
   int col = 2 * h.q + h.r;
   int row = h.r;
-  return (DoubledCoord){ col, row };
+  return (doubled_coord){ col, row };
 }
 
-Hex
-rdoubled_to_cube (DoubledCoord h)
+hex
+rdoubled_to_cube (doubled_coord h)
 {
   int q = (int)((h.col - h.row) / 2);
   int r = h.row;
   int s = -q - r;
-  return (Hex){ q, r, s };
+  return (hex){ q, r, s };
 }
 
 // Dynamic array operations
@@ -374,13 +375,13 @@ hex_array_create (void)
 {
   hex_array array = { 0 };
   array.capacity = 16;
-  array.data = malloc (array.capacity * sizeof (Hex));
+  array.data = malloc (array.capacity * sizeof (hex));
   array.count = 0;
   return array;
 }
 
 void
-hex_array_push (hex_array *array, Hex hex)
+hex_array_push (hex_array *array, hex hex)
 {
   if (!array)
     return;
@@ -388,7 +389,7 @@ hex_array_push (hex_array *array, Hex hex)
   if (array->count >= array->capacity)
     {
       array->capacity *= 2;
-      array->data = realloc (array->data, array->capacity * sizeof (Hex));
+      array->data = realloc (array->data, array->capacity * sizeof (hex));
     }
   array->data[array->count++] = hex;
 }
@@ -409,20 +410,20 @@ hex_array_free (hex_array *array)
 
 // Utility functions
 void
-print_hex (Hex h)
+print_hex (hex h)
 {
-  TraceLog (LOG_INFO, "Hex(%d, %d, %d)", h.q, h.r, h.s);
+  TraceLog (LOG_INFO, "hex(%d, %d, %d)", h.q, h.r, h.s);
 }
 
 void
-print_point (Point p)
+print_point (point p)
 {
-  TraceLog (LOG_INFO, "Point(%.2f, %.2f)", p.x, p.y);
+  TraceLog (LOG_INFO, "point(%.2f, %.2f)", p.x, p.y);
 }
 
 // Edge drawing functions
 void
-draw_hex_edge (Layout layout, Hex hex1, Hex hex2, float thickness, Color color)
+draw_hex_edge (layout layout, hex hex1, hex hex2, float thickness, Color color)
 {
   if (!are_hexes_adjacent (hex1, hex2))
     {
@@ -430,16 +431,16 @@ draw_hex_edge (Layout layout, Hex hex1, Hex hex2, float thickness, Color color)
       return;
     }
 
-  Point p1 = hex_to_pixel (layout, hex1);
-  Point p2 = hex_to_pixel (layout, hex2);
+  point p1 = hex_to_pixel (layout, hex1);
+  point p2 = hex_to_pixel (layout, hex2);
   Vector2 start = { p1.x, p1.y };
   Vector2 end = { p2.x, p2.y };
   DrawLineEx (start, end, thickness, color);
 }
 
 void
-get_shared_edge_points (Layout layout, Hex hex1, Hex hex2, Point *edge_start,
-                        Point *edge_end)
+get_shared_edge_points (layout layout, hex hex1, hex hex2, point *edge_start,
+                        point *edge_end)
 {
   if (!are_hexes_adjacent (hex1, hex2))
     {
@@ -454,7 +455,7 @@ get_shared_edge_points (Layout layout, Hex hex1, Hex hex2, Point *edge_start,
       return;
     }
 
-  Point corners1[6];
+  point corners1[6];
   get_hex_corners (layout, hex1, corners1);
 
   // The shared edge consists of two consecutive corners of hex1
@@ -463,7 +464,7 @@ get_shared_edge_points (Layout layout, Hex hex1, Hex hex2, Point *edge_start,
 }
 
 void
-draw_hex_shared_edge (Layout layout, Hex hex1, Hex hex2, float thickness,
+draw_hex_shared_edge (layout layout, hex hex1, hex hex2, float thickness,
                       Color color)
 {
   if (!are_hexes_adjacent (hex1, hex2))
@@ -472,7 +473,7 @@ draw_hex_shared_edge (Layout layout, Hex hex1, Hex hex2, float thickness,
       return;
     }
 
-  Point edge_start, edge_end;
+  point edge_start, edge_end;
   get_shared_edge_points (layout, hex1, hex2, &edge_start, &edge_end);
 
   Vector2 start = { edge_start.x, edge_start.y };
@@ -481,21 +482,21 @@ draw_hex_shared_edge (Layout layout, Hex hex1, Hex hex2, float thickness,
 }
 
 void
-draw_hex_edges_highlight (Layout layout, Hex center_hex, int direction_mask,
+draw_hex_edges_highlight (layout layout, hex center_hex, int direction_mask,
                           float thickness, Color color)
 {
   for (int dir = 0; dir < 6; dir++)
     {
       if (direction_mask & (1 << dir))
         {
-          Hex neighbor = hex_neighbor (center_hex, dir);
+          hex neighbor = hex_neighbor (center_hex, dir);
           draw_hex_edge (layout, center_hex, neighbor, thickness, color);
         }
     }
 }
 
 void
-draw_hex_shared_edges_highlight (Layout layout, Hex center_hex,
+draw_hex_shared_edges_highlight (layout layout, hex center_hex,
                                  int direction_mask, float thickness,
                                  Color color)
 {
@@ -503,7 +504,7 @@ draw_hex_shared_edges_highlight (Layout layout, Hex center_hex,
     {
       if (direction_mask & (1 << dir))
         {
-          Hex neighbor = hex_neighbor (center_hex, dir);
+          hex neighbor = hex_neighbor (center_hex, dir);
           draw_hex_shared_edge (layout, center_hex, neighbor, thickness,
                                 color);
         }
@@ -511,21 +512,21 @@ draw_hex_shared_edges_highlight (Layout layout, Hex center_hex,
 }
 
 bool
-are_hexes_adjacent (Hex hex1, Hex hex2)
+are_hexes_adjacent (hex hex1, hex hex2)
 {
   int distance = hex_distance (hex1, hex2);
   return distance == 1;
 }
 
 int
-get_edge_direction (Hex from_hex, Hex to_hex)
+get_edge_direction (hex from_hex, hex to_hex)
 {
   if (!are_hexes_adjacent (from_hex, to_hex))
     {
       return -1; // Not adjacent
     }
 
-  Hex diff = hex_subtract (to_hex, from_hex);
+  hex diff = hex_subtract (to_hex, from_hex);
   for (int dir = 0; dir < 6; dir++)
     {
       if (hex_equal (diff, hex_direction (dir)))
@@ -538,7 +539,7 @@ get_edge_direction (Hex from_hex, Hex to_hex)
 
 // Advanced edge pattern functions
 void
-draw_hex_ring_edges (Layout layout, Hex center, int radius, float thickness,
+draw_hex_ring_edges (layout layout, hex center, int radius, float thickness,
                      Color color)
 {
   if (radius <= 0)
@@ -548,7 +549,7 @@ draw_hex_ring_edges (Layout layout, Hex center, int radius, float thickness,
   hex_array ring_hexes = hex_array_create ();
 
   // Start at one hex in the ring
-  Hex current = center;
+  hex current = center;
   for (int i = 0; i < radius; i++)
     {
       current = hex_neighbor (current, 4); // Move left
@@ -576,7 +577,7 @@ draw_hex_ring_edges (Layout layout, Hex center, int radius, float thickness,
 }
 
 void
-draw_hex_path_edges (Layout layout, hex_array path, float thickness,
+draw_hex_path_edges (layout layout, hex_array path, float thickness,
                      Color color)
 {
   if (path.count < 2)
@@ -589,7 +590,7 @@ draw_hex_path_edges (Layout layout, hex_array path, float thickness,
 }
 
 void
-draw_hex_border_edges (Layout layout, hex_array hexes, float thickness,
+draw_hex_border_edges (layout layout, hex_array hexes, float thickness,
                        Color color)
 {
   if (hexes.count == 0)
@@ -598,11 +599,11 @@ draw_hex_border_edges (Layout layout, hex_array hexes, float thickness,
   // For each hex in the array, check each of its 6 edges
   for (int i = 0; i < hexes.count; i++)
     {
-      Hex current = hexes.data[i];
+      hex current = hexes.data[i];
 
       for (int dir = 0; dir < 6; dir++)
         {
-          Hex neighbor = hex_neighbor (current, dir);
+          hex neighbor = hex_neighbor (current, dir);
 
           // Check if the neighbor is NOT in our hex array
           bool neighbor_in_array = false;
@@ -619,7 +620,7 @@ draw_hex_border_edges (Layout layout, hex_array hexes, float thickness,
           if (!neighbor_in_array)
             {
               // Draw the edge segment for this border
-              Point corners[6];
+              point corners[6];
               get_hex_corners (layout, current, corners);
 
               // Draw the edge between corner[dir] and corner[(dir+1)%6]
@@ -634,7 +635,7 @@ draw_hex_border_edges (Layout layout, hex_array hexes, float thickness,
 
 // Grid generation functions
 hex_array
-generate_hex_grid_radius (Hex center, int radius)
+generate_hex_grid_radius (hex center, int radius)
 {
   hex_array grid = hex_array_create ();
 
@@ -646,7 +647,7 @@ generate_hex_grid_radius (Hex center, int radius)
       for (int r = r1; r <= r2; r++)
         {
           int s = -q - r;
-          Hex hex = hex_add (center, hex_create (q, r, s));
+          hex hex = hex_add (center, hex_create (q, r, s));
           hex_array_push (&grid, hex);
         }
     }
@@ -689,12 +690,12 @@ generate_hex_grid_parallelogram (int q1, int q2, int r1, int r2)
   return grid;
 }
 void
-draw_hex (Layout layout, Hex h, float scale, Color color)
+draw_hex (layout layout, hex h, float scale, Color color)
 {
-  Point center_pt = hex_to_pixel (layout, h);
+  point center_pt = hex_to_pixel (layout, h);
   Vector2 center = { center_pt.x, center_pt.y };
 
-  Point corners[6];
+  point corners[6];
   get_hex_corners (layout, h, corners);
 
   Vector2 vertices[6];
@@ -722,8 +723,8 @@ draw_hex (Layout layout, Hex h, float scale, Color color)
 static void
 test_hex_arithmetic (void)
 {
-  Hex result = hex_add (hex_create (1, -3, 2), hex_create (3, -7, 4));
-  Hex expected = hex_create (4, -10, 6);
+  hex result = hex_add (hex_create (1, -3, 2), hex_create (3, -7, 4));
+  hex expected = hex_create (4, -10, 6);
   if (!hex_equal (result, expected))
     {
       TraceLog (LOG_ERROR, "FAIL hex_add");
@@ -740,8 +741,8 @@ test_hex_arithmetic (void)
 static void
 test_hex_direction (void)
 {
-  Hex result = hex_direction (2);
-  Hex expected = hex_create (0, -1, 1);
+  hex result = hex_direction (2);
+  hex expected = hex_create (0, -1, 1);
   if (!hex_equal (result, expected))
     {
       TraceLog (LOG_ERROR, "FAIL hex_direction");
@@ -751,8 +752,8 @@ test_hex_direction (void)
 static void
 test_hex_neighbor (void)
 {
-  Hex result = hex_neighbor (hex_create (1, -2, 1), 2);
-  Hex expected = hex_create (1, -3, 2);
+  hex result = hex_neighbor (hex_create (1, -2, 1), 2);
+  hex expected = hex_create (1, -3, 2);
   if (!hex_equal (result, expected))
     {
       TraceLog (LOG_ERROR, "FAIL hex_neighbor");
@@ -772,17 +773,17 @@ test_hex_distance (void)
 static void
 test_layout (void)
 {
-  Hex h = hex_create (3, 4, -7);
-  Layout flat = layout_create (layout_flat, point_create (10.0, 15.0),
+  hex h = hex_create (3, 4, -7);
+  layout flat = layout_create (layout_flat, point_create (10.0, 15.0),
                                point_create (35.0, 71.0));
-  Point pixel = hex_to_pixel (flat, h);
-  Hex result = pixel_to_hex_rounded (flat, pixel);
+  point pixel = hex_to_pixel (flat, h);
+  hex result = pixel_to_hex_rounded (flat, pixel);
   if (!hex_equal (h, result))
     {
       TraceLog (LOG_ERROR, "FAIL layout flat");
     }
 
-  Layout pointy = layout_create (layout_pointy, point_create (10.0, 15.0),
+  layout pointy = layout_create (layout_pointy, point_create (10.0, 15.0),
                                  point_create (35.0, 71.0));
   pixel = hex_to_pixel (pointy, h);
   result = pixel_to_hex_rounded (pointy, pixel);
@@ -801,5 +802,5 @@ test_all (void)
   test_hex_neighbor ();
   test_hex_distance ();
   test_layout ();
-  TraceLog (LOG_INFO, "Hex grid tests completed");
+  TraceLog (LOG_INFO, "hex grid tests completed");
 }

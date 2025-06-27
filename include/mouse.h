@@ -4,7 +4,7 @@
 #include "raylib.h"
 #include "hex_grid.h"
 
-typedef struct MouseInput {
+typedef struct mouse_input {
     Vector2 screen_pos;   // Mouse position in screen coordinates
     Vector2 world_pos;    // Mouse position in world coordinates (with camera)
     bool left_pressed;    // Left button pressed this frame
@@ -15,15 +15,15 @@ typedef struct MouseInput {
     bool right_down;      // Right button is held down
     float wheel_move;     // Mouse wheel movement this frame
 
-    Hex hovered_hex;
+    hex hovered_hex;
     bool hovering_hex;
-} MouseInput;
+} mouse_input;
 
 // Call this at the start of each frame, after updating the camera
-void mouse_input_update(MouseInput* mouse, Camera2D* camera);
+void mouse_input_update(mouse_input* mouse, Camera2D* camera);
 
 // Utility functions
-bool mouse_in_rect(MouseInput* mouse, Rectangle rect);
-bool mouse_in_hex(MouseInput* mouse, Layout layout, Hex hex);
+bool mouse_in_rect(mouse_input* mouse, Rectangle rect);
+bool mouse_in_hex(mouse_input* mouse, layout layout);
 
 #endif // MOUSE_INPUT_H

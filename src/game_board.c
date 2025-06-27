@@ -5,7 +5,7 @@
 game_board *
 game_board_new (int radius)
 {
-  Hex center = hex_create (0, 0, 0);
+  hex center = hex_create (0, 0, 0);
 
   game_board *board = (game_board *)malloc (sizeof (game_board));
   if (board == NULL)

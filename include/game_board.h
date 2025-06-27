@@ -6,8 +6,8 @@
 typedef struct game_board {
     int id;
     int radius;
-    Layout layout;
-    Hex center;
+    layout layout;
+    hex center;
     hex_array hex_array;
     tile_array tile_array;
     tile_group_array tile_group_array;

@@ -16,7 +16,7 @@ typedef enum {
 // tile structure
 typedef struct {
     int id;
-    Hex coord;
+    hex coord;
     tile_type type;
     int value;
     void* extra_data;
@@ -30,17 +30,17 @@ typedef struct {
 } tile_array;
 
 // tile operations
-tile tile_create(Hex coord, tile_type type, int value);
+tile tile_create(hex coord, tile_type type, int value);
 tile_array tile_array_create(void);
 void tile_array_push(tile_array* array, tile tile);
 void tile_array_free(tile_array* array);
-tile* find_tile_by_coord(tile_array* array, Hex coord);
+tile* find_tile_by_coord(tile_array* array, hex coord);
 
 // tile properties
 Color get_tile_color(tile_type type);
 
 // tile rendering
-void draw_tile(Layout layout, tile tile);
-void draw_tile_array(Layout layout, tile_array* tiles);
+void draw_tile(layout layout, tile tile);
+void draw_tile_array(layout layout, tile_array* tiles);
 
 #endif // TILE_H

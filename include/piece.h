@@ -19,7 +19,7 @@ typedef enum {
 
 typedef struct pieceShape  {
     piece_type name;
-    Hex* hex_array;
+    hex* hex_array;
 } pieceShape;
 
 typedef struct piece {
@@ -39,14 +39,14 @@ pieceShape get_piece_shape_from_type(piece_type type);
 piece_array piece_array_create();
 void piece_array_free(piece_array* array);
 
-Hex get_piece_anchor(piece* piece);
+hex get_piece_anchor(piece* piece);
 
 //size of shape must be equal to tileCount, or else this function will fail
 piece piece_create(piece* piece, pieceShape shape, tile_array tiles);
 
-Hex* piece_type_to_hex_array(piece_type type);
+hex* piece_type_to_hex_array(piece_type type);
 
-piece piece_move(piece* piece, Hex b);
+piece piece_move(piece* piece, hex b);
 
 piece piece_rotate(piece* piece, int direction);
 

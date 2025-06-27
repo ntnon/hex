@@ -9,7 +9,7 @@ main (void)
   const int screenWidth = 800;
   const int screenHeight = 450;
   SetConfigFlags (FLAG_WINDOW_HIGHDPI);
-  InitWindow (screenWidth, screenHeight, "Hex Grid - Edge Highlighting Demo");
+  InitWindow (screenWidth, screenHeight, "hex Grid - Edge Highlighting Demo");
 
   Camera2D camera = { 0 };
   camera.target = (Vector2){ 0, 0 };
