@@ -9,7 +9,7 @@ tile_create (hex coord, tile_type type, int value)
   tile.coord = coord;
   tile.type = type;
   tile.value = value;
-  tile.extra_data = NULL;
+  // tile.extra_data = NULL;
   return tile;
 }
 
@@ -35,6 +35,17 @@ tile_array_push (tile_array *array, tile tile)
       array->data = realloc (array->data, array->capacity * sizeof (tile));
     }
   array->data[array->count++] = tile;
+}
+
+void
+tile_array_clear (tile_array *tile_array)
+{
+  if (!tile_array)
+    {
+      return; // Do nothing if the array is NULL
+    }
+
+  tile_array->count = 0; // Reset the count
 }
 
 void

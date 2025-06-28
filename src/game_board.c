@@ -1,5 +1,6 @@
 #include "game_board.h"
 #include "hex_grid.h"
+#include <stdio.h>
 #include <stdlib.h>
 
 game_board *
@@ -18,6 +19,8 @@ game_board_new (int radius)
   board->tile_array = tile_array_create ();
   board->piece_array = piece_array_create ();
   board->tile_group_array = tile_group_array_create ();
+  board->is_dirty = true;
+  board->highlight_manager = highlight_manager_create ();
   return board;
 }
 
@@ -43,4 +46,44 @@ game_board_free (game_board *board)
   piece_array_free (&board->piece_array);
   tile_group_array_free (&board->tile_group_array);
   free (board);
+}
+
+game_board *
+game_board_clone (const game_board *original)
+{
+  // Allocate memory for the new game board
+  game_board *clone = malloc (sizeof (game_board));
+  if (!clone)
+    {
+      fprintf (stderr, "Failed to allocate memory for game board clone.\n");
+      return NULL;
+    }
+
+  // Copy the layout directly (assuming it's a simple struct)
+  clone->layout = original->layout;
+
+  // Deep copy the hex array
+  clone->hex_array.count = original->hex_array.count;
+  clone->hex_array.data = malloc (original->hex_array.count * sizeof (hex));
+  if (!clone->hex_array.data)
+    {
+      fprintf (stderr, "Failed to allocate memory for hex array clone.\n");
+      free (clone);
+      return NULL;
+    }
+  for (int i = 0; i < original->hex_array.count; i++)
+    {
+      clone->hex_array.data[i] = original->hex_array.data[i];
+    }
+
+  // Return the cloned game board
+  return clone;
+}
+
+void *
+game_board_highlight_tiles (game_board *board, hex *hex)
+{
+  // Implement the logic to highlight the given hex
+  // For example, you can change the color of the hex
+  return NULL;
 }

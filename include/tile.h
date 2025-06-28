@@ -19,7 +19,6 @@ typedef struct {
     hex coord;
     tile_type type;
     int value;
-    void* extra_data;
 } tile;
 
 // tile array for managing collections
@@ -30,9 +29,11 @@ typedef struct {
 } tile_array;
 
 // tile operations
+tile tile_create_empty(hex coord);
 tile tile_create(hex coord, tile_type type, int value);
 tile_array tile_array_create(void);
 void tile_array_push(tile_array* array, tile tile);
+void tile_array_clear(tile_array *tile_array);
 void tile_array_free(tile_array* array);
 tile* find_tile_by_coord(tile_array* array, hex coord);
 

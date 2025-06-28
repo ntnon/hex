@@ -1,4 +1,3 @@
-#include "hex_grid.h"
 #include "tile.h"
 
 typedef enum {

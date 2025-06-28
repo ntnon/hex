@@ -1,6 +1,6 @@
-#include "game_board.h"
+#include "mouse_controller.h"
 #include "raylib.h"
-#include "raymath.h"
+#include <stdatomic.h>
 
 int
 main (void)
@@ -18,30 +18,20 @@ main (void)
   camera.rotation = 0.0f;
 
   // Simple layout test
-  game_board *board = game_board_new (6);
+  game_board_controller *game_board_controller
+      = game_board_controller_create (game_board_new (6));
+  mouse_controller mouse;
+  mouse_controller_init (&mouse, &camera, game_board_controller);
 
   SetTargetFPS (60);
 
   // Main game loop
   while (!WindowShouldClose ())
     {
+      mouse_controller_update (&mouse, &camera, game_board_controller);
+
       // Update
       // Pan with right mouse button
-      if (IsMouseButtonDown (MOUSE_BUTTON_RIGHT)
-          || IsMouseButtonDown (MOUSE_BUTTON_LEFT))
-        {
-          Vector2 delta = GetMouseDelta ();
-          delta = Vector2Scale (delta, -1.0f / camera.zoom);
-          camera.target = Vector2Add (camera.target, delta);
-        }
-
-      // Zoom with mouse wheel
-      float wheel = GetMouseWheelMove ();
-      if (wheel != 0)
-        {
-          float scale = 0.1f * wheel;
-          camera.zoom = Clamp (expf (logf (camera.zoom) + scale), 0.1f, 10.0f);
-        }
 
       // Draw
       BeginDrawing ();
@@ -49,14 +39,15 @@ main (void)
 
       BeginMode2D (camera);
 
-      game_board_draw (board);
+      game_board_draw (game_board_controller->main_board);
 
       EndMode2D ();
       EndDrawing ();
     }
 
   // Cleanup
-  game_board_free (board);
+  game_board_controller_free (game_board_controller);
+  mouse_controller_free (&mouse);
   CloseWindow ();
 
   return 0;

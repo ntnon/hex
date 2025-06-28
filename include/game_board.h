@@ -2,6 +2,7 @@
 #include "tile_group.h"
 #include "hex_grid.h"
 #include "piece.h"
+#include "highlight_manager.h"
 
 typedef struct game_board {
     int id;
@@ -12,12 +13,19 @@ typedef struct game_board {
     tile_array tile_array;
     tile_group_array tile_group_array;
     piece_array piece_array;
+    bool is_dirty;
+    highlight_manager highlight_manager;
 } game_board;
 
 game_board* game_board_new(int radius);
+
 void game_board_free(game_board* board);
 
+game_board *game_board_clone(const game_board* board);
+
 void game_board_add_piece(game_board* board, piece* piece);
+
+void game_board_highlight_hex(game_board* board, hex* hex);
 
 void game_board_hover_piece(game_board* board, piece* piece);
 
