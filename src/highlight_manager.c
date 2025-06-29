@@ -3,49 +3,50 @@
 #include <stdlib.h>
 
 #define DEFAULT_HIGHLIGHT_COLOR ORANGE
-highlight_manager
-highlight_manager_create ()
+highlight_manager *
+highlight_manager_create (highlight highlight)
 {
-  highlight_manager manager;
+  // Dynamically allocate memory for the highlight_manager
+  highlight_manager *manager = malloc (sizeof (highlight_manager));
+  if (!manager)
+    {
+      fprintf (stderr, "Failed to allocate memory for highlight_manager\n");
+      return NULL;
+    }
 
-  // Initialize the tile_array directly
-  manager.tile_array = tile_array_create ();
+  // Initialize the tile_array
+  manager->tile_array = tile_array_create ();
+  ;
 
   // Initialize the highlight
-  manager.highlight.color = DEFAULT_HIGHLIGHT_COLOR; // Default highlight color
-
-  // Initialize count and capacity
-  manager.count = 0;
-  manager.capacity = HIGHLIGHT_MANAGER_MAX_CAPACITY;
+  manager->highlight = highlight;
 
   return manager;
 }
 
+void
+update_highlight (highlight_manager *manager, highlight highlight)
+{
+  manager->highlight = highlight;
+}
+
+void
+highlight_manager_set_tile (highlight_manager *manager, tile tile)
+{
+  tile_array_clear (&manager->tile_array);
+  tile_array_push (&manager->tile_array, tile);
+}
 // Update the highlight manager with new tiles and a highlight color
 void
-highlight_manager_update (highlight_manager *manager, tile_array *tile_array,
-                          Color highlight_color)
+highlight_manager_set_tile_array (highlight_manager *manager,
+                                  tile_array tile_array)
 {
   // Clear existing highlights
   clear_highlights (manager);
 
-  // Update the highlight color
-  manager->highlight.color = highlight_color;
-
   // Add tiles from the provided tile_array to the manager's tile_array
-  for (int i = 0; i < tile_array->count; i++)
-    {
-      if (manager->count < manager->capacity)
-        {
-          tile_array_push (&manager->tile_array, tile_array->data[i]);
-          manager->count++;
-        }
-      else
-        {
-          // Capacity exceeded, handle as needed (e.g., log a warning)
-          break;
-        }
-    }
+  for (int i = 0; i < tile_array.count; i++)
+    tile_array_push (&manager->tile_array, tile_array.data[i]);
 }
 
 // Free the resources used by the highlight manager
@@ -59,9 +60,15 @@ highlight_manager_free (highlight_manager *manager)
 }
 
 // Clear all highlights from the highlight manager
-static void
+void
 clear_highlights (highlight_manager *manager)
 {
   tile_array_clear (&manager->tile_array);
-  manager->count = 0;
+}
+
+highlight
+highlight_create (Color color)
+{
+  highlight highlight = { color };
+  return highlight;
 }

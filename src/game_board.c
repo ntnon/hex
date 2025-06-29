@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define HOVER_HIGHLIGHT                                                       \
+  (highlight) { GREEN }
+
 game_board *
 game_board_new (int radius)
 {
@@ -20,7 +23,7 @@ game_board_new (int radius)
   board->piece_array = piece_array_create ();
   board->tile_group_array = tile_group_array_create ();
   board->is_dirty = true;
-  board->highlight_manager = highlight_manager_create ();
+  board->highlight_manager = highlight_manager_create (HOVER_HIGHLIGHT);
   return board;
 }
 
@@ -36,6 +39,17 @@ game_board_draw (game_board *board)
   for (int i = 0; i < board->tile_array.count; i++)
     {
       draw_tile (board->layout, board->tile_array.data[i]);
+    }
+
+  // highlighted tiles
+  printf ("Highlighted tiles: %d\n",
+          board->highlight_manager->tile_array.count);
+  for (int i = 0; i < board->highlight_manager->tile_array.count; i++)
+    {
+      printf ("Highlighted tile %d\n", i);
+      draw_hex (board->layout,
+                board->highlight_manager->tile_array.data[i].hex, 1.0f,
+                board->highlight_manager->highlight.color);
     }
 }
 

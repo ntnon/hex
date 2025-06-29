@@ -14,7 +14,7 @@ typedef struct game_board {
     tile_group_array tile_group_array;
     piece_array piece_array;
     bool is_dirty;
-    highlight_manager highlight_manager;
+    highlight_manager *highlight_manager;
 } game_board;
 
 game_board* game_board_new(int radius);

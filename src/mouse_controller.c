@@ -17,10 +17,11 @@ mouse_controller_init (mouse_controller *mouse, Camera2D *camera,
   mouse->right_released = false;
   mouse->right_down = false;
   mouse->wheel_move = 0.0f;
-  mouse->hovering_hex = false;
 
-  mouse->hovered_hex = NULL; // Initialize hovered_hex to NULL
-  mouse->camera = camera;    // Set the camera reference
+  mouse->hovering_hex = false;
+  mouse->hovered_hex = (hex){ 0, 0, 0 };
+
+  mouse->camera = camera; // Set the camera reference
   mouse->game_board_controller
       = game_board_controller; // Set the game board reference
 }
@@ -43,39 +44,57 @@ mouse_controller_update (mouse_controller *mouse, Camera2D *camera,
   mouse->wheel_move = GetMouseWheelMove ();
 
   mouse_controller_update_camera (mouse);
-  game_board *preview_board = game_board_controller->preview_board;
-
+  update_hovered_hex (mouse);
   // Detect hovered hex
+
+  // Only update if the hovered hex has changed
+}
+
+static void
+update_hovered_hex (mouse_controller *mouse)
+{
+  game_board *preview_board = mouse->game_board_controller->preview_board;
+  game_board *main_board = mouse->game_board_controller->main_board;
+
+  // Convert the mouse world position to a hex
   hex hovered = pixel_to_hex_rounded (
       preview_board->layout,
       (point){ mouse->world_pos.x, mouse->world_pos.y });
 
-  hex *new_hovered_hex = NULL;
+  hex new_hovered_hex = (hex){ 0, 0, 0 }; // Default value
+  bool hovering = false;
+
+  // Check if the hovered hex exists in the hex array
   for (int i = 0; i < preview_board->hex_array.count; i++)
     {
       if (hex_equal (hovered, preview_board->hex_array.data[i]))
         {
-          new_hovered_hex = &preview_board->hex_array.data[i];
+          new_hovered_hex = preview_board->hex_array.data[i];
+          hovering = true;
           break;
         }
     }
 
-  // Only update if the hovered hex has changed
-  if (mouse->hovered_hex != new_hovered_hex)
+  // Update the hovered hex and hovering state if they have changed
+  if (!hex_equal (mouse->hovered_hex, new_hovered_hex)
+      || mouse->hovering_hex != hovering)
     {
       mouse->hovered_hex = new_hovered_hex;
-      mouse->hovering_hex = (new_hovered_hex != NULL);
+      mouse->hovering_hex = hovering;
 
       // Optional: Trigger events or log changes
-      if (mouse->hovered_hex != NULL)
+      if (mouse->hovering_hex)
         {
           printf ("Hovered hex changed to: q=%d, r=%d, s=%d\n",
-                  mouse->hovered_hex->q, mouse->hovered_hex->r,
-                  mouse->hovered_hex->s);
+                  mouse->hovered_hex.q, mouse->hovered_hex.r,
+                  mouse->hovered_hex.s);
+          highlight_manager_set_tile (main_board->highlight_manager,
+                                      tile_create_empty (mouse->hovered_hex));
         }
       else
         {
           printf ("No hex is hovered.\n");
+          clear_highlights (main_board->highlight_manager);
         }
     }
 }
@@ -117,13 +136,6 @@ mouse_controller_free (mouse_controller *controller)
   if (!controller)
     {
       return; // Nothing to free
-    }
-
-  // Free the hovered hex if it was dynamically allocated
-  if (controller->hovered_hex)
-    {
-      free (controller->hovered_hex);
-      controller->hovered_hex = NULL;
     }
 
   // Free the camera if it was dynamically allocated

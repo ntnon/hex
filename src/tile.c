@@ -3,14 +3,20 @@
 
 // tile operations
 tile
-tile_create (hex coord, tile_type type, int value)
+tile_create (hex hex, tile_type type, int value)
 {
   tile tile = { 0 };
-  tile.coord = coord;
+  tile.hex = hex;
   tile.type = type;
   tile.value = value;
   // tile.extra_data = NULL;
   return tile;
+}
+
+tile
+tile_create_empty (hex hex)
+{
+  return tile_create (hex, TILE_EMPTY, 0);
 }
 
 tile_array
@@ -63,14 +69,14 @@ tile_array_free (tile_array *array)
 }
 
 tile *
-find_tile_by_coord (tile_array *array, hex coord)
+find_tile_by_coord (tile_array *array, hex hex)
 {
   if (!array)
     return NULL;
 
   for (int i = 0; i < array->count; i++)
     {
-      if (hex_equal (array->data[i].coord, coord))
+      if (hex_equal (array->data[i].hex, hex))
         {
           return &array->data[i];
         }
@@ -103,7 +109,7 @@ draw_tile (layout layout, tile tile)
 {
   DrawCircle (10, 10, 100, ORANGE);
   point corners[6];
-  get_hex_corners (layout, tile.coord, corners);
+  get_hex_corners (layout, tile.hex, corners);
 
   Vector2 vertices[6];
   for (int i = 0; i < 6; i++)
@@ -124,7 +130,7 @@ draw_tile (layout layout, tile tile)
   // Draw tile value if non-zero
   if (tile.value != 0)
     {
-      point center = hex_to_pixel (layout, tile.coord);
+      point center = hex_to_pixel (layout, tile.hex);
       const char *value_text = TextFormat ("%d", tile.value);
       DrawText (value_text, center.x - 5, center.y - 5, 12, WHITE);
     }

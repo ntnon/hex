@@ -10,15 +10,15 @@ typedef struct {
 typedef struct {
     tile_array tile_array;
     highlight highlight;
-    int count;
-    int capacity;
 } highlight_manager;
 
-highlight_manager highlight_manager_create();
-void highlight_manager_update(highlight_manager *manager, tile_array *tile_array, Color highlight_color);
-
+highlight_manager *highlight_manager_create(highlight highlight);
+void highlight_manager_set_tile_array(highlight_manager *manager, tile_array tile_array);
+void highlight_manager_set_tile(highlight_manager *manager, tile tile);
 static void remove_highlight(highlight_manager *manager, tile *tile);
-static void clear_highlights(highlight_manager *manager);
+void clear_highlights(highlight_manager *manager);
+
+highlight highlight_create(Color color);
 
 void
 highlight_manager_free (highlight_manager *manager);

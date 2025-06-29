@@ -15,7 +15,7 @@ typedef struct mouse_controller {
     bool right_down;      // Right button is held down
     float wheel_move;     // Mouse wheel movement this frame
 
-    hex *hovered_hex;
+    hex hovered_hex;
     bool hovering_hex;
 
     Camera2D* camera;
@@ -27,6 +27,7 @@ void mouse_controller_free(mouse_controller* mouse);
 // Call this at the start of each frame, after updating the camera
 void mouse_controller_update(mouse_controller* mouse, Camera2D* camera, game_board_controller* game_board_controller);
 void mouse_controller_update_camera(mouse_controller* mouse);
+static void update_hovered_hex(mouse_controller *mouse);
 
 // Utility functions
 bool mouse_in_rect(mouse_controller* mouse, Rectangle rect);
