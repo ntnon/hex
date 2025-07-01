@@ -58,6 +58,8 @@ typedef struct {
      */
     void (*generate_cells)(grid_t* grid, int size);
 
+    grid_t *(*grid_create)(grid_type_e type, layout_t layout, int size);
+    void (*draw_grid)(const grid_t* grid);
 } grid_vtable_t;
 
 // The main grid object. This is the primary struct that game logic will interact with.
@@ -94,5 +96,18 @@ grid_t* grid_create(grid_type_e type, layout_t layout, int size);
  * @param grid A pointer to the grid_t object to be freed.
  */
 void grid_free(grid_t* grid);
+
+void draw_grid(const grid_t *grid);
+
+
+
+/**
+ * @brief The public instance of the v-table for hexagonal grids.
+ *
+ * This struct is initialized in hex_grid.c with pointers to the static
+ * implementation functions. The grid_create() factory function uses this
+* instance to construct a grid of type GRID_TYPE_HEXAGON.
+ */
+extern const grid_vtable_t hex_grid_vtable;
 
 #endif // GRID_SYSTEM_H

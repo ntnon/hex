@@ -2,6 +2,9 @@
 #define GRID_TYPES_H
 
 #include <stdbool.h>
+#include "../collection_template.h"
+
+
 
 // An enum to identify the grid tessellation type
 typedef enum {
@@ -60,6 +63,11 @@ typedef struct {
     double y;
 } point_t;
 
+typedef struct {
+    point_t a;
+    point_t b;
+}grid_edge_t;
+
 // Defines the matrix and angle for converting grid coordinates to pixel space
 typedef struct {
     double f0, f1, f2, f3;  // Forward matrix (grid to pixel)
@@ -73,6 +81,7 @@ typedef struct {
     point_t size;           // Size of a single cell (e.g., width and height)
     point_t origin;         // Pixel offset for the grid's origin (0,0)
 } layout_t;
+
 
 
 #endif // GRID_TYPES_H
