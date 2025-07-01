@@ -65,7 +65,7 @@ typedef struct {
 
 
 // Enum for named directions
-typedef enum hexGridDirection {
+typedef enum hex_grid_direction {
     NORTH,
     NORTHEAST,
     SOUTHEAST,
@@ -74,10 +74,10 @@ typedef enum hexGridDirection {
     NORTHWEST,
     NONE,
     HEX_GRID_DIRECTION_COUNT
-} hexGridDirection;
+} hex_grid_direction;
 
 // Function to get the direction vector for a given direction
-hex get_direction_vector(hexGridDirection direction);
+hex get_direction_vector(hex_grid_direction direction);
 
 // Constants for offset coordinates
 extern const int EVEN;

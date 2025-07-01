@@ -41,7 +41,7 @@ static const hex hex_diagonals[6]
 
 // Function to get the direction vector for a given direction
 hex
-get_direction_vector (enum hexGridDirection direction)
+get_direction_vector (enum hex_grid_direction direction)
 {
   if (direction >= 0 && direction < 6)
     {

@@ -4,5 +4,6 @@ CompileFlags:
     -I.,
     -I/opt/homebrew/include,
     -I../external/raylib-master/src,
-    -I../external/raylib-master/src/external
+    -I../external/raylib-master/src/external,
+    -I../grid
   ]
