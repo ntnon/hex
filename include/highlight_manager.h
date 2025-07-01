@@ -8,7 +8,7 @@ typedef struct {
 }highlight;
 
 typedef struct {
-    tile_array tile_array;
+    tile_array *tile_array;
     highlight highlight;
 } highlight_manager;
 

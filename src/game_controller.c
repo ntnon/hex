@@ -1,11 +1,11 @@
-#include "game_board_controller.h"
+#include "game_controller.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-game_board_controller *
-game_board_controller_create (game_board *main_board)
+game_controller *
+game_controller_create (game_board *main_board)
 {
-  game_board_controller *controller = malloc (sizeof (game_board_controller));
+  game_controller *controller = malloc (sizeof (game_controller));
   if (!controller)
     {
       fprintf (stderr,
@@ -35,9 +35,30 @@ game_board_controller_create (game_board *main_board)
 }
 
 void
-game_board_controller_free (game_board_controller *controller)
+game_controller_free (game_controller *controller)
 {
   game_board_free (controller->main_board);
   game_board_free (controller->preview_board);
   free (controller);
+}
+void
+game_controller_draw (game_controller *controller)
+{
+  if (!controller || !controller->main_board || !controller->preview_board)
+    {
+      printf ("Game board controller is not initialized.");
+      return;
+    }
+  game_board_draw (controller->preview_board);
+}
+
+void
+progress (game_controller *controller)
+{
+  if (!controller || !controller->main_board || !controller->preview_board)
+    {
+      printf ("Game board controller is not initialized.");
+      return;
+    }
+  controller->generation++;
 }

@@ -1,12 +1,33 @@
 #include "mouse_controller.h"
 #include "raylib.h"
 #include "raymath.h"
+#include "tile.h"
 #include <stdio.h>
 #include <stdlib.h>
 
 void
+cycle_tile (mouse_controller *mouse)
+{
+  printf ("Cycle tile type\n");
+  if (mouse->hovering_hex)
+    {
+      tile_array *arr = mouse->game_controller->preview_board->tile_array;
+      if (!arr)
+        {
+          printf ("Error: tile_array is NULL\n");
+          return;
+        }
+      tile *target_tile
+          = get_tile_by_hex (mouse->game_controller->preview_board->tile_array,
+                             mouse->hovered_hex);
+      printf ("Target tile: %p\n", target_tile);
+      tile_cycle (target_tile);
+    }
+}
+
+void
 mouse_controller_init (mouse_controller *mouse, Camera2D *camera,
-                       game_board_controller *game_board_controller)
+                       game_controller *game_controller)
 {
   mouse->screen_pos = (Vector2){ 0, 0 };
   mouse->world_pos = (Vector2){ 0, 0 };
@@ -21,14 +42,13 @@ mouse_controller_init (mouse_controller *mouse, Camera2D *camera,
   mouse->hovering_hex = false;
   mouse->hovered_hex = (hex){ 0, 0, 0 };
 
-  mouse->camera = camera; // Set the camera reference
-  mouse->game_board_controller
-      = game_board_controller; // Set the game board reference
+  mouse->camera = camera;                   // Set the camera reference
+  mouse->game_controller = game_controller; // Set the game board reference
 }
 
 void
 mouse_controller_update (mouse_controller *mouse, Camera2D *camera,
-                         game_board_controller *game_board_controller)
+                         game_controller *game_controller)
 {
   mouse->screen_pos = GetMousePosition ();
   mouse->world_pos = GetScreenToWorld2D (mouse->screen_pos, *camera);
@@ -43,18 +63,20 @@ mouse_controller_update (mouse_controller *mouse, Camera2D *camera,
 
   mouse->wheel_move = GetMouseWheelMove ();
 
+  if (mouse->left_released)
+    {
+      cycle_tile (mouse);
+    }
+
   mouse_controller_update_camera (mouse);
   update_hovered_hex (mouse);
-  // Detect hovered hex
-
-  // Only update if the hovered hex has changed
 }
 
 static void
 update_hovered_hex (mouse_controller *mouse)
 {
-  game_board *preview_board = mouse->game_board_controller->preview_board;
-  game_board *main_board = mouse->game_board_controller->main_board;
+  game_board *preview_board = mouse->game_controller->preview_board;
+  game_board *main_board = mouse->game_controller->main_board;
 
   // Convert the mouse world position to a hex
   hex hovered = pixel_to_hex_rounded (
@@ -85,18 +107,15 @@ update_hovered_hex (mouse_controller *mouse)
       // Optional: Trigger events or log changes
       if (mouse->hovering_hex)
         {
-          printf ("Hovered hex changed to: q=%d, r=%d, s=%d\n",
-                  mouse->hovered_hex.q, mouse->hovered_hex.r,
-                  mouse->hovered_hex.s);
-          highlight_manager_set_tile (main_board->highlight_manager,
+          highlight_manager_set_tile (preview_board->highlight_manager,
                                       tile_create_empty (mouse->hovered_hex));
         }
       else
         {
-          printf ("No hex is hovered.\n");
-          clear_highlights (main_board->highlight_manager);
+          clear_highlights (preview_board->highlight_manager);
         }
     }
+  reveal_tile_info (mouse);
 }
 
 void
@@ -146,13 +165,74 @@ mouse_controller_free (mouse_controller *controller)
     }
 
   // Free the game board controller if it was dynamically allocated
-  if (controller->game_board_controller)
+  if (controller->game_controller)
     {
-      game_board_controller_free (
-          controller->game_board_controller); // Assuming this function exists
-      controller->game_board_controller = NULL;
+      game_controller_free (
+          controller->game_controller); // Assuming this function exists
+      controller->game_controller = NULL;
     }
 
   // Finally, free the mouse controller itself
   free (controller);
+}
+
+void
+reveal_tile_info (mouse_controller *controller)
+{
+  if (!controller || !controller->hovering_hex)
+    {
+      return; // Do nothing if the controller is NULL or not hovering over a
+              // hex
+    }
+
+  // Retrieve the hovered hex
+  hex hovered_hex = controller->hovered_hex;
+
+  // Find the tile associated with the hovered hex
+  tile *hovered_tile = get_tile_by_hex (
+      controller->game_controller->preview_board->tile_array, hovered_hex);
+
+  if (!hovered_tile)
+    {
+      return; // Do nothing if no tile is found for the hovered hex
+    }
+
+  // Define the pop-up table dimensions and position
+  Vector2 popup_position
+      = controller->screen_pos; // Use the mouse screen position
+  float popup_width = 200.0f;
+  float popup_height = 100.0f;
+
+  // Adjust the position to avoid going off-screen
+  if (popup_position.x + popup_width > GetScreenWidth ())
+    {
+      popup_position.x -= popup_width;
+    }
+  if (popup_position.y + popup_height > GetScreenHeight ())
+    {
+      popup_position.y -= popup_height;
+    }
+
+  // Draw the pop-up background
+  DrawRectangle (popup_position.x, popup_position.y, popup_width, popup_height,
+                 DARKGRAY);
+
+  // Draw the border
+  DrawRectangleLines (popup_position.x, popup_position.y, popup_width,
+                      popup_height, WHITE);
+
+  // Display the tile information
+  const char *tile_type_name = get_tile_type_name (
+      hovered_tile
+          ->type); // Assuming a function to get the name of the tile type
+  char value_text[32];
+  snprintf (value_text, sizeof (value_text), "Value: %d", hovered_tile->value);
+
+  // Draw the text
+  DrawText ("Tile Info", popup_position.x + 10, popup_position.y + 10, 20,
+            WHITE);
+  DrawText (tile_type_name, popup_position.x + 10, popup_position.y + 40, 18,
+            WHITE);
+  DrawText (value_text, popup_position.x + 10, popup_position.y + 70, 18,
+            WHITE);
 }
