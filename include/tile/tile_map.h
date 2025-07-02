@@ -59,9 +59,18 @@ void tile_map_remove(tile_map_entry_t** map_root, tile_map_entry_t* entry_to_rem
  */
 void tile_map_clear(tile_map_entry_t** map_root);
 
+/**
+ * @brief Calls the given function for each entry in the tile map.
+ * @param map_root The root of the tile map hash table.
+ * @param fn The function to call for each entry. Receives (tile_map_entry_t*, void*).
+ * @param user_data User data pointer passed to each call.
+ */
+void tile_map_foreach(tile_map_entry_t *map_root, void (*fn)(tile_map_entry_t *, void *), void *user_data);
+
+/**
+ * @brief Counts the number of tiles in a pool.
+ * @param pool A pointer to the pool to count.
+ * @return The number of tiles in the pool.
+ */
+int tile_map_size (tile_map_entry_t *map_root);
 #endif // TILE_MAP_H
-
-
-
-
-

@@ -37,6 +37,6 @@ typedef struct {
  * @param type The type (color/category) of the tile.
  * @return The initialized tile_t.
  */
-tile_t tile_create(grid_cell_t cell, int value, tile_type_t type);
+tile_t tile_create(grid_cell_t cell, tile_type_t type, int value);
 
 #endif // TILE_H

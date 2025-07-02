@@ -8,6 +8,7 @@
 
 #include "../third_party/uthash.h"
 #include "../grid/grid_types.h" // For grid_cell_t
+#include "../tile/tile_map.h"
 #include "tile.h"
 #include "raylib.h"
 // --- Enums ---
@@ -23,28 +24,12 @@ typedef enum {
     POOL_COUNT
 } pool_type_t;
 
-// --- Pool Member Structure ---
-// Represents a single tile within a pool's hash table.
-typedef struct pool_member {
-    tile_t *tile;              // Pointer to the tile that is a member of this pool.
-                               // We use a pointer here because the tile data itself
-                               // is likely stored in the global tile_map.
-    UT_hash_handle hh;         // uthash handle for the pool's member hash table.
-} pool_member_t;
 
-// --- Tile Pool Structure ---
-/**
- * @brief Represents a group or "pool" of connected tiles of the same type/color.
- */
 typedef struct tile_pool {
-    int id;                    // A unique identifier for this pool.
-    pool_type_t type;          // The type of pool (e.g., POOL_MAGENTA).
-    Color color;               // The color associated with this pool type.
-
-    // Hash table to store members of this pool.
-    // Key: tile_t* (pointer to the tile). Value: pool_member_t.
-    pool_member_t *members;
-
+    int id;                    // Unique identifier for this pool.
+    pool_type_t type;          // Pool type.
+    Color color;               // Associated color.
+    tile_map_entry_t *tiles;    // Hash table: key = tile_t*, value = pool_member_t*
     UT_hash_handle hh;
 } pool_t;
 
@@ -94,5 +79,7 @@ bool pool_contains_tile(const pool_t* pool, tile_t* tile_ptr);
  * @param pool A pointer to the pool to clear.
  */
 void pool_clear(pool_t* pool);
+
+bool pool_contains_tile(const pool_t* pool, tile_t* tile_ptr);
 
 #endif // TILE_POOL_H
