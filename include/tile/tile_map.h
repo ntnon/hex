@@ -11,11 +11,10 @@
 // This is the struct that uthash will manage.
 // The 'cell' field is the key, and the 'tile' field is the value.
 typedef struct tile_map_entry {
-    grid_cell_t cell;      // The key: grid cell coordinates and type.
-    tile_t tile;           // The value: the tile itself.
-    UT_hash_handle hh;     // uthash handle must be the last member.
+    grid_cell_t cell;      // Key: grid cell coordinates (and type, if applicable).
+    tile_t tile;           // Value: the tile data for this cell.
+    UT_hash_handle hh;     // uthash handle for hash table linkage (must be last).
 } tile_map_entry_t;
-
 
 // --- Tile Map Functions ---
 
@@ -37,6 +36,10 @@ void tile_map_free(tile_map_entry_t** map_root);
  * @param entry_to_add A pointer to the tile_map_entry_t to add. It will be managed by the map.
  */
 void tile_map_add(tile_map_entry_t** map_root, tile_map_entry_t* entry_to_add);
+
+//
+void tile_map_replace(tile_map_entry_t** map_root, tile_map_entry_t* entry_to_replace, tile_map_entry_t* entry_to_add);
+
 
 /**
  * @brief Finds a tile entry in the map by its grid cell coordinates.

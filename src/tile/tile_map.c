@@ -18,12 +18,6 @@ tile_map_free (tile_map_entry_t **map_root)
 }
 
 void
-tile_map_add (tile_map_entry_t **map_root, tile_map_entry_t *entry)
-{
-  HASH_ADD (hh, *map_root, cell, sizeof (entry->cell), entry);
-}
-
-void
 tile_map_clear (tile_map_entry_t **map_root)
 {
   tile_map_entry_t *current_entry, *tmp_entry;
@@ -63,4 +57,28 @@ tile_map_size (tile_map_entry_t *map_root)
   int size = 0;
   HASH_ITER (hh, map_root, entry, tmp) { size++; }
   return size;
+}
+
+void
+tile_map_replace (tile_map_entry_t **map_root,
+                  tile_map_entry_t *entry_to_replace,
+                  tile_map_entry_t *entry_to_add)
+{
+  HASH_DEL (*map_root, entry_to_replace);
+  HASH_ADD (hh, *map_root, cell, sizeof (entry_to_add->cell), entry_to_add);
+  free (entry_to_replace);
+}
+
+void
+tile_map_add (tile_map_entry_t **map_root, tile_map_entry_t *entry)
+{
+  tile_map_entry_t *existing_entry = tile_map_find (*map_root, entry->cell);
+  if (existing_entry)
+    {
+      tile_map_replace (map_root, existing_entry, entry);
+    }
+  else
+    {
+      HASH_ADD (hh, *map_root, cell, sizeof (entry->cell), entry);
+    }
 }

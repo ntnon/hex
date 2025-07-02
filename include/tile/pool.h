@@ -9,6 +9,7 @@
 #include "../third_party/uthash.h"
 #include "../grid/grid_types.h" // For grid_cell_t
 #include "../tile/tile_map.h"
+#include "../grid/edge_map.h"
 #include "tile.h"
 #include "raylib.h"
 // --- Enums ---
@@ -26,12 +27,14 @@ typedef enum {
 
 
 typedef struct tile_pool {
-    int id;                    // Unique identifier for this pool.
-    pool_type_t type;          // Pool type.
-    Color color;               // Associated color.
-    tile_map_entry_t *tiles;    // Hash table: key = tile_t*, value = pool_member_t*
+    int id;                        // Unique identifier for this pool.
+    pool_type_t type;              // Pool type.
+    Color color;                   // Associated color.
+    edge_map_entry_t *edges;       // Hash table of unique edges (edge_map_entry_t).
+    tile_map_entry_t *tiles;       // Hash table of tiles in this pool (tile_map_entry_t).
     UT_hash_handle hh;
 } pool_t;
+
 
 // --- Pool Lifecycle Functions ---
 
@@ -81,5 +84,7 @@ bool pool_contains_tile(const pool_t* pool, tile_t* tile_ptr);
 void pool_clear(pool_t* pool);
 
 bool pool_contains_tile(const pool_t* pool, tile_t* tile_ptr);
+
+void pool_update_edges (const grid_t *grid, pool_t *pool);
 
 #endif // TILE_POOL_H

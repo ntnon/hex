@@ -27,10 +27,10 @@
 typedef struct tile_manager {
     // Global hash table mapping grid_cell_t to tile_map_entry_t.
     // This is where all active tiles are stored.
-    tile_map_entry_t* tiles_by_cell;
+    tile_map_entry_t* tiles;
 
     // Hash table managing all active tile pools, keyed by pool ID.
-    pool_map_entry_t* pools_by_id;
+    pool_map_entry_t* pools;
 
     // A counter to generate unique pool IDs.
     int next_pool_id;
@@ -68,7 +68,7 @@ void tile_manager_free(tile_manager_t* tm);
  * @param type The type (color/category) of the new tile.
  * @return A pointer to the newly created tile_t entry, or NULL on failure.
  */
-tile_t* tile_manager_add_tile(tile_manager_t* tm, grid_cell_t cell, int value, tile_type_t type);
+void tile_manager_add_tile(tile_manager_t* tm, tile_map_entry_t* tile);
 
 /**
  * @brief Removes a tile from the manager (and its pools) at a given cell.

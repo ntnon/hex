@@ -164,7 +164,6 @@ draw_grid (const grid_t *grid)
         }
     }
 }
-
 // --- Public vtable instance ---
 
 const grid_vtable_t hex_grid_vtable = { .to_pixel = to_pixel,

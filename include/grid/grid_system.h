@@ -32,7 +32,7 @@ typedef struct {
      * @param direction An integer representing the direction (e.g., 0-5 for hex).
      * @param out_neighbor Pointer to a grid_cell_t to store the result.
      */
-    void (*get_neighbor)(grid_cell_t cell, int direction, grid_cell_t* out_neighbor);
+    void (*get_neighbor)(const grid_cell_t cell, int direction, grid_cell_t* out_neighbor);
 
     /**
      * @brief Calculates the grid-specific distance between two cells.
@@ -60,6 +60,7 @@ typedef struct {
 
     grid_t *(*grid_create)(grid_type_e type, layout_t layout, int size);
     void (*draw_grid)(const grid_t* grid);
+
 } grid_vtable_t;
 
 // The main grid object. This is the primary struct that game logic will interact with.
