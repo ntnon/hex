@@ -399,3 +399,6 @@ FodyWeavers.xsd
 build_files
 raylib-master
 /*.sln
+
+# Test binaries
+/tests/bin

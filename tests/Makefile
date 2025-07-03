@@ -1,16 +1,22 @@
 CC = clang
-CFLAGS = -I../src -I../include \
-         -I../build/external/raylib-master/src \
-         -I../build/external/raylib-master/src/external \
-         -I../build/external/raylib-master/src/external/glfw/include \
-         -g -std=c17 -Wall
+CFLAGS = -I../src -I../include -I../build/external/raylib-master/src -I../build/external/raylib-master/src/external -I../build/external/raylib-master/src/external/glfw/include -g -std=c17 -Wall
 
-TESTS = tile_map_test
+BIN_DIR = bin
+SRC_DIR = .
+SRC_TESTS = $(wildcard $(SRC_DIR)/*_test.c)
+TESTS = $(patsubst $(SRC_DIR)/%_test.c,$(BIN_DIR)/%_test,$(SRC_TESTS))
 
-all: $(TESTS)
+all: tests
 
-tile_map_test: tile_map_test.c ../src/tile/tile_map.c
+tests: $(BIN_DIR) $(TESTS)
+
+$(BIN_DIR):
+	mkdir -p $(BIN_DIR)
+
+# Pattern rule: build each test binary from its .c file
+$(BIN_DIR)/%_test: $(SRC_DIR)/%_test.c ../src/tile/tile_map.c
 	$(CC) $(CFLAGS) -o $@ $^
 
 clean:
 	rm -f $(TESTS)
+	rm -rf $(BIN_DIR)
