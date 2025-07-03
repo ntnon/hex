@@ -12,7 +12,7 @@
 // The 'cell' field is the key, and the 'tile' field is the value.
 typedef struct tile_map_entry {
     grid_cell_t cell;      // Key: grid cell coordinates (and type, if applicable).
-    tile_t tile;           // Value: the tile data for this cell.
+    tile_t *tile;           // Value: the tile data for this cell.
     UT_hash_handle hh;     // uthash handle for hash table linkage (must be last).
 } tile_map_entry_t;
 
@@ -47,7 +47,7 @@ void tile_map_replace(tile_map_entry_t** map_root, tile_map_entry_t* entry_to_re
  * @param search_cell The grid_cell_t to search for.
  * @return A pointer to the found tile_map_entry_t, or NULL if not found.
  */
-tile_map_entry_t* tile_map_find(tile_map_entry_t* map_root, grid_cell_t search_cell);
+tile_map_entry_t* tile_map_find(tile_map_entry_t* map_root, tile_t* search_tile);
 
 /**
  * @brief Removes a tile entry from the map and frees its memory.

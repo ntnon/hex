@@ -2,7 +2,7 @@
 #define GRID_TYPES_H
 
 #include <stdbool.h>
-#include "../collection_template.h"
+
 
 
 

@@ -1,7 +1,7 @@
 #include "../../include/tile/tile_manager.h"
 
 tile_manager_t *
-tile_manager_create (void)
+tile_manager_create (grid_t *grid)
 {
   tile_manager_t *tm = malloc (sizeof (tile_manager_t));
   if (!tm)
@@ -10,6 +10,8 @@ tile_manager_create (void)
     }
   tm->tiles = tile_map_create ();
   tm->pools = pool_map_create ();
+
+  tm->grid = grid;
 
   return tm;
 }

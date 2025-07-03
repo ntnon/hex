@@ -1,6 +1,6 @@
 #include "../../include/grid/edge_map.h"
+#include "../../include/grid/grid_system.h"
 #include "../../include/grid/grid_types.h"
-#include "hex_grid.c"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -82,7 +82,7 @@ get_cell_edges (const grid_t *grid, grid_cell_t cell,
                 edge_map_entry_t **edge_map_root)
 {
   point_t corners[6];
-  get_corners (grid, cell, corners);
+  grid->vtable->get_corners (grid, cell, corners);
   corners_to_edges (corners, edge_map_root);
 }
 

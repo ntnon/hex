@@ -49,7 +49,7 @@ typedef struct {
      * @param corners An array to be filled with the corner points. The size
      *                of the array must be appropriate for the grid type (e.g., 6 for hex).
      */
-    void (*get_corners)(const grid_t* grid, grid_cell_t cell, point_t corners[]);
+     void (*get_corners)(const grid_t *grid, grid_cell_t cell, point_t corners[]);
 
     /**
      * @brief Generates all the cells for a grid of a given size.

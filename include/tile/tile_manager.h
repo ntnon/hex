@@ -10,10 +10,10 @@
 #define TILE_MANAGER_H
 
 #include "../grid/grid_types.h"
+//#include "../grid/grid_system.h"
 #include "tile.h"
 #include "pool_map.h"
 #include "tile_map.h"
-#include "../collection_template.h"    // For generic collections
 #include "raylib.h"
 
 // --- Tile Manager Structure ---
@@ -35,6 +35,8 @@ typedef struct tile_manager {
     // A counter to generate unique pool IDs.
     int next_pool_id;
 
+    grid_t* grid;
+
     // If you have a global list of all tiles (e.g., for iteration),
     // you could have it here too, though the hash map is primary.
     // tile_t*_collection_t* all_tiles_list;
@@ -47,7 +49,7 @@ typedef struct tile_manager {
  * @brief Creates and initializes a new tile manager.
  * @return A pointer to the newly created tile_manager_t, or NULL on failure.
  */
-tile_manager_t* tile_manager_create(void);
+tile_manager_t* tile_manager_create(grid_t* grid);
 
 /**
  * @brief Frees all memory associated with the tile manager, including

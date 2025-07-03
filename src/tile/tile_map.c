@@ -20,7 +20,6 @@ tile_map_free (tile_map_entry_t **map_root)
 void
 tile_map_clear (tile_map_entry_t **map_root)
 {
-  tile_map_entry_t *current_entry, *tmp_entry;
   HASH_CLEAR (hh, *map_root);
 }
 
@@ -33,12 +32,13 @@ tile_map_remove (tile_map_entry_t **map_root,
 }
 
 tile_map_entry_t *
-tile_map_find (tile_map_entry_t *map_root, grid_cell_t search_cell)
+tile_map_find (tile_map_entry_t *map_root, tile_t *search_tile)
 {
   tile_map_entry_t *found_entry
       = NULL; // Declare a pointer to store the found entry
 
-  HASH_FIND (hh, map_root, &search_cell, sizeof (grid_cell_t), found_entry);
+  HASH_FIND (hh, map_root, &search_tile->cell, sizeof (grid_cell_t),
+             found_entry);
   return found_entry;
 };
 
@@ -72,7 +72,7 @@ tile_map_replace (tile_map_entry_t **map_root,
 void
 tile_map_add (tile_map_entry_t **map_root, tile_map_entry_t *entry)
 {
-  tile_map_entry_t *existing_entry = tile_map_find (*map_root, entry->cell);
+  tile_map_entry_t *existing_entry = tile_map_find (*map_root, entry->tile);
   if (existing_entry)
     {
       tile_map_replace (map_root, existing_entry, entry);

@@ -3,7 +3,6 @@
 
 #include "grid_system.h"
 #include "../third_party/uthash.h"
-#include "../collection_template.h"
 
 typedef struct {
     grid_edge_t edge;

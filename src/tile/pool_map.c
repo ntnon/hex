@@ -1,4 +1,5 @@
 #include "../../include/tile/pool_map.h"
+#include <stdio.h>
 
 pool_map_entry_t *
 pool_map_create (void)
