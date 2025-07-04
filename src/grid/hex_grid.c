@@ -46,7 +46,7 @@ from_pixel (const grid_t *grid, point_t p)
 }
 
 static void
-get_neighbor (grid_cell_t cell, int direction, grid_cell_t *out_neighbor)
+get_neighbor_cell (grid_cell_t cell, int direction, grid_cell_t *out_neighbor)
 {
   // Hex direction vectors
   static const int dq[6] = { 1, 1, 0, -1, -1, 0 };
@@ -61,11 +61,11 @@ get_neighbor (grid_cell_t cell, int direction, grid_cell_t *out_neighbor)
 }
 
 static void
-get_neighbors (grid_cell_t cell, grid_cell_t neighbors[6])
+get_neighbor_cells (grid_cell_t cell, grid_cell_t neighbors[6])
 {
   for (int dir = 0; dir < 6; ++dir)
     {
-      get_neighbor (cell, dir, &neighbors[dir]);
+      get_neighbor_cell (cell, dir, &neighbors[dir]);
     }
 }
 
@@ -174,19 +174,36 @@ draw_grid (const grid_t *grid)
     }
 }
 
+bool
+is_valid_cell (const grid_t *grid, grid_cell_t check_cell)
+{
+  if (check_cell.type != grid->cells->type)
+    return false;
+
+  for (int i = 0; i < grid->num_cells; ++i)
+    {
+      grid_cell_t cell = grid->cells[i];
+      if (cell.coord.hex.s == check_cell.coord.hex.s
+          && cell.coord.hex.q == check_cell.coord.hex.q)
+        return true;
+    }
+  return false;
+}
+
 // --- Public vtable instance ---
 
 const grid_vtable_t hex_grid_vtable = {
   .to_pixel = to_pixel,
   .from_pixel = from_pixel,
-  .get_neighbor = get_neighbor,
-  .get_neighbors = get_neighbors,
+  .get_neighbor_cell = get_neighbor_cell,
+  .get_neighbor_cells = get_neighbor_cells,
   .distance = distance,
   .get_corners = get_corners,
   .generate_cells = generate_cells,
   .grid_create = grid_create,
   .draw_grid = draw_grid,
   .num_neighbors = 6,
+  .is_valid_cell = is_valid_cell,
 };
 /*
 const orientation_t layout_pointy = { .f0 = 1.732050808,

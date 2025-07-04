@@ -1,4 +1,4 @@
-#include "pool.h"
+#include "pool_manager.h"
 #include "../third_party/uthash.h"
 
 // Hash table entry mapping a tile to its pool.

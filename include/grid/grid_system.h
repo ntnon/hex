@@ -32,14 +32,14 @@ typedef struct {
      * @param direction An integer representing the direction (e.g., 0-5 for hex).
      * @param out_neighbor Pointer to a grid_cell_t to store the result.
      */
-    void (*get_neighbor)(const grid_cell_t cell, int direction, grid_cell_t* out_neighbor);
+    void (*get_neighbor_cell)(const grid_cell_t cell, int direction, grid_cell_t* out_neighbor);
 
     /**
      * @brief Gets the neighboring cells of a given cell.
      * @param cell The starting cell.
      * @param neighbors An array to be filled with the neighboring cells.
      */
-    void (*get_neighbors)(const grid_cell_t cell, grid_cell_t neighbors[]);
+    void (*get_neighbor_cells)(const grid_cell_t cell, grid_cell_t neighbors[]);
 
     /**
      * @brief Calculates the grid-specific distance between two cells.
@@ -70,6 +70,8 @@ typedef struct {
 
 
     int num_neighbors;
+
+    bool (*is_valid_cell)(const grid_t* grid, grid_cell_t cell);
 
 } grid_vtable_t;
 

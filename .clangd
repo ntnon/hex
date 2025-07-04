@@ -6,5 +6,6 @@ CompileFlags:
     -I../external/raylib-master/src,
     -I../external/raylib-master/src/external,
     -I../grid,
+    -I../tile,
     -I../tests
   ]

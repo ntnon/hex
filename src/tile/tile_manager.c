@@ -1,6 +1,8 @@
 #include "../../include/tile/tile_manager.h"
 #include "../utility.c"
+#include <stdio.h>
 
+/*
 tile_manager_t *
 tile_manager_create (grid_t *grid)
 {
@@ -69,15 +71,34 @@ tile_manager_randomize_board (tile_manager_t *tm)
     }
 }
 
+*/
+tile_t *
+cell_to_tile_ptr (tile_manager_t *tm, grid_cell_t cell)
+{
+  tile_map_entry_t *entry = tile_map_find (tm->tiles, cell);
+  if (!entry)
+    {
+      printf ("Tile not found at cell\n");
+      return NULL;
+    }
+  return entry->tile;
+}
+
+void
+cells_to_tile_ptrs (tile_manager_t *tm, const grid_cell_t *cells,
+                    size_t num_cells, tile_t **out_tile_ptrs)
+{
+  for (size_t i = 0; i < num_cells; ++i)
+    {
+      out_tile_ptrs[i] = cell_to_tile_ptr (tm, cells[i]);
+    }
+}
+
 /*
  * NOT IMPLEMENTED YET
  */
 bool tile_manager_remove_tile (tile_manager_t *tm, grid_cell_t cell);
-tile_t *tile_manager_get_tile (const tile_manager_t *tm, grid_cell_t cell);
 
-pool_t *tile_manager_create_pool_for_tile (tile_manager_t *tm,
-                                           tile_t *tile_ptr);
-pool_t *tile_manager_get_pool_by_id (const tile_manager_t *tm, int pool_id);
 bool tile_manager_add_tile_to_pool (tile_manager_t *tm, int pool_id,
                                     tile_t *tile_ptr);
 bool tile_manager_remove_tile_from_pool (tile_manager_t *tm, tile_t *tile_ptr);

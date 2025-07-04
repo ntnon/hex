@@ -6,7 +6,6 @@
 
 
 // --- Pool Hash Table Entry ---
-// If you need to manage multiple pools and look them up by ID:
 typedef struct pool_map_entry {
     int id;                 // The key: pool ID.
     pool_t *pool;           // The value: a pointer to the pool.
@@ -22,12 +21,6 @@ void pool_map_free(pool_map_entry_t** map_root);
 
 pool_map_entry_t* find_pool_by_tile(pool_map_entry_t* map_root, int tile_id);
 
-/**
- * @brief Finds a pool entry in the map by its pool ID.
- * @param map_root A pointer to the root of the pool map hash table.
- * @param pool_id The ID of the pool to search for.
- * @return A pointer to the found pool_map_entry_t, or NULL if not found.
- */
 pool_map_entry_t* find_pool_by_id(pool_map_entry_t* map_root, int pool_id);
 
 #endif /* POOL_MAP_H */

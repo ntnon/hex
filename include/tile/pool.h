@@ -79,4 +79,6 @@ bool pool_contains_tile(const pool_t* pool, const tile_t* tile_ptr);
 
 void pool_update_edges (const grid_t *grid, pool_t *pool);
 
+bool pool_accepts_tile_type(const pool_t *pool, tile_type_t type);
+
 #endif // TILE_POOL_H

@@ -1,21 +1,32 @@
 #include "pool_map.h"
 #include "tile.h"
-#include "tile_to_pool_map.h"
 
 typedef struct {
     pool_map_entry_t *pool_map;
-    tile_to_pool_entry_t *tile_to_pool_map;
     size_t num_pools;
     int next_pool_id;
 
-}pool_manager_t;
+} pool_manager_t;
 
 pool_manager_t *pool_manager_create(void);
 void pool_manager_free(pool_manager_t *pm);
 void pool_manager_clear(pool_manager_t *pm);
 
+size_t pool_map_filter_by_tile_type(
+    pool_map_entry_t *pool_map,
+    tile_type_t tile_type,
+    pool_t **out_pools,
+    size_t max_out_pools
+);
+
 pool_t *
-pool_manager_create_pool (pool_manager_t *pm, const tile_t *tile);
+pool_manager_create_pool (pool_manager_t *pm, tile_t *tile);
+
+pool_t *
+pool_manager_create_pool_from_tile (pool_manager_t *pm, tile_t *tile);
+
+pool_t *
+pool_manager_find_pool(pool_manager_t *pm, pool_t *pool);
 
 pool_map_entry_t *pool_manager_find_entry_by_pool(pool_manager_t *pm, pool_t *pool);
 

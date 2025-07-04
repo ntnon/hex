@@ -1,4 +1,5 @@
 #include "../../include/tile/tile_map.h"
+#include "stdio.h"
 
 tile_map_entry_t *
 tile_map_create (void)
@@ -61,14 +62,19 @@ tile_map_add (tile_map_entry_t **map_root, tile_t *tile)
   if (existing_entry)
     {
       // Update the tile pointer in the existing entry
-      existing_entry->tile
-          = tile; // const-correct if struct uses const tile_t *
+      existing_entry->tile = tile;
     }
   else
     {
       tile_map_entry_t *entry = malloc (sizeof (tile_map_entry_t));
+      if (!entry)
+        {
+          // Handle allocation failure
+          fprintf (stderr, "Out of memory!\n");
+          return;
+        }
       entry->cell = tile->cell;
-      entry->tile = tile; // const-correct if struct uses const tile_t *
+      entry->tile = tile;
       HASH_ADD (hh, *map_root, cell, sizeof (entry->cell), entry);
     }
 }

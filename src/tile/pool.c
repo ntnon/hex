@@ -77,3 +77,14 @@ pool_update_edges (const grid_t *grid, pool_t *pool)
   edge_map_free (&pool->edges);  // Free old edges if needed
   pool->edges = collected_edges; // Assign the new set
 };
+
+bool
+pool_accepts_tile_type (const pool_t *pool, tile_type_t type)
+{
+  for (size_t i = 0; i < pool->num_accepted_tile_types; ++i)
+    {
+      if (pool->accepted_tile_types[i] == type)
+        return true;
+    }
+  return false;
+}

@@ -1,34 +1,6 @@
 #include "../../include/tile/pool_manager.h"
 #include <stdio.h>
 
-#define MAX_POOL_CANDIDATES 50
-void
-pool_manager_assign_tile_to_best_neighbor_pool (pool_manager_t *pm,
-                                                tile_t *tile,
-                                                tile_t **neighbor_tiles,
-                                                size_t num_neighbor_tiles)
-{
-  size_t max_num_pools = MAX_POOL_CANDIDATES;
-  pool_t *pool_candidates[max_num_pools];
-  size_t num_neighbor_pools = pool_manager_find_neighbor_pools_for_tile (
-      pm, neighbor_tiles, num_neighbor_tiles, pool_candidates, max_num_pools);
-
-  pool_t *best_pool = pool_manager_find_best_neighbor_pool_for_tile (
-      pm, tile, pool_candidates, num_neighbor_pools);
-  if (!best_pool)
-    {
-      printf ("No viable pool for hexagon cell at (%d, %d, %d)\n",
-              tile->cell.coord.hex.q, tile->cell.coord.hex.r,
-              tile->cell.coord.hex.s);
-      pool_manager_create_pool_with_tile (pm, tile);
-      return;
-    }
-  else
-    {
-      pool_manager_add_tile_to_pool (pm, best_pool, tile);
-    }
-}
-
 void
 pool_manager_create_pool_with_tile (pool_manager_t *pm, const tile_t *tile)
 {
@@ -43,50 +15,23 @@ pool_manager_get_unique_id (pool_manager_t *pm)
 }
 
 size_t
-pool_manager_find_neighbor_pools_for_tile (pool_manager_t *pm,
-                                           tile_t **neighbor_tiles,
-                                           size_t num_neighbor_tiles,
-                                           pool_t **out_pools,
-                                           size_t max_pools)
+pool_map_filter_by_tile_type (pool_manager_t *pm, tile_type_t tile_type,
+                              pool_t **out_pools, size_t max_out_pools)
 {
-  size_t num_neighbor_pools = 0;
-  for (size_t i = 0; i < num_neighbor_tiles; ++i)
-    {
-      tile_t *neighbor = neighbor_tiles[i];
-      pool_t *neighbor_pool
-          = tile_to_pool_map_get_pool_by_tile (pm->tile_to_pool_map, neighbor);
-      if (neighbor_pool)
-        {
-          // Uniqueness check
-          int duplicate = 0;
-          for (size_t j = 0; j < num_neighbor_pools; ++j)
-            {
-              if (out_pools[j] == neighbor_pool)
-                {
-                  duplicate = 1;
-                  break;
-                }
-            }
-          if (!duplicate)
-            {
-              if (num_neighbor_pools < max_pools)
-                {
-                  out_pools[num_neighbor_pools++] = neighbor_pool;
-                }
-              else
-                {
-                  printf ("Warning: Exceeded max_pools.\n");
-                }
-            }
-        }
-      else
-        {
-          printf ("Neighbor tile %zu is not associated with any pool.\n", i);
-        }
-    }
-  return num_neighbor_pools;
+  size_t count = 0;
+  pool_map_entry_t *entry, *tmp;
+  HASH_ITER (hh, pm->pool_map, entry, tmp)
+  {
+    if (pool_accepts_tile_type (entry->pool, tile_type))
+      {
+        if (count < max_out_pools)
+          {
+            out_pools[count++] = entry->pool;
+          }
+      }
+  }
+  return count;
 }
-
 pool_t *
 pool_manager_find_best_neighbor_pool_for_tile (pool_manager_t *pm,
                                                tile_t *tile,
@@ -129,17 +74,6 @@ pool_manager_find_best_neighbor_pool_for_tile (pool_manager_t *pm,
 }
 
 void
-pool_manager_assign_tile_to_pool (pool_manager_t *pm, pool_t *pool,
-                                  const tile_t *tile)
-{
-  // Remove any existing mapping for this tile
-  tile_to_pool_map_remove (&pm->tile_to_pool_map, (tile_t *)tile);
-
-  // Add the new mapping
-  tile_to_pool_map_add (&pm->tile_to_pool_map, (tile_t *)tile, pool);
-}
-
-void
 pool_manager_add_tile_to_pool (pool_manager_t *pm, pool_t *pool,
                                const tile_t *tile)
 {
@@ -150,7 +84,6 @@ pool_manager_add_tile_to_pool (pool_manager_t *pm, pool_t *pool,
 void
 pool_manager_clear (pool_manager_t *pm)
 {
-  tile_to_pool_map_free (&pm->tile_to_pool_map);
   pool_map_free (&pm->pool_map);
   pm->num_pools = 0;
   pm->next_pool_id = 0;
