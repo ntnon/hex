@@ -37,7 +37,7 @@ tile_to_pool_map_remove (tile_to_pool_entry_t **tile_to_pool_map, tile_t *tile)
 }
 
 void
-tile_to_pool_map_clear (tile_to_pool_entry_t **tile_to_pool_map)
+tile_to_pool_map_free (tile_to_pool_entry_t **tile_to_pool_map)
 {
   tile_to_pool_entry_t *entry, *tmp;
   HASH_ITER (hh, *tile_to_pool_map, entry, tmp)
@@ -46,10 +46,4 @@ tile_to_pool_map_clear (tile_to_pool_entry_t **tile_to_pool_map)
     free (entry);
   }
   *tile_to_pool_map = NULL;
-}
-
-void
-tile_to_pool_map_free (tile_to_pool_entry_t **tile_to_pool_map)
-{
-  tile_to_pool_map_clear (tile_to_pool_map);
-}
+};

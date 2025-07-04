@@ -43,23 +43,18 @@ pool_add_accepted_tile_type (pool_t *pool, tile_type_t type)
 }
 
 void
-pool_free (pool_t *pool)
-{
-  tile_map_free (&pool->tiles);
-  free (pool);
-}
-
-void
 pool_update (pool_t *pool)
 {
   printf ("Pool update logic not implemented yet.\n");
 }
 
 void
-pool_clear (pool_t *pool)
+pool_free (pool_t *pool)
 {
-  tile_map_clear (&pool->tiles);
-}
+  tile_map_free (&pool->tiles);
+  edge_map_free (&pool->edges);
+  free (pool);
+};
 
 int
 pool_score (pool_t *pool)

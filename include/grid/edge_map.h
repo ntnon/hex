@@ -15,7 +15,6 @@ edge_map_entry_t *edge_map_create_entry(grid_edge_t edge);
 void edge_map_add(edge_map_entry_t **root, edge_map_entry_t *entry);
 void edge_map_free(edge_map_entry_t **root);
 void edge_map_insert(edge_map_entry_t **root, edge_map_entry_t *entry);
-void edge_map_clear(edge_map_entry_t **map_root) ;
 
 
 void

@@ -14,6 +14,4 @@ void tile_to_pool_map_add(tile_to_pool_entry_t **tile_to_pool_map, tile_t *tile,
 
 void tile_to_pool_map_remove(tile_to_pool_entry_t **tile_to_pool_map, tile_t *tile);
 
-void tile_to_pool_map_clear(tile_to_pool_entry_t **tile_to_pool_map);
-
 void tile_to_pool_map_free(tile_to_pool_entry_t **tile_to_pool_map);

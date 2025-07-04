@@ -45,7 +45,6 @@ find_pool_by_id (pool_map_entry_t *map_root, int id)
 
 void pool_map_remove (pool_map_entry_t **map_root,
                       pool_map_entry_t *entry_to_remove);
-void pool_map_clear (pool_map_entry_t **map_root);
 
 void
 pool_map_merge (pool_map_entry_t **destination, pool_map_entry_t *source)
@@ -57,18 +56,6 @@ pool_map_merge (pool_map_entry_t **destination, pool_map_entry_t *source)
     pool_map_add (destination, entry);
   }
   // No need to free source, as all entries have been moved
-}
-
-void
-pool_map_free (pool_map_entry_t **map_root)
-{
-  pool_map_entry_t *el, *tmp;
-  HASH_ITER (hh, *map_root, el, tmp)
-  {
-    HASH_DEL (*map_root, el);
-    free (el);
-  }
-  *map_root = NULL;
 }
 
 void

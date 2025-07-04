@@ -150,15 +150,15 @@ pool_manager_add_tile_to_pool (pool_manager_t *pm, pool_t *pool,
 void
 pool_manager_clear (pool_manager_t *pm)
 {
-  tile_to_pool_map_clear (&pm->tile_to_pool_map);
-  pool_map_clear (&pm->pool_map);
+  tile_to_pool_map_free (&pm->tile_to_pool_map);
+  pool_map_free (&pm->pool_map);
+  pm->num_pools = 0;
+  pm->next_pool_id = 0;
 }
 
 void
 pool_manager_free (pool_manager_t *pm)
 {
-  pool_manager_clear (pm);
-  pool_map_free (&pm->pool_map);
-  tile_to_pool_map_free (&pm->tile_to_pool_map);
+  pool_manager_free (pm);
   free (pm);
 }

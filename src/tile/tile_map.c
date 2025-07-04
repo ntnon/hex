@@ -17,14 +17,6 @@ tile_map_free (tile_map_entry_t **map_root)
   }
 }
 
-void
-tile_map_clear (tile_map_entry_t **map_root)
-{
-  tile_map_entry_t *current_entry, *tmp_entry;
-  HASH_ITER (hh, *map_root, current_entry, tmp_entry) { free (current_entry); }
-  HASH_CLEAR (hh, *map_root);
-}
-
 tile_map_entry_t *
 tile_map_find (tile_map_entry_t *map_root, grid_cell_t cell)
 {

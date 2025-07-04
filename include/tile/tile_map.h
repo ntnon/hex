@@ -27,6 +27,7 @@ void tile_map_add(tile_map_entry_t **map_root, tile_t *tile); // still takes til
 
 int
 tile_map_size (tile_map_entry_t *map_root);
+
 void
 tile_map_foreach (tile_map_entry_t *map_root,
                   void (*fn) (tile_map_entry_t *, void *), void *user_data);

@@ -18,14 +18,6 @@ tile_manager_create (grid_t *grid)
 }
 
 void
-tile_manager_free (tile_manager_t *tm)
-{
-  tile_map_free (&tm->tiles);
-  pool_manager_free (tm->pool_manager);
-  free (tm);
-}
-
-void
 tile_manager_find_best_pool_for_tile (tile_manager_t *tm, tile_t *tile)
 {
   size_t num_neighbors = tm->grid->vtable->num_neighbors;
@@ -47,23 +39,32 @@ void
 tile_manager_clear (tile_manager_t *tm)
 {
   pool_manager_clear (tm->pool_manager);
-  tile_map_clear (&tm->tiles);
+  tile_map_free (&tm->tiles);
+}
+
+void
+tile_manager_free (tile_manager_t *tm)
+{
+  pool_manager_free (tm->pool_manager);
+  tile_manager_clear (tm);
+  free (tm);
 }
 
 void
 tile_manager_randomize_board (tile_manager_t *tm)
 {
-  tile_map_free (&tm->tiles);
+  tile_manager_clear (tm); // always clears the board
   size_t cell_count = tm->grid->num_cells;
   grid_cell_t *cells = tm->grid->cells;
+  shuffle_array (cells, cell_count, sizeof (grid_cell_t), swap_grid_cell);
 
   for (size_t i = 0; i < cell_count; i++)
     {
-      tile_t *tile = tile_map_get (&tm->tiles, cells[i]);
-      if (!tile)
+      if (rand () % 2 == 0) // only generate some tiles.
         {
-          tile = tile_create (cells[i]);
-          tile_manager_add_tile (tm, tile);
+
+          tile_t *new_tile_ptr = tile_create_random_ptr (cells[i]);
+          tile_manager_add_tile (tm, new_tile_ptr);
         }
     }
 }
