@@ -60,6 +60,15 @@ get_neighbor (grid_cell_t cell, int direction, grid_cell_t *out_neighbor)
   out_neighbor->coord.hex.s += ds[direction];
 }
 
+static void
+get_neighbors (grid_cell_t cell, grid_cell_t neighbors[6])
+{
+  for (int dir = 0; dir < 6; ++dir)
+    {
+      get_neighbor (cell, dir, &neighbors[dir]);
+    }
+}
+
 static int
 distance (grid_cell_t a, grid_cell_t b)
 {
@@ -108,7 +117,7 @@ generate_cells (grid_t *grid, int radius)
           count++;
         }
     }
-  grid->cell_count = count;
+  grid->num_cells = count;
   grid->cell_capacity = capacity;
 }
 
@@ -121,7 +130,7 @@ grid_create (grid_type_e type, layout_t layout, int size)
   grid->type = type;
   grid->layout = layout;
   grid->cells = NULL;
-  grid->cell_count = 0;
+  grid->num_cells = 0;
   grid->cell_capacity = 0;
 
   switch (type)
@@ -143,7 +152,7 @@ draw_grid (const grid_t *grid)
 {
   int corners_count = 6; // Default for hexagons
 
-  for (int i = 0; i < grid->cell_count; ++i)
+  for (int i = 0; i < grid->num_cells; ++i)
     {
       grid_cell_t cell = grid->cells[i];
       point_t corners[6]; // Use the max needed for now (hex)
@@ -164,16 +173,21 @@ draw_grid (const grid_t *grid)
         }
     }
 }
+
 // --- Public vtable instance ---
 
-const grid_vtable_t hex_grid_vtable = { .to_pixel = to_pixel,
-                                        .from_pixel = from_pixel,
-                                        .get_neighbor = get_neighbor,
-                                        .distance = distance,
-                                        .get_corners = get_corners,
-                                        .generate_cells = generate_cells,
-                                        .grid_create = grid_create,
-                                        .draw_grid = draw_grid };
+const grid_vtable_t hex_grid_vtable = {
+  .to_pixel = to_pixel,
+  .from_pixel = from_pixel,
+  .get_neighbor = get_neighbor,
+  .get_neighbors = get_neighbors,
+  .distance = distance,
+  .get_corners = get_corners,
+  .generate_cells = generate_cells,
+  .grid_create = grid_create,
+  .draw_grid = draw_grid,
+  .num_neighbors = 6,
+};
 /*
 const orientation_t layout_pointy = { .f0 = 1.732050808,
                                       .f1 = 0.866025404,

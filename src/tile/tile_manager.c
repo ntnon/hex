@@ -1,4 +1,5 @@
 #include "../../include/tile/tile_manager.h"
+#include "../utility.c"
 
 tile_manager_t *
 tile_manager_create (grid_t *grid)
@@ -9,7 +10,7 @@ tile_manager_create (grid_t *grid)
       return NULL;
     }
   tm->tiles = tile_map_create ();
-  tm->pools = pool_map_create ();
+  tm->pool_manager = pool_manager_create ();
 
   tm->grid = grid;
 
@@ -20,22 +21,61 @@ void
 tile_manager_free (tile_manager_t *tm)
 {
   tile_map_free (&tm->tiles);
-  pool_map_free (&tm->pools);
+  pool_manager_free (tm->pool_manager);
   free (tm);
 }
 
 void
-tile_manager_add_tile (tile_manager_t *tm, tile_map_entry_t *tile)
+tile_manager_find_best_pool_for_tile (tile_manager_t *tm, tile_t *tile)
 {
-  tile_map_add (&tm->tiles, tile);
+  size_t num_neighbors = tm->grid->vtable->num_neighbors;
+  grid_cell_t neighbors[num_neighbors];
+  tile_t *neighbor_tiles[num_neighbors];
+  tm->grid->vtable->get_neighbors (tile->cell, neighbors);
+  pool_manager_assign_tile_to_best_neighbor_pool (
+      tm->pool_manager, tile, neighbor_tiles, num_neighbors);
 }
 
+void
+tile_manager_add_tile (tile_manager_t *tm, tile_t *tile)
+{
+  tile_map_add (&tm->tiles, tile);
+  tile_manager_find_best_pool_for_tile (tm, tile);
+}
+
+void
+tile_manager_clear (tile_manager_t *tm)
+{
+  pool_manager_clear (tm->pool_manager);
+  tile_map_clear (&tm->tiles);
+}
+
+void
+tile_manager_randomize_board (tile_manager_t *tm)
+{
+  tile_map_free (&tm->tiles);
+  size_t cell_count = tm->grid->num_cells;
+  grid_cell_t *cells = tm->grid->cells;
+
+  for (size_t i = 0; i < cell_count; i++)
+    {
+      tile_t *tile = tile_map_get (&tm->tiles, cells[i]);
+      if (!tile)
+        {
+          tile = tile_create (cells[i]);
+          tile_manager_add_tile (tm, tile);
+        }
+    }
+}
+
+/*
+ * NOT IMPLEMENTED YET
+ */
 bool tile_manager_remove_tile (tile_manager_t *tm, grid_cell_t cell);
 tile_t *tile_manager_get_tile (const tile_manager_t *tm, grid_cell_t cell);
 
 pool_t *tile_manager_create_pool_for_tile (tile_manager_t *tm,
-                                           tile_t *tile_ptr, pool_type_t type,
-                                           Color color);
+                                           tile_t *tile_ptr);
 pool_t *tile_manager_get_pool_by_id (const tile_manager_t *tm, int pool_id);
 bool tile_manager_add_tile_to_pool (tile_manager_t *tm, int pool_id,
                                     tile_t *tile_ptr);

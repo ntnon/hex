@@ -18,7 +18,7 @@ void pool_map_free(pool_map_entry_t** map_root);
 void pool_map_add(pool_map_entry_t** map_root, pool_map_entry_t* entry_to_add);
 
 void pool_map_remove(pool_map_entry_t** map_root, pool_map_entry_t* entry_to_remove);
-void pool_map_clear(pool_map_entry_t** map_root);
+void pool_map_free(pool_map_entry_t** map_root);
 
 pool_map_entry_t* find_pool_by_tile(pool_map_entry_t* map_root, int tile_id);
 

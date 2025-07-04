@@ -9,8 +9,8 @@
 #ifndef TILE_MANAGER_H
 #define TILE_MANAGER_H
 
-#include "../grid/grid_types.h"
 //#include "../grid/grid_system.h"
+#include "pool_manager.h"
 #include "tile.h"
 #include "pool_map.h"
 #include "tile_map.h"
@@ -29,11 +29,7 @@ typedef struct tile_manager {
     // This is where all active tiles are stored.
     tile_map_entry_t* tiles;
 
-    // Hash table managing all active tile pools, keyed by pool ID.
-    pool_map_entry_t* pools;
-
-    // A counter to generate unique pool IDs.
-    int next_pool_id;
+    pool_manager_t* pool_manager;
 
     grid_t* grid;
 
@@ -70,7 +66,7 @@ void tile_manager_free(tile_manager_t* tm);
  * @param type The type (color/category) of the new tile.
  * @return A pointer to the newly created tile_t entry, or NULL on failure.
  */
-void tile_manager_add_tile(tile_manager_t* tm, tile_map_entry_t* tile);
+void tile_manager_add_tile(tile_manager_t* tm, tile_t* tile);
 
 /**
  * @brief Removes a tile from the manager (and its pools) at a given cell.
@@ -88,59 +84,14 @@ bool tile_manager_remove_tile(tile_manager_t* tm, grid_cell_t cell);
  */
 tile_t* tile_manager_get_tile(const tile_manager_t* tm, grid_cell_t cell);
 
-// --- Pool Management Functions (Orchestrated by Tile Manager) ---
-
 /**
- * @brief Creates a new tile pool and adds it to the manager.
- * This is likely called when a tile is placed that starts a new group.
+ * @brief Sends the tile to the pool manager where its pool membership is updated.
  * @param tm A pointer to the tile manager.
- * @param tile_ptr A pointer to the tile that is initiating this new pool.
- * @param type The type of the new pool (e.g., POOL_MAGENTA).
- * @param color The color for the new pool.
- * @return A pointer to the newly created pool_t, or NULL on failure.
+ * @param tile The tile to be pooled.
  */
-pool_t* tile_manager_create_pool_for_tile(tile_manager_t* tm, tile_t* tile_ptr, pool_type_t type, Color color);
+void tile_manager_pool_tile(tile_manager_t* tm, tile_t* tile);
 
-/**
- * @brief Finds a pool by its ID.
- * @param tm A pointer to the tile manager.
- * @param pool_id The ID of the pool to find.
- * @return A pointer to the pool_t, or NULL if not found.
- */
-pool_t* tile_manager_get_pool_by_id(const tile_manager_t* tm, int pool_id);
 
-/**
- * @brief Adds an existing tile to a specific pool.
- * This function would typically be called during pool detection/creation.
- * @param tm A pointer to the tile manager.
- * @param pool_id The ID of the pool to add the tile to.
- * @param tile_ptr A pointer to the tile_t to add.
- * @return True if successful, false otherwise.
- */
-bool tile_manager_add_tile_to_pool(tile_manager_t* tm, int pool_id, tile_t* tile_ptr);
-
-/**
- * @brief Removes a tile from its current pool and potentially re-evaluates pool memberships.
- * This is a complex operation that might involve:
- * 1. Finding which pool the tile belongs to.
- * 2. Removing the tile from that pool.
- * 3. If the pool becomes empty or the tile was the sole member, potentially remove the pool.
- * 4. Potentially re-evaluating neighbors to form new pools or split existing ones.
- * @param tm A pointer to the tile manager.
- * @param tile_ptr A pointer to the tile being removed from its pool.
- * @return True if the tile was successfully removed from a pool, false otherwise.
- */
-bool tile_manager_remove_tile_from_pool(tile_manager_t* tm, tile_t* tile_ptr);
-
-/**
- * @brief Updates all tile pools based on the current state of tiles.
- * This is where game logic would trigger a recalculation of pools (e.g., after a tile is placed, removed, or changed).
- * It might involve:
- * - Clearing existing pool memberships.
- * - Iterating through all tiles and running a flood fill to identify new pools.
- * - Updating the global pool manager.
- * @param tm A pointer to the tile manager.
- */
-void tile_manager_update_all_pools(tile_manager_t* tm);
+void tile_manager_randomize_board(tile_manager_t* tm);
 
 #endif // TILE_MANAGER_H

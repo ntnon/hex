@@ -16,25 +16,17 @@
 /**
  * @brief Enum representing the type or color of a tile pool.
  */
-typedef enum {
-    POOL_EMPTY = 0,
-    POOL_MIXED,
-    POOL_MAGENTA,
-    POOL_CYAN,
-    POOL_YELLOW,
-    POOL_COUNT
-} pool_type_t;
+ #define MAX_ACCEPTED_TILE_TYPES 8
 
-
-typedef struct tile_pool {
-    int id;                        // Unique identifier for this pool.
-    pool_type_t type;              // Pool type.
-    Color color;                   // Associated color.
-    edge_map_entry_t *edges;       // Hash table of unique edges (edge_map_entry_t).
-    tile_map_entry_t *tiles;       // Hash table of tiles in this pool (tile_map_entry_t).
-    UT_hash_handle hh;
-} pool_t;
-
+ typedef struct tile_pool {
+     int id;
+     bool is_mixed;
+     Color color;
+     edge_map_entry_t *edges;
+     tile_map_entry_t *tiles;
+     tile_type_t accepted_tile_types[MAX_ACCEPTED_TILE_TYPES]; // <-- new field
+     size_t num_accepted_tile_types;                          // <-- new field
+ } pool_t;
 
 // --- Pool Lifecycle Functions ---
 
@@ -45,7 +37,12 @@ typedef struct tile_pool {
  * @param color The associated color for the pool.
  * @return A pointer to the newly created pool_t, or NULL on failure.
  */
-pool_t* pool_create(int id, pool_type_t type, Color color);
+
+ pool_t * pool_create(int id, const tile_t *tile);
+
+int pool_score(pool_t *pool);
+
+void pool_add_accepted_tile_type(pool_t* pool, tile_type_t type);
 
 /**
  * @brief Frees all memory associated with a tile pool, including its members.
@@ -60,14 +57,14 @@ void pool_free(pool_t* pool);
  * @param pool A pointer to the pool to add the tile to.
  * @param tile_ptr A pointer to the tile_t to add.
  */
-void pool_add_tile(pool_t* pool, tile_t* tile_ptr);
+void pool_add_tile(pool_t* pool, const tile_t* tile_ptr);
 
 /**
  * @brief Removes a tile from a pool.
  * @param pool A pointer to the pool to remove the tile from.
  * @param tile_ptr A pointer to the tile_t to remove.
  */
-void pool_remove_tile(pool_t* pool, tile_t* tile_ptr);
+void pool_remove_tile(const pool_t* pool, const tile_t* tile_ptr);
 
 /**
  * @brief Checks if a specific tile is a member of this pool.
@@ -75,15 +72,10 @@ void pool_remove_tile(pool_t* pool, tile_t* tile_ptr);
  * @param tile_ptr A pointer to the tile_t to search for.
  * @return True if the tile is in the pool, false otherwise.
  */
-bool pool_contains_tile(const pool_t* pool, tile_t* tile_ptr);
+bool pool_contains_tile(const pool_t* pool, const tile_t* tile_ptr);
 
-/**
- * @brief Clears all tiles from a pool, freeing their membership entries but not the tiles themselves.
- * @param pool A pointer to the pool to clear.
- */
-void pool_clear(pool_t* pool);
 
-bool pool_contains_tile(const pool_t* pool, tile_t* tile_ptr);
+bool pool_contains_tile(const pool_t* pool, const tile_t* tile_ptr);
 
 void pool_update_edges (const grid_t *grid, pool_t *pool);
 

@@ -58,3 +58,23 @@ pool_map_merge (pool_map_entry_t **destination, pool_map_entry_t *source)
   }
   // No need to free source, as all entries have been moved
 }
+
+void
+pool_map_free (pool_map_entry_t **map_root)
+{
+  pool_map_entry_t *el, *tmp;
+  HASH_ITER (hh, *map_root, el, tmp)
+  {
+    HASH_DEL (*map_root, el);
+    free (el);
+  }
+  *map_root = NULL;
+}
+
+void
+pool_map_remove (pool_map_entry_t **map_root,
+                 pool_map_entry_t *entry_to_remove)
+{
+  HASH_DEL (*map_root, entry_to_remove);
+  free (entry_to_remove);
+}

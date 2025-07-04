@@ -16,64 +16,20 @@ typedef struct tile_map_entry {
     UT_hash_handle hh;     // uthash handle for hash table linkage (must be last).
 } tile_map_entry_t;
 
-// --- Tile Map Functions ---
+tile_map_entry_t *
+tile_map_create (void);
+void
+tile_map_free (tile_map_entry_t **map_root);
 
-/**
- * @brief Creates and initializes a new tile map (hash table root).
- * @return A pointer to the newly created, empty tile map.
- */
-tile_map_entry_t* tile_map_create(void);
+tile_map_entry_t* tile_map_find(tile_map_entry_t *map_root, grid_cell_t cell);
+void tile_map_remove(tile_map_entry_t **map_root, grid_cell_t cell);
+void tile_map_add(tile_map_entry_t **map_root, tile_t *tile); // still takes tile, since you need to store it
 
-/**
- * @brief Frees all memory associated with the tile map and its entries.
- * @param map_root A pointer to the root of the tile map hash table.
- */
-void tile_map_free(tile_map_entry_t** map_root);
-
-/**
- * @brief Adds a tile entry to the tile map.
- * @param map_root A pointer to the root of the tile map hash table.
- * @param entry_to_add A pointer to the tile_map_entry_t to add. It will be managed by the map.
- */
-void tile_map_add(tile_map_entry_t** map_root, tile_map_entry_t* entry_to_add);
-
-//
-void tile_map_replace(tile_map_entry_t** map_root, tile_map_entry_t* entry_to_replace, tile_map_entry_t* entry_to_add);
+int
+tile_map_size (tile_map_entry_t *map_root);
+void
+tile_map_foreach (tile_map_entry_t *map_root,
+                  void (*fn) (tile_map_entry_t *, void *), void *user_data);
 
 
-/**
- * @brief Finds a tile entry in the map by its grid cell coordinates.
- * @param map_root A pointer to the root of the tile map hash table.
- * @param search_cell The grid_cell_t to search for.
- * @return A pointer to the found tile_map_entry_t, or NULL if not found.
- */
-tile_map_entry_t* tile_map_find(tile_map_entry_t* map_root, tile_t* search_tile);
-
-/**
- * @brief Removes a tile entry from the map and frees its memory.
- * @param map_root A pointer to the root of the tile map hash table.
- * @param entry_to_remove A pointer to the tile_map_entry_t to remove.
- */
-void tile_map_remove(tile_map_entry_t** map_root, tile_map_entry_t* entry_to_remove);
-
-/**
- * @brief Clears all entries from the tile map and frees their memory.
- * @param map_root A pointer to the root of the tile map hash table.
- */
-void tile_map_clear(tile_map_entry_t** map_root);
-
-/**
- * @brief Calls the given function for each entry in the tile map.
- * @param map_root The root of the tile map hash table.
- * @param fn The function to call for each entry. Receives (tile_map_entry_t*, void*).
- * @param user_data User data pointer passed to each call.
- */
-void tile_map_foreach(tile_map_entry_t *map_root, void (*fn)(tile_map_entry_t *, void *), void *user_data);
-
-/**
- * @brief Counts the number of tiles in a pool.
- * @param pool A pointer to the pool to count.
- * @return The number of tiles in the pool.
- */
-int tile_map_size (tile_map_entry_t *map_root);
 #endif // TILE_MAP_H

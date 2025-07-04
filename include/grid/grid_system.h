@@ -35,6 +35,13 @@ typedef struct {
     void (*get_neighbor)(const grid_cell_t cell, int direction, grid_cell_t* out_neighbor);
 
     /**
+     * @brief Gets the neighboring cells of a given cell.
+     * @param cell The starting cell.
+     * @param neighbors An array to be filled with the neighboring cells.
+     */
+    void (*get_neighbors)(const grid_cell_t cell, grid_cell_t neighbors[]);
+
+    /**
      * @brief Calculates the grid-specific distance between two cells.
      * @param a The first cell.
      * @param b The second cell.
@@ -61,6 +68,9 @@ typedef struct {
     grid_t *(*grid_create)(grid_type_e type, layout_t layout, int size);
     void (*draw_grid)(const grid_t* grid);
 
+
+    int num_neighbors;
+
 } grid_vtable_t;
 
 // The main grid object. This is the primary struct that game logic will interact with.
@@ -68,13 +78,9 @@ typedef struct {
 struct grid_t {
     grid_type_e type;
     layout_t layout;
-
-    // A pointer to the v-table containing the function implementations for this grid's type.
     const grid_vtable_t* vtable;
-
-    // A dynamic array holding all the cells that make up this grid.
     grid_cell_t* cells;
-    int cell_count;
+    int num_cells;
     int cell_capacity;
 };
 
@@ -99,8 +105,6 @@ grid_t* grid_create(grid_type_e type, layout_t layout, int size);
 void grid_free(grid_t* grid);
 
 void draw_grid(const grid_t *grid);
-
-
 
 /**
  * @brief The public instance of the v-table for hexagonal grids.

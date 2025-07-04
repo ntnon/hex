@@ -13,7 +13,7 @@ fi
 echo "Running game to capture debug output..."
 
 # Run the game in background and capture output
-./bin/Debug/raylib-quickstart > debug_output.txt 2>&1 &
+./bin/Debug/hexhex > debug_output.txt 2>&1 &
 GAME_PID=$!
 
 # Let it run for longer to capture more output

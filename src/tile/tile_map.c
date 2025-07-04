@@ -20,27 +20,29 @@ tile_map_free (tile_map_entry_t **map_root)
 void
 tile_map_clear (tile_map_entry_t **map_root)
 {
+  tile_map_entry_t *current_entry, *tmp_entry;
+  HASH_ITER (hh, *map_root, current_entry, tmp_entry) { free (current_entry); }
   HASH_CLEAR (hh, *map_root);
 }
 
-void
-tile_map_remove (tile_map_entry_t **map_root,
-                 tile_map_entry_t *entry_to_remove)
+tile_map_entry_t *
+tile_map_find (tile_map_entry_t *map_root, grid_cell_t cell)
 {
-  HASH_DEL (*map_root, entry_to_remove);
-  free (entry_to_remove);
+  tile_map_entry_t *found = NULL;
+  HASH_FIND (hh, map_root, &cell, sizeof (grid_cell_t), found);
+  return found;
 }
 
-tile_map_entry_t *
-tile_map_find (tile_map_entry_t *map_root, tile_t *search_tile)
+void
+tile_map_remove (tile_map_entry_t **map_root, grid_cell_t cell)
 {
-  tile_map_entry_t *found_entry
-      = NULL; // Declare a pointer to store the found entry
-
-  HASH_FIND (hh, map_root, &search_tile->cell, sizeof (grid_cell_t),
-             found_entry);
-  return found_entry;
-};
+  tile_map_entry_t *entry = tile_map_find (*map_root, cell);
+  if (entry)
+    {
+      HASH_DEL (*map_root, entry);
+      free (entry);
+    }
+}
 
 void
 tile_map_foreach (tile_map_entry_t *map_root,
@@ -60,25 +62,21 @@ tile_map_size (tile_map_entry_t *map_root)
 }
 
 void
-tile_map_replace (tile_map_entry_t **map_root,
-                  tile_map_entry_t *entry_to_replace,
-                  tile_map_entry_t *entry_to_add)
+tile_map_add (tile_map_entry_t **map_root, tile_t *tile)
 {
-  HASH_DEL (*map_root, entry_to_replace);
-  HASH_ADD (hh, *map_root, cell, sizeof (entry_to_add->cell), entry_to_add);
-  free (entry_to_replace);
-}
-
-void
-tile_map_add (tile_map_entry_t **map_root, tile_map_entry_t *entry)
-{
-  tile_map_entry_t *existing_entry = tile_map_find (*map_root, entry->tile);
+  // Use tile->cell as the key for lookup
+  tile_map_entry_t *existing_entry = tile_map_find (*map_root, tile->cell);
   if (existing_entry)
     {
-      tile_map_replace (map_root, existing_entry, entry);
+      // Update the tile pointer in the existing entry
+      existing_entry->tile
+          = tile; // const-correct if struct uses const tile_t *
     }
   else
     {
+      tile_map_entry_t *entry = malloc (sizeof (tile_map_entry_t));
+      entry->cell = tile->cell;
+      entry->tile = tile; // const-correct if struct uses const tile_t *
       HASH_ADD (hh, *map_root, cell, sizeof (entry->cell), entry);
     }
 }
