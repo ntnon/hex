@@ -57,6 +57,7 @@ tile_map_size (tile_map_entry_t *map_root)
 void
 tile_map_add (tile_map_entry_t **map_root, tile_t *tile)
 {
+  printf ("adding tile\n");
   // Use tile->cell as the key for lookup
   tile_map_entry_t *existing_entry = tile_map_find (*map_root, tile->cell);
   if (existing_entry)

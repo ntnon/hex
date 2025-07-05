@@ -26,10 +26,11 @@ typedef struct tile_manager {
     tile_map_entry_t* tiles;
 } tile_manager_t;
 
-
 tile_manager_t* tile_manager_create(void);
 void tile_manager_free(tile_manager_t* tm);
 void tile_manager_clear(tile_manager_t* tm);
+
+void draw_tiles(tile_manager_t* tm);
 
 void tile_manager_add_tile(tile_manager_t* tm, tile_t* tile);
 bool tile_manager_remove_tile(tile_manager_t* tm, grid_cell_t cell);

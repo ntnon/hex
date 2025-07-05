@@ -9,9 +9,9 @@ typedef struct  {
     tile_to_pool_entry_t *tile_to_pool;
 }board_t;
 
-board_t board_create(void);
+board_t* board_create(void);
 
-void board_draw(board_t *board);
+void board_draw(const board_t *board);
 
 void clear_board(board_t *board);
 
@@ -28,4 +28,4 @@ void remove_tile(board_t *board, tile_t* tile);
 
 void cycle_tile_type(board_t *board, tile_t *tile);
 
-static pool_t* find_new_tile_pool_candidates(board_t *board, tile_t *tile);
+//static pool_t* find_new_tile_pool_candidates(board_t *board, tile_t *tile);

@@ -1,5 +1,4 @@
-#include "../include/grid/grid_system.h"
-#include "grid/grid_types.h"
+#include "board/board.h"
 #include "raylib.h"
 #include <stdio.h>
 int
@@ -19,25 +18,10 @@ main (void)
 
   // Simple layout test
 
-  SetTargetFPS (60);
+  SetTargetFPS (5);
 
-  const orientation_t layout_pointy_t = { .f0 = 1.732050808,
-                                          .f1 = 0.866025404,
-                                          .f2 = 0.0,
-                                          .f3 = 1.5,
-                                          .b0 = 0.577350269,
-                                          .b1 = -0.333333333,
-                                          .b2 = 0.0,
-                                          .b3 = 0.666666667,
-                                          .start_angle = 0.5 };
-  layout_t layout = {
-    .orientation = layout_pointy_t,
-    .size = { 30.0, 30.0 }, // Hex size (adjust as needed)
-    .origin = { 0.0, 0.0 }  // Center of the screen (adjust as needed)
-  };
-
-  int radius = 90; // For example
-  grid_t *grid = grid_create (GRID_TYPE_HEXAGON, layout, radius);
+  board_t *board = board_create ();
+  randomize_board (board);
 
   // Main game loop
   while (!WindowShouldClose ())
@@ -48,8 +32,8 @@ main (void)
 
       BeginMode2D (camera);
       // game_controller_draw (game_controller);
-      grid_t *grid = grid_create (GRID_TYPE_HEXAGON, layout, radius);
-      draw_grid (grid);
+
+      board_draw (board);
 
       EndMode2D ();
 

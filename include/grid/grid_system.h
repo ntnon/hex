@@ -2,6 +2,8 @@
 #define GRID_SYSTEM_H
 
 #include "grid_types.h"
+#include <stdlib.h>
+#include "raylib.h"
 
 // Forward-declare the main grid struct to be used in the v-table definition
 typedef struct grid_t grid_t;
@@ -50,7 +52,7 @@ typedef struct {
     int (*distance)(grid_cell_t a, grid_cell_t b);
 
     /**
-     * @brief Gets the pixel coordinates of a cell's corners.
+     * @brief Gets the pixel coordinates of a cell's corners. It is very important that the order of the corners are clockwise. Otherwise, the rendering method will not work correctly.
      * @param grid The grid system instance.
      * @param cell The cell whose corners are to be calculated.
      * @param corners An array to be filled with the corner points. The size
@@ -73,6 +75,10 @@ typedef struct {
 
     bool (*is_valid_cell)(const grid_t* grid, grid_cell_t cell);
 
+    void
+    (*draw_cell_with_colors) (const grid_t *grid, grid_cell_t cell, Color fill_color,
+                           Color edge_color);
+
 } grid_vtable_t;
 
 // The main grid object. This is the primary struct that game logic will interact with.
@@ -82,8 +88,7 @@ struct grid_t {
     layout_t layout;
     const grid_vtable_t* vtable;
     grid_cell_t* cells;
-    int num_cells;
-    int cell_capacity;
+    size_t num_cells;
 };
 
 

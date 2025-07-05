@@ -6,7 +6,9 @@
 pool_t *
 pool_create (int id, const tile_t *tile)
 {
-  pool_t *pool;
+  pool_t *pool = malloc (sizeof (pool_t));
+  if (!pool)
+    return NULL; // Always check malloc
   pool->id = id;
   pool->accepted_tile_types[0] = tile->type;
   pool->num_accepted_tile_types = 1;
@@ -45,6 +47,7 @@ pool_add_accepted_tile_type (pool_t *pool, tile_type_t type)
 void
 pool_update (pool_t *pool)
 {
+  pool->is_mixed = 1; // FIX THIS
   printf ("Pool update logic not implemented yet.\n");
 }
 

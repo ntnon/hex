@@ -1,4 +1,11 @@
 #include "../../include/tile/tile_to_pool_map.h"
+#include "stdio.h"
+
+tile_to_pool_entry_t *
+tile_to_pool_map_create (void)
+{
+  return NULL; // An empty uthash table
+}
 
 pool_t *
 tile_to_pool_map_get_pool_by_tile (tile_to_pool_entry_t *tile_to_pool_map,
@@ -21,6 +28,10 @@ tile_to_pool_map_add (tile_to_pool_entry_t **tile_to_pool_map, tile_t *tile,
       entry->tile = tile;
       entry->pool = pool;
       HASH_ADD_PTR (*tile_to_pool_map, tile, entry);
+    }
+  else
+    {
+      fprintf (stderr, "Tile %p already exists in the map\n", tile);
     }
 }
 

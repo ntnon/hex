@@ -79,6 +79,29 @@ distance (grid_cell_t a, grid_cell_t b)
   int ds = abs (a.coord.hex.s - b.coord.hex.s);
   return (dq + dr + ds) / 2;
 }
+static void
+draw_cell_with_colors (const grid_t *grid, grid_cell_t cell, Color fill_color,
+                       Color edge_color)
+{
+  int corners_count = 6; // For hexagons
+  point_t corners[6];
+  grid->vtable->get_corners (grid, cell, corners);
+
+  Vector2 verts[6];
+  for (int j = 0; j < corners_count; ++j)
+    {
+      verts[j].x = (float)corners[j].x;
+      verts[j].y = (float)corners[j].y;
+    }
+
+  DrawTriangleFan (verts, corners_count, fill_color);
+
+  for (int j = 0; j < corners_count; ++j)
+    {
+      int next = (j + 1) % corners_count;
+      DrawLineV (verts[j], verts[next], edge_color);
+    }
+}
 
 static void
 get_corners (const grid_t *grid, grid_cell_t cell, point_t corners[6])
@@ -88,7 +111,7 @@ get_corners (const grid_t *grid, grid_cell_t cell, point_t corners[6])
   double angle_offset = layout->orientation.start_angle;
   for (int i = 0; i < 6; i++)
     {
-      double angle = 2.0 * M_PI * (angle_offset + i) / 6.0;
+      double angle = 2.0 * M_PI * (angle_offset - i) / 6.0;
       corners[i].x = center.x + layout->size.x * cos (angle);
       corners[i].y = center.y + layout->size.y * sin (angle);
     }
@@ -98,7 +121,7 @@ static void
 generate_cells (grid_t *grid, int radius)
 {
   // Generates all hexes within the given radius
-  int count = 0;
+  size_t count = 0;
   int capacity = (3 * radius * (radius + 1)) + 1;
   grid->cells = malloc (capacity * sizeof (grid_cell_t));
   if (!grid->cells)
@@ -118,7 +141,6 @@ generate_cells (grid_t *grid, int radius)
         }
     }
   grid->num_cells = count;
-  grid->cell_capacity = capacity;
 }
 
 grid_t *
@@ -131,13 +153,13 @@ grid_create (grid_type_e type, layout_t layout, int size)
   grid->layout = layout;
   grid->cells = NULL;
   grid->num_cells = 0;
-  grid->cell_capacity = 0;
 
   switch (type)
     {
     case GRID_TYPE_HEXAGON:
       grid->vtable = &hex_grid_vtable;
       grid->vtable->generate_cells (grid, size);
+
       break;
     // Add cases for other grid types as you implement them
     default:
@@ -150,27 +172,9 @@ grid_create (grid_type_e type, layout_t layout, int size)
 void
 draw_grid (const grid_t *grid)
 {
-  int corners_count = 6; // Default for hexagons
-
-  for (int i = 0; i < grid->num_cells; ++i)
+  for (size_t i = 0; i < grid->num_cells; ++i)
     {
-      grid_cell_t cell = grid->cells[i];
-      point_t corners[6]; // Use the max needed for now (hex)
-      grid->vtable->get_corners (grid, cell, corners);
-
-      Vector2 verts[6];
-      for (int j = 0; j < corners_count; ++j)
-        {
-          verts[j].x = (float)corners[j].x;
-          verts[j].y = (float)corners[j].y;
-        }
-
-      DrawTriangleFan (verts, corners_count, LIGHTGRAY);
-      for (int j = 0; j < corners_count; ++j)
-        {
-          int next = (j + 1) % corners_count;
-          DrawLineV (verts[j], verts[next], DARKGRAY);
-        }
+      draw_cell_with_colors (grid, grid->cells[i], LIGHTGRAY, GRAY);
     }
 }
 
@@ -180,7 +184,7 @@ is_valid_cell (const grid_t *grid, grid_cell_t check_cell)
   if (check_cell.type != grid->cells->type)
     return false;
 
-  for (int i = 0; i < grid->num_cells; ++i)
+  for (size_t i = 0; i < grid->num_cells; ++i)
     {
       grid_cell_t cell = grid->cells[i];
       if (cell.coord.hex.s == check_cell.coord.hex.s
@@ -192,19 +196,19 @@ is_valid_cell (const grid_t *grid, grid_cell_t check_cell)
 
 // --- Public vtable instance ---
 
-const grid_vtable_t hex_grid_vtable = {
-  .to_pixel = to_pixel,
-  .from_pixel = from_pixel,
-  .get_neighbor_cell = get_neighbor_cell,
-  .get_neighbor_cells = get_neighbor_cells,
-  .distance = distance,
-  .get_corners = get_corners,
-  .generate_cells = generate_cells,
-  .grid_create = grid_create,
-  .draw_grid = draw_grid,
-  .num_neighbors = 6,
-  .is_valid_cell = is_valid_cell,
-};
+const grid_vtable_t hex_grid_vtable
+    = { .to_pixel = to_pixel,
+        .from_pixel = from_pixel,
+        .get_neighbor_cell = get_neighbor_cell,
+        .get_neighbor_cells = get_neighbor_cells,
+        .distance = distance,
+        .get_corners = get_corners,
+        .generate_cells = generate_cells,
+        .grid_create = grid_create,
+        .draw_grid = draw_grid,
+        .num_neighbors = 6,
+        .is_valid_cell = is_valid_cell,
+        .draw_cell_with_colors = draw_cell_with_colors };
 /*
 const orientation_t layout_pointy = { .f0 = 1.732050808,
                                       .f1 = 0.866025404,

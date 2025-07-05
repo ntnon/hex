@@ -8,6 +8,10 @@ typedef struct {
     UT_hash_handle hh;    // uthash handle for linking entries in the hash table.
 } tile_to_pool_entry_t;
 
+tile_to_pool_entry_t *tile_to_pool_map_create(void);
+
+tile_to_pool_entry_t *tile_to_pool_entry_create(tile_t *tile, pool_t *pool);
+
 pool_t* tile_to_pool_map_get_pool_by_tile(tile_to_pool_entry_t *tile_to_pool_map, tile_t *tile);
 
 void tile_to_pool_map_add(tile_to_pool_entry_t **tile_to_pool_map, tile_t *tile, pool_t *pool);

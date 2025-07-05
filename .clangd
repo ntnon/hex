@@ -7,5 +7,9 @@ CompileFlags:
     -I../external/raylib-master/src/external,
     -I../grid,
     -I../tile,
-    -I../tests
+    -I../tests,
+    -Wall, -Wextra, -Wmissing-prototypes
+    -Werror,
+    -fsanitize=address,
+    -fsanitize=undefined
   ]
