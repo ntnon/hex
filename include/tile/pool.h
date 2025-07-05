@@ -40,7 +40,7 @@
 
  pool_t * pool_create(int id, const tile_t *tile);
 
-int pool_score(pool_t *pool);
+int pool_score(const pool_t *pool);
 
 void pool_add_accepted_tile_type(pool_t* pool, tile_type_t type);
 
@@ -80,5 +80,7 @@ bool pool_contains_tile(const pool_t* pool, const tile_t* tile_ptr);
 void pool_update_edges (const grid_t *grid, pool_t *pool);
 
 bool pool_accepts_tile_type(const pool_t *pool, tile_type_t type);
+
+int compare_pools_by_score(const void *a, const void *b);
 
 #endif // TILE_POOL_H

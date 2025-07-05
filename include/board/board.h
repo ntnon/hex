@@ -21,6 +21,9 @@ void randomize_board(board_t *board);
 
 void add_tile(board_t *board, tile_t* tile);
 
+void get_neighbor_pools (board_t *board, tile_t *tile, pool_t **out_pools,
+                    size_t max_neighbors);
+
 void remove_tile(board_t *board, tile_t* tile);
 
 void cycle_tile_type(board_t *board, tile_t *tile);

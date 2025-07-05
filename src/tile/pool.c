@@ -57,7 +57,7 @@ pool_free (pool_t *pool)
 };
 
 int
-pool_score (pool_t *pool)
+pool_score (const pool_t *pool)
 {
   // Example: prioritize size, then lower ID as tiebreaker
   // You can adjust weights as needed
@@ -87,4 +87,14 @@ pool_accepts_tile_type (const pool_t *pool, tile_type_t type)
         return true;
     }
   return false;
+}
+
+int
+compare_pools_by_score (const void *a, const void *b)
+{
+  const pool_t *pool_a = *(const pool_t **)a;
+  const pool_t *pool_b = *(const pool_t **)b;
+  int score_a = pool_score (pool_a);
+  int score_b = pool_score (pool_b);
+  return score_b - score_a;
 }

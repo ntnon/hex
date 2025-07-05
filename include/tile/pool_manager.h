@@ -13,17 +13,19 @@ void pool_manager_free(pool_manager_t *pm);
 void pool_manager_clear(pool_manager_t *pm);
 
 size_t pool_map_filter_by_tile_type(
-    pool_map_entry_t *pool_map,
+    pool_t **pool_candidates,
+    size_t num_candidates,
     tile_type_t tile_type,
     pool_t **out_pools,
     size_t max_out_pools
 );
 
+
 pool_t *
 pool_manager_create_pool (pool_manager_t *pm, tile_t *tile);
 
 pool_t *
-pool_manager_create_pool_from_tile (pool_manager_t *pm, tile_t *tile);
+pool_manager_create_pool_with_tile (pool_manager_t *pm, const tile_t *tile);
 
 pool_t *
 pool_manager_find_pool(pool_manager_t *pm, pool_t *pool);
@@ -67,4 +69,8 @@ void pool_manager_assign_tile_to_pool(pool_manager_t *pm, pool_t *pool, const ti
 
 void pool_manager_add_tile_to_pool(pool_manager_t *pm, pool_t *pool, const tile_t *tile);
 
-void pool_manager_create_pool_with_tile(pool_manager_t *pm, const tile_t *tile);
+
+size_t
+filter_pools_by_tile_type (pool_t **pool_candidates, size_t num_candidates,
+                           tile_type_t tile_type, pool_t **out_pools,
+                           size_t max_out_pools);

@@ -2,10 +2,15 @@
 #include <stdio.h>
 
 void
+pool_manager_add_pool (pool_manager_t *pm, pool_t *pool)
+{
+  pool->id = pool_manager_get_unique_id (pm);
+}
+pool_t *
 pool_manager_create_pool_with_tile (pool_manager_t *pm, const tile_t *tile)
 {
-  pool_t *pool = pool_create (pool_manager_get_unique_id (pm), tile);
-  pool_manager_assign_tile_to_pool (pm, pool, tile);
+  pool_t *new_pool = pool_create (pool_manager_get_unique_id (pm), tile);
+  return new_pool;
 }
 
 int
@@ -15,23 +20,22 @@ pool_manager_get_unique_id (pool_manager_t *pm)
 }
 
 size_t
-pool_map_filter_by_tile_type (pool_manager_t *pm, tile_type_t tile_type,
-                              pool_t **out_pools, size_t max_out_pools)
+pool_map_filter_by_tile_type (pool_t **pool_candidates, size_t num_candidates,
+                              tile_type_t tile_type, pool_t **out_pools,
+                              size_t max_out_pools)
 {
   size_t count = 0;
-  pool_map_entry_t *entry, *tmp;
-  HASH_ITER (hh, pm->pool_map, entry, tmp)
-  {
-    if (pool_accepts_tile_type (entry->pool, tile_type))
-      {
-        if (count < max_out_pools)
-          {
-            out_pools[count++] = entry->pool;
-          }
-      }
-  }
+  for (size_t i = 0; i < num_candidates && count < max_out_pools; ++i)
+    {
+      if (pool_candidates[i]
+          && pool_accepts_tile_type (pool_candidates[i], tile_type))
+        {
+          out_pools[count++] = pool_candidates[i];
+        }
+    }
   return count;
 }
+
 pool_t *
 pool_manager_find_best_neighbor_pool_for_tile (pool_manager_t *pm,
                                                tile_t *tile,
