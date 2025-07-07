@@ -15,11 +15,11 @@ const orientation_t layout_pointy_t = { .f0 = 1.732050808,
                                         .start_angle = 0.5 };
 layout_t layout = {
   .orientation = layout_pointy_t,
-  .size = { 100.0, 100.0 }, // Hex size (adjust as needed)
-  .origin = { 0.0, 0.0 }    // Center of the screen (adjust as needed)
+  .size = { 60.0, 60.0 }, // Hex size (adjust as needed)
+  .origin = { 0.0, 0.0 }  // Center of the screen (adjust as needed)
 };
 
-int radius = 2; // For example
+int radius = 60; // For example
 
 board_t *
 board_create (void)
@@ -34,8 +34,23 @@ board_create (void)
   return board;
 }
 
-void clear_board (board_t *board);
-void free_board (board_t *board);
+void
+clear_board (board_t *board)
+{
+  tile_manager_clear (board->tile_manager);
+  pool_manager_clear (board->pool_manager);
+  tile_to_pool_map_free (&board->tile_to_pool);
+}
+
+void
+free_board (board_t *board)
+{
+  tile_manager_free (board->tile_manager);
+  pool_manager_free (board->pool_manager);
+  tile_to_pool_map_free (&board->tile_to_pool);
+  grid_free (board->grid);
+  free (board);
+}
 
 bool
 valid_tile (board_t *board, tile_t *tile)
@@ -64,12 +79,19 @@ get_neighbor_pools (board_t *board, tile_t *tile, pool_t **out_pools,
         {
           out_pools[i] = tile_to_pool_map_get_pool_by_tile (
               board->tile_to_pool, neighbor_tiles[i]);
+
+          // This is the actual error case - tile exists but has no pool
+          if (!out_pools[i])
+            {
+              fprintf (
+                  stderr,
+                  "ERROR: Neighbor tile exists but has no pool assignment!\n");
+            }
         }
       else
         {
           out_pools[i] = NULL;
-          fprintf (stderr, "The neighbor tile does not have a pool -> this "
-                           "should not be possible\n");
+          // This is normal - no tile at this neighbor position
         }
     }
 }
@@ -92,7 +114,7 @@ add_tile (board_t *board, tile_t *tile)
 
   if (num_filtered_pools == 0)
     {
-      fprintf (stderr, "No valid pool found for tile\n");
+
       target_pool
           = pool_manager_create_pool_with_tile (board->pool_manager, tile);
     }
@@ -106,12 +128,17 @@ add_tile (board_t *board, tile_t *tile)
 
   if (!target_pool)
     {
-      fprintf (stderr, "No valid pool found for tile\n");
 
       return;
     }
   tile_map_add (&board->tile_manager->tiles, tile);
   tile_to_pool_map_add (&board->tile_to_pool, tile, target_pool);
+  if (num_filtered_pools > 1)
+    {
+      // Merge all connected pools into the target pool
+      pool_manager_merge_pools (board->pool_manager, &board->tile_to_pool,
+                                filtered_candidate_pools, num_filtered_pools);
+    }
 }
 
 void
@@ -119,12 +146,6 @@ remove_tile (board_t *board, tile_t *tile)
 {
   if (!valid_tile (board, tile))
     return;
-}
-
-void
-board_draw (const board_t *board)
-{
-  renderer_draw_board (board);
 }
 
 void
@@ -139,9 +160,17 @@ randomize_board (board_t *board)
     {
       if (rand () % 3 == 0)
         {
+          // In randomize_board()
           tile_t *tile = tile_create_random_ptr (cells[i]);
-          // tile_map_add (&board->tile_manager->tiles, tile);
-          add_tile (board, tile);
+          if (tile->type != TILE_EMPTY)
+            { // Only add non-empty tiles
+              add_tile (board, tile);
+            }
+          else
+            {
+              // Free the empty tile since we're not using it
+              free (tile);
+            }
         }
     }
 }

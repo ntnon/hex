@@ -58,3 +58,17 @@ tile_to_pool_map_free (tile_to_pool_entry_t **tile_to_pool_map)
   }
   *tile_to_pool_map = NULL;
 };
+
+void
+tile_to_pool_map_reassign_pool (tile_to_pool_entry_t **tile_to_pool_map,
+                                pool_t *from_pool, pool_t *to_pool)
+{
+  tile_to_pool_entry_t *current_entry, *tmp_entry;
+  HASH_ITER (hh, *tile_to_pool_map, current_entry, tmp_entry)
+  {
+    if (current_entry->pool == from_pool)
+      {
+        current_entry->pool = to_pool;
+      }
+  }
+}

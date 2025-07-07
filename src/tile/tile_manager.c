@@ -35,6 +35,19 @@ cells_to_tile_ptrs (tile_manager_t *tm, const grid_cell_t *cells,
     }
 }
 
+void
+tile_manager_free (tile_manager_t *tm)
+{
+  tile_map_free (&tm->tiles);
+  free (tm);
+}
+
+void
+tile_manager_clear (tile_manager_t *tm)
+{
+  tile_map_free (&tm->tiles);
+}
+
 /*
  * NOT IMPLEMENTED YET
  */

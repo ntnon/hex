@@ -1,4 +1,4 @@
-#include "board/board.h"
+#include "board/renderer.h"
 #include "raylib.h"
 #include <stdio.h>
 int
@@ -9,41 +9,38 @@ main (void)
   const int screenHeight = 450;
   SetConfigFlags (FLAG_WINDOW_HIGHDPI);
   InitWindow (screenWidth, screenHeight, "hex Grid - Edge Highlighting Demo");
+  /*
 
-  Camera2D camera = { 0 };
-  camera.target = (Vector2){ 0, 0 };
-  camera.offset = (Vector2){ screenWidth / 2.0f, screenHeight / 2.0f };
-  camera.zoom = 0.1f;
-  camera.rotation = 0.0f;
+    Camera2D camera = { 0 };
+    camera.target = (Vector2){ 0, 0 };
+    camera.offset = (Vector2){ screenWidth / 2.0f, screenHeight / 2.0f };
+    camera.zoom = 0.1f;
+    camera.rotation = 0.0f;
+   */
 
   // Simple layout test
 
-  SetTargetFPS (5);
+  SetTargetFPS (60);
 
   board_t *board = board_create ();
   randomize_board (board);
 
+  board_input_controller_t input_ctrl;
+  board_input_controller_init (&input_ctrl);
+
   // Main game loop
   while (!WindowShouldClose ())
     {
-      // Draw
+      board_input_controller_update (&input_ctrl, board, screenWidth,
+                                     screenHeight);
       BeginDrawing ();
       ClearBackground (RAYWHITE);
-
-      BeginMode2D (camera);
-      // game_controller_draw (game_controller);
-
-      board_draw (board);
-
-      EndMode2D ();
-
-      // mouse_controller_update (&mouse, &camera, game_controller);
-
-      // render_stats (&r);
+      renderer_draw (board, &input_ctrl);
       EndDrawing ();
     }
 
-  // Cleanup
+  //
+  free_board (board);
 
   CloseWindow ();
 

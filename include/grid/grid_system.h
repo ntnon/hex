@@ -78,6 +78,7 @@ typedef struct {
     void
     (*draw_cell_with_colors) (const grid_t *grid, grid_cell_t cell, Color fill_color,
                            Color edge_color);
+    void(*grid_free)(grid_t* grid);
 
 } grid_vtable_t;
 

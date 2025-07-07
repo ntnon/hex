@@ -16,7 +16,8 @@ pool_map_entry_t* pool_map_create(void);
 void pool_map_free(pool_map_entry_t** map_root);
 void pool_map_add(pool_map_entry_t **map_root, int id, pool_t *pool);
 
-void pool_map_remove(pool_map_entry_t** map_root, pool_map_entry_t* entry_to_remove);
+void
+pool_map_remove (pool_map_entry_t **map_root, int id);
 void pool_map_free(pool_map_entry_t** map_root);
 
 pool_map_entry_t* find_pool_by_id(pool_map_entry_t* map_root, int pool_id);

@@ -40,15 +40,23 @@ find_pool_by_id (pool_map_entry_t *map_root, int id)
 {
   pool_map_entry_t *entry = NULL;
   HASH_FIND_INT (map_root, &id, entry);
-  if (!entry)
-    printf ("Entry with ID %d not found.\n", id);
+  // Remove this debug print - it's normal for entries not to exist
+  // if (!entry)
+  //   printf ("Entry with ID %d not found.\n", id);
   return entry;
 }
 
 void
-pool_map_remove (pool_map_entry_t **map_root,
-                 pool_map_entry_t *entry_to_remove)
+pool_map_remove (pool_map_entry_t **map_root, int id)
 {
-  HASH_DEL (*map_root, entry_to_remove);
-  free (entry_to_remove);
+  // Find the entry by ID
+  pool_map_entry_t *entry_to_remove = NULL;
+  HASH_FIND_INT (*map_root, &id, entry_to_remove);
+
+  // If the entry exists, remove it
+  if (entry_to_remove)
+    {
+      HASH_DEL (*map_root, entry_to_remove);
+      free (entry_to_remove);
+    }
 }

@@ -194,21 +194,33 @@ is_valid_cell (const grid_t *grid, grid_cell_t check_cell)
   return false;
 }
 
+void
+grid_free (grid_t *grid)
+{
+  if (!grid)
+    return;
+
+  free (grid->cells); // Free the cells array
+  free (grid);        // Free the grid struct itself
+}
+
 // --- Public vtable instance ---
 
-const grid_vtable_t hex_grid_vtable
-    = { .to_pixel = to_pixel,
-        .from_pixel = from_pixel,
-        .get_neighbor_cell = get_neighbor_cell,
-        .get_neighbor_cells = get_neighbor_cells,
-        .distance = distance,
-        .get_corners = get_corners,
-        .generate_cells = generate_cells,
-        .grid_create = grid_create,
-        .draw_grid = draw_grid,
-        .num_neighbors = 6,
-        .is_valid_cell = is_valid_cell,
-        .draw_cell_with_colors = draw_cell_with_colors };
+const grid_vtable_t hex_grid_vtable = {
+  .to_pixel = to_pixel,
+  .from_pixel = from_pixel,
+  .get_neighbor_cell = get_neighbor_cell,
+  .get_neighbor_cells = get_neighbor_cells,
+  .distance = distance,
+  .get_corners = get_corners,
+  .generate_cells = generate_cells,
+  .grid_create = grid_create,
+  .draw_grid = draw_grid,
+  .num_neighbors = 6,
+  .is_valid_cell = is_valid_cell,
+  .draw_cell_with_colors = draw_cell_with_colors,
+  .grid_free = grid_free,
+};
 /*
 const orientation_t layout_pointy = { .f0 = 1.732050808,
                                       .f1 = 0.866025404,

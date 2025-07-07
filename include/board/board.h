@@ -1,6 +1,6 @@
 #include "../grid/grid_system.h"
 #include "../tile/tile_manager.h"
-#include "../tile/tile_to_pool_map.h"
+#include "../tile/pool_manager.h"
 
 typedef struct  {
     grid_t *grid;
@@ -10,8 +10,6 @@ typedef struct  {
 }board_t;
 
 board_t* board_create(void);
-
-void board_draw(const board_t *board);
 
 void clear_board(board_t *board);
 

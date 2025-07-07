@@ -1,4 +1,5 @@
-#include "pool_manager.h"
+#include "tile.h"
+#include "pool.h"
 #include "../third_party/uthash.h"
 
 // Hash table entry mapping a tile to its pool.
@@ -19,3 +20,7 @@ void tile_to_pool_map_add(tile_to_pool_entry_t **tile_to_pool_map, tile_t *tile,
 void tile_to_pool_map_remove(tile_to_pool_entry_t **tile_to_pool_map, tile_t *tile);
 
 void tile_to_pool_map_free(tile_to_pool_entry_t **tile_to_pool_map);
+
+void tile_to_pool_map_reassign_pool(tile_to_pool_entry_t **tile_to_pool_map,
+                                   pool_t *from_pool,
+                                   pool_t *to_pool);
