@@ -63,12 +63,40 @@ void
 tile_to_pool_map_reassign_pool (tile_to_pool_entry_t **tile_to_pool_map,
                                 pool_t *from_pool, pool_t *to_pool)
 {
-  tile_to_pool_entry_t *current_entry, *tmp_entry;
-  HASH_ITER (hh, *tile_to_pool_map, current_entry, tmp_entry)
+  if (!tile_to_pool_map || !from_pool || !to_pool)
+    return;
+
+  // First, transfer tiles from source pool's internal tiles map to target
+  // pool's internal tiles map
+  tile_map_entry_t *tile_entry, *tmp;
+  HASH_ITER (hh, from_pool->tiles->root, tile_entry, tmp)
   {
-    if (current_entry->pool == from_pool)
+    // Add tile to target pool's internal tiles map
+    tile_map_add (to_pool->tiles, tile_entry->tile);
+
+    // Remove tile from source pool's internal tiles map
+    tile_map_remove (from_pool->tiles, tile_entry->cell);
+  }
+
+  // Then update the global tile-to-pool mapping
+  tile_to_pool_entry_t *entry, *tmp_entry;
+  HASH_ITER (hh, *tile_to_pool_map, entry, tmp_entry)
+  {
+    if (entry->pool == from_pool)
       {
-        current_entry->pool = to_pool;
+        // Update the pool pointer in the global mapping
+        entry->pool = to_pool;
       }
   }
+
+  // Update accepted tile types in target pool if needed
+  for (size_t i = 0; i < from_pool->num_accepted_tile_types; i++)
+    {
+      pool_add_accepted_tile_type (to_pool, from_pool->accepted_tile_types[i]);
+    }
+
+  // Debug output
+  printf ("[DEBUG] Transferred %d tiles from pool %d to pool %d\n",
+          from_pool->tiles->num_tiles, from_pool->id, to_pool->id);
+  printf ("[DEBUG] Target pool now has %d tiles\n", to_pool->tiles->num_tiles);
 }

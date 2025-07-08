@@ -1,4 +1,5 @@
 #include "../../include/board/renderer.h"
+#include "../../include/grid/grid_cell_utils.h"
 #include "raylib.h"
 #include <float.h>
 #include <math.h>
@@ -44,6 +45,7 @@ draw_tile_wrapper (tile_map_entry_t *entry, void *user_data)
 static void
 update_tiled_grid_cache (const board_t *board)
 {
+
   const grid_t *grid = board->grid;
   float min_x = FLT_MAX, min_y = FLT_MAX;
   float max_x = -FLT_MAX, max_y = -FLT_MAX;
@@ -166,10 +168,10 @@ renderer_draw_board (const board_t *board)
         }
     }
 }
-
 void
 renderer_draw_tile (const tile_t *tile, const grid_t *grid)
 {
+
   if (!tile)
     {
       printf ("ERROR: tile is null\n");
@@ -190,8 +192,21 @@ renderer_draw_tile (const tile_t *tile, const grid_t *grid)
       printf ("ERROR: grid->vtable->draw_cell_with_colors is null\n");
       return;
     }
+
+  // Draw the colored hex cell.
   grid->vtable->draw_cell_with_colors (grid, tile->cell, tile_get_color (tile),
                                        BLANK);
+
+  // Compute the center of the hex cell using the to_pixel function.
+  point_t center = grid->vtable->to_pixel (grid, tile->cell);
+
+  // Create a string representing the hex coordinates.
+  char coord_text[32];
+  grid_cell_to_string (&tile->cell, coord_text, sizeof (coord_text));
+
+  // Draw the coordinate text centered on the cell.
+  // Adjust the x and y values (here subtracting 10) as needed.
+  DrawText (coord_text, (int)center.x - 10, (int)center.y - 10, 10, BLACK);
 }
 
 void
@@ -205,10 +220,14 @@ renderer_draw_hover_info (const board_t *board,
     return;
   Vector2 mouse = GetMousePosition ();
   char info[128];
+
   pool_t *pool = tile_to_pool_map_get_pool_by_tile (board->tile_to_pool, tile);
   int pool_id = pool ? pool->id : -1;
-  snprintf (info, sizeof (info), "Type: %d\nValue: %d\nPool: %d", tile->type,
-            tile->value, pool_id);
+  int pool_max_friendly_neighbors = pool ? pool->highest_n : -1;
+
+  snprintf (info, sizeof (info), "Type: %d\nValue: %d\nPool: %d\nMFN: %d",
+            tile->type, tile->value, pool_id, pool_max_friendly_neighbors);
+
   int height = 60, width = 120;
   DrawRectangle (mouse.x + 16, mouse.y + 16, width, height, Fade (GRAY, 0.9f));
   DrawText (info, mouse.x + 24, mouse.y + 24, 16, BLACK);
@@ -218,6 +237,7 @@ void
 renderer_draw (const board_t *board,
                const board_input_controller_t *input_ctrl)
 {
+
   BeginMode2D ((Camera2D){
       .offset = (Vector2){ GetScreenWidth () / 2.0f + input_ctrl->pan.x,
                            GetScreenHeight () / 2.0f + input_ctrl->pan.y },

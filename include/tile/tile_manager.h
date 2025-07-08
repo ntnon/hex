@@ -23,7 +23,7 @@
  * related to tile interactions and pool updates.
  */
 typedef struct tile_manager {
-    tile_map_entry_t* tiles;
+    tile_map_t* tiles;
 } tile_manager_t;
 
 tile_manager_t* tile_manager_create(void);

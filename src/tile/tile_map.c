@@ -1,65 +1,87 @@
 #include "../../include/tile/tile_map.h"
-#include "stdio.h"
+#include "../../include/grid/grid_cell_utils.h"
+#include <stdio.h>
+#include <stdlib.h>
 
-tile_map_entry_t *
+tile_map_t *
 tile_map_create (void)
 {
+  tile_map_t *map = malloc (sizeof (tile_map_t));
+  if (!map)
+    {
+      fprintf (stderr, "Out of memory!\n");
+      return NULL;
+    }
+  map->root = NULL;
+  map->num_tiles = 0;
+  return map;
+}
+
+bool
+tile_map_contains (tile_map_t *map, grid_cell_t cell)
+{
+  return (tile_map_find (map, cell) != NULL);
+}
+
+void
+tile_map_free (tile_map_t *map)
+{
+  if (!map)
+    return;
+  tile_map_entry_t *current_entry, *tmp_entry;
+  HASH_ITER (hh, map->root, current_entry, tmp_entry)
+  {
+    HASH_DEL (map->root, current_entry);
+    free (current_entry);
+  }
+  map->num_tiles = 0;
+  free (map);
+}
+
+tile_map_entry_t *
+tile_map_find (tile_map_t *map, grid_cell_t cell)
+{
+  if (!map)
+    return NULL;
+  tile_map_entry_t *entry;
+  for (entry = map->root; entry != NULL; entry = entry->hh.next)
+    {
+      if (grid_cells_equal (&entry->cell, &cell))
+        return entry;
+    }
   return NULL;
 }
 
 void
-tile_map_free (tile_map_entry_t **map_root)
+tile_map_remove (tile_map_t *map, grid_cell_t cell)
 {
-  tile_map_entry_t *current_entry, *tmp_entry;
-  HASH_ITER (hh, *map_root, current_entry, tmp_entry)
-  {
-    HASH_DEL (*map_root, current_entry);
-    free (current_entry);
-  }
-  *map_root = NULL;
-}
-
-tile_map_entry_t *
-tile_map_find (tile_map_entry_t *map_root, grid_cell_t cell)
-{
-  tile_map_entry_t *found = NULL;
-  HASH_FIND (hh, map_root, &cell, sizeof (grid_cell_t), found);
-  return found;
-}
-
-void
-tile_map_remove (tile_map_entry_t **map_root, grid_cell_t cell)
-{
-  tile_map_entry_t *entry = tile_map_find (*map_root, cell);
+  if (!map)
+    return;
+  tile_map_entry_t *entry = tile_map_find (map, cell);
   if (entry)
     {
-      HASH_DEL (*map_root, entry);
+      HASH_DEL (map->root, entry);
+      map->num_tiles--;
       free (entry);
     }
 }
 
 void
-tile_map_foreach (tile_map_entry_t *map_root,
-                  void (*fn) (tile_map_entry_t *, void *), void *user_data)
+tile_map_foreach (tile_map_t *map, void (*fn) (tile_map_entry_t *, void *),
+                  void *user_data)
 {
+  if (!map)
+    return;
   tile_map_entry_t *entry, *tmp;
-  HASH_ITER (hh, map_root, entry, tmp) { fn (entry, user_data); }
-}
-
-int
-tile_map_size (tile_map_entry_t *map_root)
-{
-  tile_map_entry_t *entry, *tmp;
-  int size = 0;
-  HASH_ITER (hh, map_root, entry, tmp) { size++; }
-  return size;
+  HASH_ITER (hh, map->root, entry, tmp) { fn (entry, user_data); }
 }
 
 void
-tile_map_add (tile_map_entry_t **map_root, tile_t *tile)
+tile_map_add (tile_map_t *map, tile_t *tile)
 {
-  // Use tile->cell as the key for lookup
-  tile_map_entry_t *existing_entry = tile_map_find (*map_root, tile->cell);
+  if (!map || !tile)
+    return;
+  tile_map_entry_t *existing_entry = tile_map_find (map, tile->cell);
   if (existing_entry)
     {
       // Update the tile pointer in the existing entry
@@ -70,12 +92,12 @@ tile_map_add (tile_map_entry_t **map_root, tile_t *tile)
       tile_map_entry_t *entry = malloc (sizeof (tile_map_entry_t));
       if (!entry)
         {
-          // Handle allocation failure
           fprintf (stderr, "Out of memory!\n");
           return;
         }
       entry->cell = tile->cell;
       entry->tile = tile;
-      HASH_ADD (hh, *map_root, cell, sizeof (entry->cell), entry);
+      HASH_ADD (hh, map->root, cell, sizeof (entry->cell), entry);
+      map->num_tiles++;
     }
 }

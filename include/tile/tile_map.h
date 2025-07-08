@@ -1,36 +1,44 @@
 #ifndef TILE_MAP_H
 #define TILE_MAP_H
 
-
 #include "../third_party/uthash.h"
 #include "../grid/grid_types.h"
 #include "tile.h"
 #include "raylib.h"
 
-// --- Tile Hash Table Entry ---
-// This is the struct that uthash will manage.
-// The 'cell' field is the key, and the 'tile' field is the value.
+// --- Individual Hash Table Entry ---
+// 'cell' is the key, and 'tile' is the associated value.
 typedef struct tile_map_entry {
-    grid_cell_t cell;      // Key: grid cell coordinates (and type, if applicable).
-    tile_t *tile;           // Value: the tile data for this cell.
-    UT_hash_handle hh;     // uthash handle for hash table linkage (must be last).
+    grid_cell_t cell;      // Key: grid cell coordinates
+    tile_t *tile;          // Value: pointer to a tile
+    UT_hash_handle hh;     // UTHash handle (must be last)
 } tile_map_entry_t;
 
-tile_map_entry_t *
-tile_map_create (void);
-void
-tile_map_free (tile_map_entry_t **map_root);
+// --- Tile Map Container ---
+// This struct encapsulates the hash root and additional metadata.
+typedef struct tile_map {
+    tile_map_entry_t *root;
+    int num_tiles;         // Total number of tiles in the map
+} tile_map_t;
 
-tile_map_entry_t* tile_map_find(tile_map_entry_t *map_root, grid_cell_t cell);
-void tile_map_remove(tile_map_entry_t **map_root, grid_cell_t cell);
-void tile_map_add(tile_map_entry_t **map_root, tile_t *tile); // still takes tile, since you need to store it
+// Create a new tile map.
+tile_map_t *tile_map_create(void);
 
-int
-tile_map_size (tile_map_entry_t *map_root);
+// Free the entire tile map.
+void tile_map_free(tile_map_t *map);
 
-void
-tile_map_foreach (tile_map_entry_t *map_root,
-                  void (*fn) (tile_map_entry_t *, void *), void *user_data);
+// Find an entry in the tile map based on a grid cell key.
+tile_map_entry_t* tile_map_find(tile_map_t *map, grid_cell_t cell);
 
+bool tile_map_contains(tile_map_t *map, grid_cell_t cell);
+
+// Remove an entry identified by a cell from the map.
+void tile_map_remove(tile_map_t *map, grid_cell_t cell);
+
+// Add a tile into the map.
+void tile_map_add(tile_map_t *map, tile_t *tile);
+
+// Iterate over each tile map entry.
+void tile_map_foreach(tile_map_t *map, void (*fn)(tile_map_entry_t *, void *), void *user_data);
 
 #endif // TILE_MAP_H

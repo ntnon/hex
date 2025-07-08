@@ -22,8 +22,10 @@
      int id;
      bool is_mixed;
      Color color;
+     tile_t* center;
+     int highest_n;
      edge_map_entry_t *edges;
-     tile_map_entry_t *tiles;
+     tile_map_t *tiles;
      tile_type_t accepted_tile_types[MAX_ACCEPTED_TILE_TYPES]; // <-- new field
      size_t num_accepted_tile_types;                          // <-- new field
  } pool_t;
@@ -38,8 +40,7 @@
  * @return A pointer to the newly created pool_t, or NULL on failure.
  */
 
- pool_t * pool_create(int id, const tile_t *tile);
-
+pool_t * pool_create (void);
 int pool_score(const pool_t *pool);
 
 void pool_add_accepted_tile_type(pool_t* pool, tile_type_t type);
@@ -57,7 +58,8 @@ void pool_free(pool_t* pool);
  * @param pool A pointer to the pool to add the tile to.
  * @param tile_ptr A pointer to the tile_t to add.
  */
-void pool_add_tile(pool_t* pool, const tile_t* tile_ptr);
+
+bool pool_add_tile_to_pool (pool_t *pool, const tile_t *tile);
 
 /**
  * @brief Removes a tile from a pool.
@@ -66,6 +68,8 @@ void pool_add_tile(pool_t* pool, const tile_t* tile_ptr);
  */
 void pool_remove_tile(const pool_t* pool, const tile_t* tile_ptr);
 
+void
+pool_update (pool_t *pool, const grid_t *grid);
 /**
  * @brief Checks if a specific tile is a member of this pool.
  * @param pool A constant pointer to the pool to check within.
@@ -74,12 +78,9 @@ void pool_remove_tile(const pool_t* pool, const tile_t* tile_ptr);
  */
 bool pool_contains_tile(const pool_t* pool, const tile_t* tile_ptr);
 
-
-bool pool_contains_tile(const pool_t* pool, const tile_t* tile_ptr);
+bool pool_accepts_tile_type(const pool_t *pool, tile_type_t type);
 
 void pool_update_edges (const grid_t *grid, pool_t *pool);
-
-bool pool_accepts_tile_type(const pool_t *pool, tile_type_t type);
 
 int compare_pools_by_score(const void *a, const void *b);
 

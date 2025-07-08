@@ -19,7 +19,7 @@ layout_t layout = {
   .origin = { 0.0, 0.0 }  // Center of the screen (adjust as needed)
 };
 
-int radius = 60; // For example
+int radius = 10; // For example
 
 board_t *
 board_create (void)
@@ -115,8 +115,8 @@ add_tile (board_t *board, tile_t *tile)
   if (num_filtered_pools == 0)
     {
 
-      target_pool
-          = pool_manager_create_pool_with_tile (board->pool_manager, tile);
+      target_pool = pool_manager_create_pool (
+          board->pool_manager); // create new pool for the tile
     }
   else
     {
@@ -128,17 +128,23 @@ add_tile (board_t *board, tile_t *tile)
 
   if (!target_pool)
     {
-
       return;
     }
-  tile_map_add (&board->tile_manager->tiles, tile);
-  tile_to_pool_map_add (&board->tile_to_pool, tile, target_pool);
+  tile_manager_add_tile (board->tile_manager, tile); // add to general tile map
+  pool_manager_add_tile_to_pool (board->pool_manager, target_pool,
+                                 tile); // add tile to pool
+  tile_to_pool_map_add (&board->tile_to_pool, tile,
+                        target_pool); // add tile to "tile_to_pool_map"
   if (num_filtered_pools > 1)
     {
+      printf ("Merging %zu pools\n", num_filtered_pools);
       // Merge all connected pools into the target pool
-      pool_manager_merge_pools (board->pool_manager, &board->tile_to_pool,
-                                filtered_candidate_pools, num_filtered_pools);
+      target_pool = pool_manager_merge_pools (
+          board->pool_manager, &board->tile_to_pool, filtered_candidate_pools,
+          num_filtered_pools);
     }
+
+  pool_update (target_pool, board->grid);
 }
 
 void
@@ -151,14 +157,14 @@ remove_tile (board_t *board, tile_t *tile)
 void
 randomize_board (board_t *board)
 {
-  printf ("Randomizing board!!...\n");
+  printf ("randomizing board\n");
   grid_cell_t *cells = board->grid->cells;
   shuffle_array (cells, board->grid->num_cells, sizeof (grid_cell_t),
                  swap_grid_cell);
 
   for (size_t i = 0; i < board->grid->num_cells; i++)
     {
-      if (rand () % 3 == 0)
+      if (rand () % 1 == 0)
         {
           // In randomize_board()
           tile_t *tile = tile_create_random_ptr (cells[i]);
