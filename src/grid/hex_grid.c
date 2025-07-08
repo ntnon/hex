@@ -79,6 +79,7 @@ distance (grid_cell_t a, grid_cell_t b)
   int ds = abs (a.coord.hex.s - b.coord.hex.s);
   return (dq + dr + ds) / 2;
 }
+
 static void
 draw_cell_with_colors (const grid_t *grid, grid_cell_t cell, Color fill_color,
                        Color edge_color)

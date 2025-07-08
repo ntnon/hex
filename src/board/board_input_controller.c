@@ -2,7 +2,7 @@
 #include "raylib.h"
 #include <stdio.h>
 
-#define ZOOM_MIN 0.05f
+#define ZOOM_MIN 0.1f
 #define ZOOM_MAX 3.0f
 
 void

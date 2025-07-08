@@ -15,11 +15,11 @@ const orientation_t layout_pointy_t = { .f0 = 1.732050808,
                                         .start_angle = 0.5 };
 layout_t layout = {
   .orientation = layout_pointy_t,
-  .size = { 60.0, 60.0 }, // Hex size (adjust as needed)
+  .size = { 50.0, 50.0 }, // Hex size (adjust as needed)
   .origin = { 0.0, 0.0 }  // Center of the screen (adjust as needed)
 };
 
-int radius = 10; // For example
+int radius = 50; // For example
 
 board_t *
 board_create (void)
@@ -164,7 +164,7 @@ randomize_board (board_t *board)
 
   for (size_t i = 0; i < board->grid->num_cells; i++)
     {
-      if (rand () % 1 == 0)
+      if (rand () % 4 >= 0)
         {
           // In randomize_board()
           tile_t *tile = tile_create_random_ptr (cells[i]);

@@ -5,7 +5,7 @@
 #include <math.h>
 #include <stdio.h>
 
-#define TILE_CACHE_SIZE 2048 // Maximum size for each tile
+#define TILE_CACHE_SIZE 8000 // Maximum size for each tile
 
 // Structure to hold a cached tile
 typedef struct

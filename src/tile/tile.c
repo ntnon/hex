@@ -32,10 +32,16 @@ tile_get_color (const tile_t *tile)
     case TILE_CYAN:
       return SKYBLUE;
     case TILE_YELLOW:
-      return YELLOW;
+      return GREEN;
     case TILE_EMPTY:
       return BLACK;
     default:
       return BLANK; // Or any color you want for empty/unknown
     }
+}
+
+void
+tile_cycle (tile_t *tile)
+{
+  tile->type = (tile->type + 1) % 3;
 }
