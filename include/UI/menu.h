@@ -1,0 +1,29 @@
+#ifndef MENU_H
+#define MENU_H
+
+#include "raylib.h"
+
+typedef enum {
+    MENU_ACTION_NONE,
+    MENU_ACTION_START,
+    MENU_ACTION_OPTIONS,
+    MENU_ACTION_QUIT
+} menu_action_t;
+
+typedef struct {
+    Rectangle bounds;
+    const char *label;
+    menu_action_t action;
+} menu_button_t;
+
+typedef struct {
+    menu_button_t buttons[3];
+    int button_count;
+} menu_screen_t;
+
+void menu_screen_init(menu_screen_t *menu);
+menu_action_t menu_screen_update(menu_screen_t *menu, Vector2 mouse, bool mouse_pressed);
+void menu_screen_draw(const menu_screen_t *menu);
+void menu_screen_unload(menu_screen_t *menu);
+
+#endif // MENU_H

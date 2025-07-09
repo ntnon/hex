@@ -9,7 +9,8 @@ typedef struct  {
     tile_to_pool_entry_t *tile_to_pool;
 }board_t;
 
-board_t* board_create(void);
+board_t *
+board_create (grid_type_e   grid_type, int radius);
 
 void clear_board(board_t *board);
 

@@ -96,7 +96,4 @@ tile_to_pool_map_reassign_pool (tile_to_pool_entry_t **tile_to_pool_map,
     }
 
   // Debug output
-  printf ("[DEBUG] Transferred %d tiles from pool %d to pool %d\n",
-          from_pool->tiles->num_tiles, from_pool->id, to_pool->id);
-  printf ("[DEBUG] Target pool now has %d tiles\n", to_pool->tiles->num_tiles);
 }

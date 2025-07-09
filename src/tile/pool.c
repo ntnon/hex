@@ -111,9 +111,6 @@ pool_add_tile_to_pool (pool_t *pool, const tile_t *tile)
   // Update the accepted tile types in the pool.
   pool_update_accepted_tile_types (pool, tile);
 
-  // Debug: Print the new tile count in the pool.
-  printf ("Pool %d now has %d tiles\n", pool->id, pool->tiles->num_tiles);
-
   return true;
 }
 
@@ -206,36 +203,27 @@ pool_find_tile_friendly_neighbor_count (tile_map_t *tile_map,
   grid->vtable->get_neighbor_cells (tile->cell, neighbor_cells);
 
   char key_buffer[32];
-  printf ("Tile at: ");
   grid_cell_to_string (&tile->cell, key_buffer, sizeof (key_buffer));
-  printf ("%s\n", key_buffer);
 
   int neighbor_count = 0;
   for (int i = 0; i < num_neighbors; ++i)
     {
-      printf ("Neighbor cell: ");
       grid_cell_to_string (&neighbor_cells[i], key_buffer,
                            sizeof (key_buffer));
-      printf ("%s\n", key_buffer);
 
       bool entry = tile_map_contains (tile_map, neighbor_cells[i]);
       if (entry)
         {
           neighbor_count++;
-          printf ("FOUND neighbor at ");
           grid_cell_to_string (&neighbor_cells[i], key_buffer,
                                sizeof (key_buffer));
-          printf ("%s\n", key_buffer);
         }
       else
         {
-          printf ("No neighbor for ");
           grid_cell_to_string (&neighbor_cells[i], key_buffer,
                                sizeof (key_buffer));
-          printf ("%s\n", key_buffer);
         }
     }
-  printf ("Neighbor count: %d\n", neighbor_count);
   return neighbor_count;
 }
 
@@ -250,13 +238,9 @@ pool_find_max_tile_neighbors_in_pool (pool_t *pool, const grid_t *grid)
     }
 
   int best_score = 0;
-  printf ("num of tiles in pool: %d\n", pool->tiles->num_tiles);
-
   tile_map_entry_t *entry, *tmp;
   HASH_ITER (hh, pool->tiles->root, entry, tmp)
   {
-    printf ("Processing tile at ");
-    print_grid_cell (&entry->cell);
     int score = pool_find_tile_friendly_neighbor_count (pool->tiles,
                                                         entry->tile, grid);
     if (score > best_score)

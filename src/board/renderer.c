@@ -5,7 +5,7 @@
 #include <math.h>
 #include <stdio.h>
 
-#define TILE_CACHE_SIZE 8000 // Maximum size for each tile
+#define TILE_CACHE_SIZE 10000 // Maximum size for each tile
 
 // Structure to hold a cached tile
 typedef struct
@@ -206,7 +206,7 @@ renderer_draw_tile (const tile_t *tile, const grid_t *grid)
 
   // Draw the coordinate text centered on the cell.
   // Adjust the x and y values (here subtracting 10) as needed.
-  DrawText (coord_text, (int)center.x - 10, (int)center.y - 10, 10, BLACK);
+  DrawText (coord_text, (int)center.x - 10, (int)center.y - 10, 8, BLACK);
 }
 
 void

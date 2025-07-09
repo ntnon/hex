@@ -1,4 +1,6 @@
-#include "board/renderer.h"
+#include "UI/menu.h"
+#include "game/game.h"
+#include "game/screen_manager.h"
 #include "raylib.h"
 #include <stdio.h>
 int
@@ -6,47 +8,68 @@ main (void)
 {
 
   // Initialization
-  const int screenWidth = 800;
-  const int screenHeight = 450;
+  int screen_width = 800;
+  int screen_height = 400;
   SetConfigFlags (FLAG_WINDOW_HIGHDPI);
-  InitWindow (screenWidth, screenHeight, "hex Grid - Edge Highlighting Demo");
-  /*
-
-    Camera2D camera = { 0 };
-    camera.target = (Vector2){ 0, 0 };
-    camera.offset = (Vector2){ screenWidth / 2.0f, screenHeight / 2.0f };
-    camera.zoom = 0.1f;
-    camera.rotation = 0.0f;
-   */
-
-  // Simple layout test≤
-
+  SetConfigFlags (FLAG_WINDOW_RESIZABLE);
   SetTargetFPS (60);
+  InitWindow (screen_width, screen_height, "hex");
 
-  board_t *board = board_create ();
+  game_t *game;
+  game_init (game);
 
-  randomize_board (board);
+  screen_manager_t mgr;
+  screen_manager_init (&mgr);
 
-  board_input_controller_t input_ctrl;
-  board_input_controller_init (&input_ctrl);
-  // SetTraceLogLevel (LOG_WARNING);
-  //  Main game loop
-  //
-  printf ("Tile count %d\n", board->tile_manager->tiles->num_tiles);
+  menu_screen_t menu;
+  menu_screen_init (&menu);
+
   while (!WindowShouldClose ())
     {
-      board_input_controller_update (&input_ctrl, board, screenWidth,
-                                     screenHeight);
+      screen_width = GetScreenWidth ();
+      screen_height = GetScreenHeight ();
+
+      board_input_controller_update (game->&input_ctrl, game->board, screen_width,
+                                     screen_height);
       BeginDrawing ();
 
       ClearBackground (RAYWHITE);
+      switch (mgr.current)
+        {
+        case SCREEN_MENU:
+          menu_action_t action = menu_screen_update (
+              &menu, GetMousePosition (), IsMouseButtonDown (0));
+          menu_screen_draw (&menu);
+          menu_screen_update (&menu, GetMousePosition (),
+                              IsMouseButtonDown (0));
+          menu_screen_draw (&menu);
+          if (action == MENU_ACTION_START)
+            mgr.current = SCREEN_GAME;
+          else if (action == MENU_ACTION_QUIT)
+            CloseWindow (); // Or set a running flag to false
+          break;
+        case SCREEN_GAME:
+          render_game (game);
 
-      renderer_draw (board, &input_ctrl);
+          // draw_game();
+          break;
+        case SCREEN_PAUSE:
+          // update_pause();
+          // draw_pause();
+          break;
+        case SCREEN_GAMEOVER:
+          // update_gameover();
+          // draw_gameover();
+          break;
+        default:
+          break;
+        }
+
       EndDrawing ();
     }
 
   //
-  free_board (board);
+  free_game (game);
 
   CloseWindow ();
 

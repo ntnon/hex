@@ -15,14 +15,12 @@ const orientation_t layout_pointy_t = { .f0 = 1.732050808,
                                         .start_angle = 0.5 };
 layout_t layout = {
   .orientation = layout_pointy_t,
-  .size = { 50.0, 50.0 }, // Hex size (adjust as needed)
+  .size = { 20.0, 20.0 }, // Hex size (adjust as needed)
   .origin = { 0.0, 0.0 }  // Center of the screen (adjust as needed)
 };
 
-int radius = 50; // For example
-
 board_t *
-board_create (void)
+board_create (grid_type_e grid_type, int radius)
 {
   board_t *board = malloc (sizeof (board_t));
   if (!board)
@@ -137,7 +135,6 @@ add_tile (board_t *board, tile_t *tile)
                         target_pool); // add tile to "tile_to_pool_map"
   if (num_filtered_pools > 1)
     {
-      printf ("Merging %zu pools\n", num_filtered_pools);
       // Merge all connected pools into the target pool
       target_pool = pool_manager_merge_pools (
           board->pool_manager, &board->tile_to_pool, filtered_candidate_pools,

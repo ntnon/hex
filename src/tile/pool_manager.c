@@ -53,7 +53,6 @@ pool_manager_merge_pools (pool_manager_t *pm,
                           tile_to_pool_entry_t **tile_to_pool_map,
                           pool_t **pools_to_merge, size_t num_pools)
 {
-  printf ("Merging %zu pools\n", num_pools);
   if (num_pools <= 1)
     return (num_pools == 1) ? pools_to_merge[0] : NULL;
 

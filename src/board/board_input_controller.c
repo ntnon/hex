@@ -15,8 +15,8 @@ board_input_controller_init (board_input_controller_t *ctrl)
 
 void
 board_input_controller_update (board_input_controller_t *ctrl,
-                               const board_t *board, int screenWidth,
-                               int screenHeight)
+                               const board_t *board, int screen_width,
+                               int screen_height)
 {
   // Zoom with mouse wheel
 
@@ -41,8 +41,8 @@ board_input_controller_update (board_input_controller_t *ctrl,
   // Hover detection
   Vector2 mouse = GetMousePosition ();
   point_t board_pos
-      = { .x = (mouse.x - screenWidth / 2.0f - ctrl->pan.x) / ctrl->zoom,
-          .y = (mouse.y - screenHeight / 2.0f - ctrl->pan.y) / ctrl->zoom };
+      = { .x = (mouse.x - screen_width / 2.0f - ctrl->pan.x) / ctrl->zoom,
+          .y = (mouse.y - screen_height / 2.0f - ctrl->pan.y) / ctrl->zoom };
   grid_cell_t cell = board->grid->vtable->from_pixel (board->grid, board_pos);
   if (board->grid->vtable->is_valid_cell (board->grid, cell))
     {

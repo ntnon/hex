@@ -18,8 +18,7 @@ tile_create_ptr (grid_cell_t cell, tile_type_t type, int value)
 tile_t *
 tile_create_random_ptr (grid_cell_t cell)
 {
-  return tile_create_ptr (cell, (tile_type_t)rand () % 3 + 1,
-                          rand () % 2 ? 2 : 4);
+  return tile_create_ptr (cell, (tile_type_t)rand () % 3 + 1, rand () % 5 + 1);
 }
 
 Color

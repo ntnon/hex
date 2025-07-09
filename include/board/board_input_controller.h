@@ -16,5 +16,5 @@ void
 board_input_controller_init (board_input_controller_t *ctrl);
 void
 board_input_controller_update (board_input_controller_t *ctrl,
-                               const board_t *board, int screenWidth,
-                               int screenHeight);
+                               const board_t *board, int screen_width,
+                               int screen_height);
