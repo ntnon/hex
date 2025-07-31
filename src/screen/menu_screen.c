@@ -1,4 +1,4 @@
-#include "../../include/UI/menu.h"
+#include "../../include/screen/menu_screen.h"
 #include "raylib.h"
 
 #define BUTTON_WIDTH 200
@@ -29,6 +29,7 @@ menu_screen_init (menu_screen_t *menu)
   menu->buttons[2].action = MENU_ACTION_QUIT;
 
   menu->button_count = 3;
+  menu->last_action = MENU_ACTION_NONE;
 }
 
 menu_action_t
@@ -63,8 +64,77 @@ menu_screen_draw (const menu_screen_t *menu)
       DrawRectangleLinesEx (menu->buttons[i].bounds, 2, DARKGRAY);
 
       int text_width = MeasureText (menu->buttons[i].label, 24);
-      int text_x = menu->buttons[i].bounds.x + (BUTTON_WIDTH - text_width) / 2;
-      int text_y = menu->buttons[i].bounds.y + (BUTTON_HEIGHT - 24) / 2;
+      int text_x
+          = menu->buttons[i].bounds.x + (float)(BUTTON_WIDTH - text_width) / 2;
+      int text_y = menu->buttons[i].bounds.y + (float)(BUTTON_HEIGHT - 24) / 2;
       DrawText (menu->buttons[i].label, text_x, text_y, 24, BLACK);
     }
+}
+
+void
+menu_screen_unload (menu_screen_t *menu)
+{
+  // No dynamic resources to free in this implementation
+}
+
+void
+menu_input_handler (void *screen_data)
+{
+  menu_screen_t *menu = (menu_screen_t *)screen_data;
+  if (!menu)
+    return;
+
+  Vector2 mouse = GetMousePosition ();
+  bool mouse_pressed = IsMouseButtonPressed (MOUSE_LEFT_BUTTON);
+
+  menu->last_action = menu_screen_update (menu, mouse, mouse_pressed);
+
+  // Handle keyboard shortcuts
+  if (IsKeyPressed (KEY_ENTER))
+    {
+      menu->last_action = MENU_ACTION_START;
+    }
+  else if (IsKeyPressed (KEY_ESCAPE))
+    {
+      menu->last_action = MENU_ACTION_QUIT;
+    }
+}
+
+void
+menu_action_handler (void *screen_data, screen_manager_t *mgr, bool *running)
+{
+  menu_screen_t *menu = (menu_screen_t *)screen_data;
+  screen_manager_t *screen_mgr = (screen_manager_t *)mgr;
+
+  if (!menu || !screen_mgr || !running)
+    return;
+
+  switch (menu->last_action)
+    {
+    case MENU_ACTION_START:
+      screen_manager_switch (screen_mgr, SCREEN_GAME);
+      break;
+    case MENU_ACTION_OPTIONS:
+      // TODO: Implement options screen
+      break;
+    case MENU_ACTION_QUIT:
+      *running = false;
+      break;
+    case MENU_ACTION_NONE:
+    default:
+      break;
+    }
+
+  // Reset action after handling
+  menu->last_action = MENU_ACTION_NONE;
+}
+
+void
+menu_render_handler (void *screen_data)
+{
+  menu_screen_t *menu = (menu_screen_t *)screen_data;
+  if (!menu)
+    return;
+
+  menu_screen_draw (menu);
 }

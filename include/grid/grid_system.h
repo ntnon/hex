@@ -73,10 +73,10 @@ typedef struct {
 
     int num_neighbors;
 
-    bool (*is_valid_cell)(const grid_t* grid, grid_cell_t cell);
+    bool (*is_valid_cell)(const grid_t* grid, grid_cell_t check_cell);
 
     void
-    (*draw_cell_with_colors) (const grid_t *grid, grid_cell_t cell, Color fill_color,
+    (*render_cell) (const grid_t *grid, grid_cell_t cell, Color fill_color,
                            Color edge_color);
     void(*grid_free)(grid_t* grid);
 
@@ -113,6 +113,9 @@ grid_t* grid_create(grid_type_e type, layout_t layout, int size);
 void grid_free(grid_t* grid);
 
 void draw_grid(const grid_t *grid);
+
+bool is_valid_cell(const grid_t* grid, grid_cell_t check_cell);
+
 
 /**
  * @brief The public instance of the v-table for hexagonal grids.

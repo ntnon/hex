@@ -1,77 +1,82 @@
-#include "UI/menu.h"
-#include "game/game.h"
-#include "game/screen_manager.h"
+#define RAYGUI_IMPLEMENTATION
+#include "../include/third_party/raygui.h"
+#include "controller/input_controller.h"
 #include "raylib.h"
+#include "screen/game_screen.h"
+#include "screen/menu_screen.h"
+#include "screen/pause_screen.h"
+#include "screen/screen_manager.h"
+#include <stdbool.h>
 #include <stdio.h>
+
 int
 main (void)
 {
+  // Window initialization
+  const int initial_width = 800;
+  const int initial_height = 600;
 
-  // Initialization
-  int screen_width = 800;
-  int screen_height = 400;
   SetConfigFlags (FLAG_WINDOW_HIGHDPI);
   SetConfigFlags (FLAG_WINDOW_RESIZABLE);
   SetTargetFPS (60);
-  InitWindow (screen_width, screen_height, "hex");
+  InitWindow (initial_width, initial_height, "HexHex");
 
-  game_t *game;
-  game_init (game);
+  // Initialize core systems
+  screen_manager_t screen_mgr;
+  screen_manager_init (&screen_mgr);
 
-  screen_manager_t mgr;
-  screen_manager_init (&mgr);
+  input_controller_t input_ctrl;
+  input_controller_init (&input_ctrl);
 
-  menu_screen_t menu;
-  menu_screen_init (&menu);
+  // Initialize screen data
+  menu_screen_t menu_screen;
+  menu_screen_init (&menu_screen);
 
-  while (!WindowShouldClose ())
+  game_screen_t game_screen;
+  game_screen_init (&game_screen);
+
+  pause_screen_t pause_screen;
+  pause_screen_init (&pause_screen);
+
+  // Register screens with input controller
+  input_controller_register_screen (&input_ctrl, SCREEN_MENU,
+                                    menu_input_handler, menu_action_handler,
+                                    menu_render_handler, &menu_screen);
+
+  input_controller_register_screen (&input_ctrl, SCREEN_GAME,
+                                    game_input_handler, game_action_handler,
+                                    game_render_handler, &game_screen);
+
+  input_controller_register_screen (&input_ctrl, SCREEN_PAUSE,
+                                    pause_input_handler, pause_action_handler,
+                                    pause_render_handler, &pause_screen);
+
+  // Set initial screen
+  screen_manager_switch (&screen_mgr, SCREEN_MENU);
+
+  // Main game loop
+  bool running = true;
+  while (running && !WindowShouldClose ())
     {
-      screen_width = GetScreenWidth ();
-      screen_height = GetScreenHeight ();
 
-      board_input_controller_update (game->&input_ctrl, game->board, screen_width,
-                                     screen_height);
+      // Handle input and actions for current screen
+      input_controller_update (&input_ctrl, &screen_mgr, &running);
+
+      // Render current screen
       BeginDrawing ();
-
       ClearBackground (RAYWHITE);
-      switch (mgr.current)
-        {
-        case SCREEN_MENU:
-          menu_action_t action = menu_screen_update (
-              &menu, GetMousePosition (), IsMouseButtonDown (0));
-          menu_screen_draw (&menu);
-          menu_screen_update (&menu, GetMousePosition (),
-                              IsMouseButtonDown (0));
-          menu_screen_draw (&menu);
-          if (action == MENU_ACTION_START)
-            mgr.current = SCREEN_GAME;
-          else if (action == MENU_ACTION_QUIT)
-            CloseWindow (); // Or set a running flag to false
-          break;
-        case SCREEN_GAME:
-          render_game (game);
 
-          // draw_game();
-          break;
-        case SCREEN_PAUSE:
-          // update_pause();
-          // draw_pause();
-          break;
-        case SCREEN_GAMEOVER:
-          // update_gameover();
-          // draw_gameover();
-          break;
-        default:
-          break;
-        }
+      input_controller_render (&input_ctrl, &screen_mgr);
 
       EndDrawing ();
     }
 
-  //
-  free_game (game);
+  // Cleanup
+  game_screen_unload (&game_screen);
+  menu_screen_unload (&menu_screen);
+  pause_screen_unload (&pause_screen);
+  input_controller_destroy (&input_ctrl);
 
   CloseWindow ();
-
   return 0;
 }

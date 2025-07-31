@@ -2,24 +2,25 @@
 #include "raylib.h"
 #include <stdio.h>
 
-#define ZOOM_MIN 0.1f
-#define ZOOM_MAX 3.0f
-
 void
 board_input_controller_init (board_input_controller_t *ctrl)
 {
   ctrl->pan = (Vector2){ 0 };
   ctrl->zoom = 1.0f;
   ctrl->has_hovered_cell = false;
+  ctrl->dragging = false;
+  ctrl->drag_button = MOUSE_BUTTON_LEFT;
 }
+
+// Add these to your controller struct:
+// bool dragging;
+// int drag_button;
 
 void
 board_input_controller_update (board_input_controller_t *ctrl,
                                const board_t *board, int screen_width,
                                int screen_height)
 {
-  // Zoom with mouse wheel
-
   float wheel = GetMouseWheelMove ();
   if (wheel != 0.0f)
     {
@@ -30,15 +31,36 @@ board_input_controller_update (board_input_controller_t *ctrl,
         ctrl->zoom = ZOOM_MAX;
     }
 
-  // Pan with middle mouse drag
-  if (IsMouseButtonDown (MOUSE_BUTTON_MIDDLE))
+  // Start drag on mouse button down
+  if (!ctrl->dragging
+      && (IsMouseButtonPressed (MOUSE_BUTTON_LEFT)
+          || IsMouseButtonPressed (MOUSE_BUTTON_MIDDLE)
+          || IsMouseButtonPressed (MOUSE_BUTTON_RIGHT)))
+    {
+      if (IsMouseButtonPressed (MOUSE_BUTTON_LEFT))
+        ctrl->drag_button = MOUSE_BUTTON_LEFT;
+      else if (IsMouseButtonPressed (MOUSE_BUTTON_MIDDLE))
+        ctrl->drag_button = MOUSE_BUTTON_MIDDLE;
+      else
+        ctrl->drag_button = MOUSE_BUTTON_RIGHT;
+      ctrl->dragging = true;
+    }
+
+  // End drag on mouse button up
+  if (ctrl->dragging && IsMouseButtonReleased (ctrl->drag_button))
+    {
+      ctrl->dragging = false;
+    }
+
+  // Pan while dragging
+  if (ctrl->dragging)
     {
       Vector2 delta = GetMouseDelta ();
       ctrl->pan.x += delta.x;
       ctrl->pan.y += delta.y;
     }
 
-  // Hover detection
+  // Hover detection (unchanged)
   Vector2 mouse = GetMousePosition ();
   point_t board_pos
       = { .x = (mouse.x - screen_width / 2.0f - ctrl->pan.x) / ctrl->zoom,
@@ -53,4 +75,11 @@ board_input_controller_update (board_input_controller_t *ctrl,
     {
       ctrl->has_hovered_cell = false;
     }
+}
+
+void
+board_input_controller_deactivate (board_input_controller_t *ctrl)
+{
+  ctrl->dragging = false;
+  ctrl->has_hovered_cell = false;
 }

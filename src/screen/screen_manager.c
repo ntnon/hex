@@ -1,9 +1,9 @@
-#include "../../include/game/screen_manager.h"
+#include "../../include/screen/screen_manager.h"
 
 void
 screen_manager_init (screen_manager_t *manager)
 {
-  manager->current = SCREEN_GAME;
+  manager->current = SCREEN_MENU;
 }
 
 void

@@ -1,5 +1,6 @@
 #ifndef MENU_H
 #define MENU_H
+#include "screen_manager.h"
 
 #include "raylib.h"
 
@@ -19,11 +20,16 @@ typedef struct {
 typedef struct {
     menu_button_t buttons[3];
     int button_count;
+    menu_action_t last_action;
 } menu_screen_t;
 
 void menu_screen_init(menu_screen_t *menu);
 menu_action_t menu_screen_update(menu_screen_t *menu, Vector2 mouse, bool mouse_pressed);
 void menu_screen_draw(const menu_screen_t *menu);
 void menu_screen_unload(menu_screen_t *menu);
+
+// Input and action handlers for integration with input controller
+void menu_input_handler(void *screen_data);
+void menu_action_handler(void *screen_data, screen_manager_t *mgr, bool *running);void menu_render_handler(void *screen_data);
 
 #endif // MENU_H

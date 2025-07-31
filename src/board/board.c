@@ -1,4 +1,4 @@
-#include "../../include/board/renderer.h"
+#include "../../include/board/board.h"
 #include "../../include/utility.h"
 #include <stdio.h>
 
@@ -15,7 +15,7 @@ const orientation_t layout_pointy_t = { .f0 = 1.732050808,
                                         .start_angle = 0.5 };
 layout_t layout = {
   .orientation = layout_pointy_t,
-  .size = { 20.0, 20.0 }, // Hex size (adjust as needed)
+  .size = { 70.0, 70.0 }, // Hex size (adjust as needed)
   .origin = { 0.0, 0.0 }  // Center of the screen (adjust as needed)
 };
 
@@ -24,11 +24,15 @@ board_create (grid_type_e grid_type, int radius)
 {
   board_t *board = malloc (sizeof (board_t));
   if (!board)
-    return NULL; // Always check malloc
+    {
+      fprintf (stderr, "Failed to allocate memory for board\n");
+      return NULL;
+    }
+
   board->pool_manager = pool_manager_create ();
   board->tile_manager = tile_manager_create ();
   board->tile_to_pool = tile_to_pool_map_create ();
-  board->grid = grid_create (GRID_TYPE_HEXAGON, layout, radius);
+  board->grid = grid_create (grid_type, layout, radius);
   return board;
 }
 
@@ -107,7 +111,7 @@ add_tile (board_t *board, tile_t *tile)
   get_neighbor_pools (board, tile, candidate_pools, 6);
 
   size_t num_filtered_pools = pool_map_filter_by_tile_type (
-      candidate_pools, 6, tile->type, filtered_candidate_pools,
+      candidate_pools, 6, tile->data.type, filtered_candidate_pools,
       MAX_POOL_CANDIDATES);
 
   if (num_filtered_pools == 0)
@@ -165,7 +169,7 @@ randomize_board (board_t *board)
         {
           // In randomize_board()
           tile_t *tile = tile_create_random_ptr (cells[i]);
-          if (tile->type != TILE_EMPTY)
+          if (tile->data.type != TILE_EMPTY)
             { // Only add non-empty tiles
               add_tile (board, tile);
             }
@@ -177,4 +181,5 @@ randomize_board (board_t *board)
         }
     }
 }
+
 void cycle_tile_type (board_t *board, tile_t *tile);

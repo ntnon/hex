@@ -1,15 +1,14 @@
-#include "inventory.h"
-#include "../../include/board/renderer.h"
+#include "../board/board.h"
+#include "../game/inventory.h"
+//#include "../controller/game_controller.h"
+
+#include <stdbool.h>
 
 typedef struct {
-inv_t   inventory;
-board_t board;
-board_input_controller_t *input_ctrl;
-} game_t;
+    board_t *board;
+    inventory_t *inventory;
+}game_t;
 
-void game_init(game_t *game);
-void game_update(game_t *game);
-void game_render(game_t *game);
+game_t *game_create(void);
 
-void
-free_game (game_t *game);
+void free_game(game_t* game);

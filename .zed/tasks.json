@@ -48,8 +48,15 @@
     "tags": []
   },
   {
+    "label": "Clean, Premake, Entr",
+    "command": "make clean &&cd build && ./premake5.osx gmake2 && cd .. && ./entr.sh",
     "shell": "system",
-    "label": "Make hexhex",
-    "command": "make clean && make"
+    "reveal": "always"
+  },
+  {
+    "label": "premake, clean, bear",
+    "command": "cd build && ./premake5.osx gmake2 && cd .. && make clean && make && bear -- make",
+    "shell": "system",
+    "reveal": "always"
   }
 ]

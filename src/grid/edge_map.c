@@ -59,7 +59,7 @@ edge_map_free (edge_map_entry_t **map_root)
   }
 }
 
-static void
+void
 corners_to_edges (point_t corners[6], edge_map_entry_t **edge_map_root)
 {
   for (int i = 0; i < 6; ++i)

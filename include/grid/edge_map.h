@@ -33,9 +33,11 @@ edge_map_merge (edge_map_entry_t **dst_map, edge_map_entry_t *src_map);
  * @param corners         Array of 6 corner points defining the cell.
  * @param edge_map_root   Pointer to the root of the edge hash table.
  */
- static void
+void
  corners_to_edges(point_t corners[6], edge_map_entry_t **edge_map_root);
 
+ void
+ edge_map_clear (edge_map_entry_t **map_root);
 
 //utility
 

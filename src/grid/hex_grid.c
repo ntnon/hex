@@ -1,4 +1,5 @@
 #include "../../include/grid/grid_system.h"
+#include "../../include/renderer.h"
 #include "raylib.h"
 #include <math.h>
 #include <stdio.h>
@@ -81,30 +82,6 @@ distance (grid_cell_t a, grid_cell_t b)
 }
 
 static void
-draw_cell_with_colors (const grid_t *grid, grid_cell_t cell, Color fill_color,
-                       Color edge_color)
-{
-  int corners_count = 6; // For hexagons
-  point_t corners[6];
-  grid->vtable->get_corners (grid, cell, corners);
-
-  Vector2 verts[6];
-  for (int j = 0; j < corners_count; ++j)
-    {
-      verts[j].x = (float)corners[j].x;
-      verts[j].y = (float)corners[j].y;
-    }
-
-  DrawTriangleFan (verts, corners_count, fill_color);
-
-  for (int j = 0; j < corners_count; ++j)
-    {
-      int next = (j + 1) % corners_count;
-      DrawLineV (verts[j], verts[next], edge_color);
-    }
-}
-
-static void
 get_corners (const grid_t *grid, grid_cell_t cell, point_t corners[6])
 {
   const layout_t *layout = &grid->layout;
@@ -175,13 +152,16 @@ draw_grid (const grid_t *grid)
 {
   for (size_t i = 0; i < grid->num_cells; ++i)
     {
-      draw_cell_with_colors (grid, grid->cells[i], LIGHTGRAY, GRAY);
+      render_hex_cell (grid, grid->cells[i], LIGHTGRAY, GRAY);
     }
 }
 
 bool
 is_valid_cell (const grid_t *grid, grid_cell_t check_cell)
 {
+  if (!grid)
+    return false;
+
   if (check_cell.type != grid->cells->type)
     return false;
 
@@ -219,7 +199,7 @@ const grid_vtable_t hex_grid_vtable = {
   .draw_grid = draw_grid,
   .num_neighbors = 6,
   .is_valid_cell = is_valid_cell,
-  .draw_cell_with_colors = draw_cell_with_colors,
+  .render_cell = render_hex_cell,
   .grid_free = grid_free,
 };
 /*

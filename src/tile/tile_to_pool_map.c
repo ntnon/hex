@@ -89,11 +89,5 @@ tile_to_pool_map_reassign_pool (tile_to_pool_entry_t **tile_to_pool_map,
       }
   }
 
-  // Update accepted tile types in target pool if needed
-  for (size_t i = 0; i < from_pool->num_accepted_tile_types; i++)
-    {
-      pool_add_accepted_tile_type (to_pool, from_pool->accepted_tile_types[i]);
-    }
-
   // Debug output
 }

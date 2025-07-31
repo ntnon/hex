@@ -1,106 +1,179 @@
-#include "../../include/game/inventory.h"
-#include "../../include/grid/grid_types.h"
+#include "../include/game/inventory.h"
+#include "../include/third_party/kvec.h"
+// #include "../../include/grid/grid_types.h"
+#include "raylib.h"
+#include <stdio.h>
 #include <stdlib.h>
 
-inv_item_t *
-create_inv_item (tile_t *tile)
+tile_data_t
+inventory_create_item (void)
 {
-  inv_item_t *item = malloc (sizeof (inv_item_t));
-  item->tile = tile;
-  return item;
+  return tile_data_create_random ();
 }
 
-void
-inventory_set_index (inv_t *inv, int index)
+int
+inventory_get_size (inventory_t *inv)
 {
-  if (index >= 0 && index < inv->size)
+  return inv->items.m;
+}
+
+// Set the selected index in the inventory
+void
+inventory_set_index (inventory_t *inv, int index)
+{
+  if (inv == NULL)
+    {
+      printf ("Inventory is NULL.\n");
+      return; // Handle NULL inventory
+    }
+  if (index >= 0 && index < inventory_get_size (inv))
     {
       inv->selected_index = index;
     }
 }
 
-inv_item_t *
-inventory_create_item ()
+void
+inventory_fill (inventory_t *inv)
 {
-  grid_cell_t cell = { .type = GRID_TYPE_HEXAGON, .coord = { 0, 0, 0 } };
-  tile_t *tile = tile_create_random_ptr (cell);
-  return create_inv_item (tile);
-}
-
-inv_item_t **
-inventory_create_item_array (int size)
-{
-  inv_item_t **item_array = malloc (size * sizeof (inv_item_t *));
-  for (int i = 0; i < size; i++)
+  if (inv == NULL)
     {
-      item_array[i] = inventory_create_item ();
+      printf ("Inventory is NULL.\n");
+      return; // Handle NULL inventory
     }
-  return item_array;
+
+  for (int i = 0; i < inventory_get_size (inv); i++)
+    {
+      inv->items.a[i] = inventory_create_item ();
+    }
 }
 
-inv_t *
-create_inventory (int size)
+// Create the inventory
+inventory_t *
+inventory_create (int size)
 {
-  inv_t *inventory = malloc (sizeof (inv_t));
-  inventory->item_array = inventory_create_item_array (size);
-  inventory->size = size;
+  if (size <= 0)
+    {
+      printf ("Invalid inventory size.\n");
+      return NULL; // Handle invalid size
+    }
+
+  inventory_t *inventory = malloc (sizeof (inventory_t));
+  if (inventory == NULL)
+    {
+      printf ("Failed to allocate memory for inventory.\n");
+      return NULL; // Handle memory allocation failure
+    }
+
+  kv_init (inventory->items);
+  inventory_fill (inventory);
+
   inventory->selected_index = -1;
+
+  // Fill the inventory with items
+
   return inventory;
 }
 
 void
-inventory_render (inv_t *inv)
+inventory_destroy_item (inventory_t *inventory, int index)
 {
+}
+
+void
+inventory_use_selected (inventory_t *inv)
+{
+  int index = inv->selected_index;
+  if (!inv || index < 0 || index >= inventory_get_size (inv))
+    return;
+
+  // Remove the item
+  kv_remove_at (tile_data_t, inv->items, index);
+
+  // Adjust selected_index
+  inv->selected_index = -1;
+}
+
+void
+free_inventory (inventory_t *inv)
+{
+  printf ("Inventory freed\n");
+  if (!inv)
+    return;
+  kv_destroy (inv->items); // destroy the inventory items
+  free (inv);              // <-- You were missing this
+}
+
+// Centralized slot rectangle calculation
+Rectangle
+inventory_get_slot_rect (inventory_t *inv, int i)
+{
+  int size = inventory_get_size (inv);
   int screen_width = GetScreenWidth ();
   int screen_height = GetScreenHeight ();
-
   int slot_size = 64;
   int slot_padding = 12;
-  int total_width = inv->size * slot_size + (inv->size - 1) * slot_padding;
+  int total_width = size * slot_size + (size - 1) * slot_padding;
   int start_x = (screen_width - total_width) / 2;
   int y = screen_height - slot_size - 24;
+  int x = start_x + i * (slot_size + slot_padding);
+  return (Rectangle){ x, y, slot_size, slot_size };
+}
 
-  for (int i = 0; i < inv->size; i++)
+// Render a single inventory item
+void
+inventory_render_item (inventory_t *inv, int i, bool selected)
+{
+  Rectangle slot = inventory_get_slot_rect (inv, i);
+  Color fill = tile_get_color (inv->items.a[i]);
+
+  DrawRectangleRec (slot, fill);
+
+  if (selected)
     {
-      Rectangle slot = { start_x + i * (slot_size + slot_padding), y,
-                         slot_size, slot_size };
-      Color fill = (inv->item_array[i] && inv->item_array[i]->tile)
-                       ? tile_get_color (inv->item_array[i]->tile)
-                       : LIGHTGRAY;
-
-      DrawRectangleRec (slot, fill);
-
-      if (i == inv->selected_index)
-        {
-          DrawRectangleLinesEx (slot, 4, GOLD);
-        }
-      else
-        {
-          DrawRectangleLinesEx (slot, 2, DARKGRAY);
-        }
+      DrawRectangleLinesEx (slot, 4, GOLD);
+    }
+  else
+    {
+      DrawRectangleLinesEx (slot, 2, DARKGRAY);
     }
 }
 
+// Render the entire inventory and handle click selection
 void
-inventory_destroy_item (inv_item_t *item)
+inventory_render (inventory_t *inv)
 {
-  if (item)
+  Vector2 mouse = GetMousePosition ();
+  bool mouse_clicked = IsMouseButtonPressed (MOUSE_BUTTON_LEFT);
+
+  for (int i = 0; i < inventory_get_size (inv); i++)
     {
-      if (item->tile)
+      Rectangle slot = inventory_get_slot_rect (inv, i);
+
+      // Handle click selection
+      if (mouse_clicked && CheckCollisionPointRec (mouse, slot))
         {
-          free (item->tile); // Assuming you have a tile_destroy function
+          inv->selected_index = i;
         }
-      free (item);
+
+      inventory_render_item (inv, i, i == inv->selected_index);
     }
 }
 
-void
-free_inventory (inv_t *inv)
+// Hit test: is mouse over any inventory slot?
+bool
+inventory_hit_test (inventory_t *inv, Vector2 mouse)
 {
-  for (int i = 0; i < inv->size; i++)
+  for (int i = 0; i < inventory_get_size (inv); i++)
     {
-      inventory_destroy_item (inv->item_array[i]);
+      Rectangle slot = inventory_get_slot_rect (inv, i);
+      if (CheckCollisionPointRec (mouse, slot))
+        return true;
     }
-  free (inv->item_array);
-  free (inv);
+  return false;
+}
+
+void
+inventory_handle_input (inventory_t *inv)
+{
+  printf ("hi");
 }

@@ -1,11 +1,11 @@
-#include "../../include/board/renderer.h"
-#include "../../include/grid/grid_cell_utils.h"
+#include "../include/renderer.h"
+#include "../include/grid/grid_cell_utils.h"
 #include "raylib.h"
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
 
-#define TILE_CACHE_SIZE 10000 // Maximum size for each tile
+#define TILE_CACHE_SIZE 1000 // Maximum size for each tile
 
 // Structure to hold a cached tile
 typedef struct
@@ -29,10 +29,10 @@ static Vector2 gridCacheMin = { 0 }; // overall grid bounding box minimum
 // Helper: Draw each tile from the tile map; user_data is a pointer to the
 // grid.
 static void
-draw_tile_wrapper (tile_map_entry_t *entry, void *user_data)
+draw_tile_wrapper (tile_t *tile, void *user_data)
 {
   const grid_t *grid = (const grid_t *)user_data;
-  renderer_draw_tile (entry->tile, grid);
+  render_tile (tile, grid);
 }
 
 /*
@@ -120,8 +120,8 @@ update_tiled_grid_cache (const board_t *board)
           cam.zoom = 1.0f;
           BeginMode2D (cam);
           // Render every tile from the board.
-          tile_map_foreach (board->tile_manager->tiles, draw_tile_wrapper,
-                            (void *)grid);
+          tile_map_foreach_tile (board->tile_manager->tiles, draw_tile_wrapper,
+                                 (void *)grid);
           EndMode2D ();
           EndTextureMode ();
         }
@@ -130,7 +130,7 @@ update_tiled_grid_cache (const board_t *board)
 }
 
 void
-renderer_draw_board (const board_t *board)
+render_board (const board_t *board)
 {
   if (!board)
     {
@@ -169,7 +169,7 @@ renderer_draw_board (const board_t *board)
     }
 }
 void
-renderer_draw_tile (const tile_t *tile, const grid_t *grid)
+render_tile (const tile_t *tile, const grid_t *grid)
 {
 
   if (!tile)
@@ -187,15 +187,15 @@ renderer_draw_tile (const tile_t *tile, const grid_t *grid)
       printf ("ERROR: grid->vtable is null\n");
       return;
     }
-  if (!grid->vtable->draw_cell_with_colors)
+  if (!grid->vtable->render_cell)
     {
       printf ("ERROR: grid->vtable->draw_cell_with_colors is null\n");
       return;
     }
 
   // Draw the colored hex cell.
-  grid->vtable->draw_cell_with_colors (grid, tile->cell, tile_get_color (tile),
-                                       BLANK);
+  grid->vtable->render_cell (grid, tile->cell, tile_get_color (tile->data),
+                             BLANK);
 
   // Compute the center of the hex cell using the to_pixel function.
   point_t center = grid->vtable->to_pixel (grid, tile->cell);
@@ -210,41 +210,105 @@ renderer_draw_tile (const tile_t *tile, const grid_t *grid)
 }
 
 void
-renderer_draw_hover_info (const board_t *board,
-                          const board_input_controller_t *ctrl)
+render_hex_cell (const grid_t *grid, grid_cell_t cell, Color fill_color,
+                 Color edge_color)
 {
-  if (!ctrl->has_hovered_cell)
-    return;
-  tile_t *tile = cell_to_tile_ptr (board->tile_manager, ctrl->hovered_cell);
-  if (!tile)
-    return;
-  Vector2 mouse = GetMousePosition ();
-  char info[128];
+  int corners_count = 6;
+  point_t corners[6];
+  grid->vtable->get_corners (grid, cell, corners);
 
-  pool_t *pool = tile_to_pool_map_get_pool_by_tile (board->tile_to_pool, tile);
-  int pool_id = pool ? pool->id : -1;
-  int pool_max_friendly_neighbors = pool ? pool->highest_n : -1;
+  Vector2 verts[6];
+  for (int j = 0; j < corners_count; ++j)
+    {
+      verts[j].x = (float)corners[j].x;
+      verts[j].y = (float)corners[j].y;
+    }
 
-  snprintf (info, sizeof (info), "Type: %d\nValue: %d\nPool: %d\nMFN: %d",
-            tile->type, tile->value, pool_id, pool_max_friendly_neighbors);
+  DrawTriangleFan (verts, corners_count, fill_color);
 
-  int height = 60, width = 120;
-  DrawRectangle (mouse.x + 16, mouse.y + 16, width, height, Fade (GRAY, 0.9f));
-  DrawText (info, mouse.x + 24, mouse.y + 24, 16, BLACK);
+  for (int j = 0; j < corners_count; ++j)
+    {
+      int next = (j + 1) % corners_count;
+      DrawLineV (verts[j], verts[next], edge_color);
+    }
 }
 
+// void
+// render_hover_info (const board_t *board, const board_input_controller_t
+// *ctrl)
+// {
+//   if (!ctrl->has_hovered_cell)
+//     return;
+//   tile_t *tile = cell_to_tile_ptr (board->tile_manager, ctrl->hovered_cell);
+//   if (!tile)
+//     return;
+//   Vector2 mouse = GetMousePosition ();
+//   char info[128];
+
+//   pool_t *pool = tile_to_pool_map_get_pool_by_tile (board->tile_to_pool,
+//   tile); int pool_id = pool ? pool->id : -1; int pool_max_friendly_neighbors
+//   = pool ? pool->highest_n : -1;
+
+//   snprintf (info, sizeof (info), "Type: %d\nValue: %d\nPool: %d\nMFN: %d",
+//             tile->data.type, tile->data.value, pool_id,
+//             pool_max_friendly_neighbors);
+
+//   int height = 60, width = 120;
+//   DrawRectangle (mouse.x + 16, mouse.y + 16, width, height, Fade (GRAY,
+//   0.9f)); DrawText (info, mouse.x + 24, mouse.y + 24, 16, BLACK);
+// }
+
+// void
+// render (const board_t *board, const board_input_controller_t *input_ctrl)
+// {
+
+//   BeginMode2D ((Camera2D){
+//       .offset = (Vector2){ GetScreenWidth () / 2.0f + input_ctrl->pan.x,
+//                            GetScreenHeight () / 2.0f + input_ctrl->pan.y },
+//       .zoom = input_ctrl->zoom,
+//       .rotation = 0.0f,
+//       .target = (Vector2){ 0, 0 } });
+//   render_board (board);
+//   EndMode2D ();
+//   render_hover_info (board, input_ctrl);
+// }
+
 void
-renderer_draw (const board_t *board,
-               const board_input_controller_t *input_ctrl)
+tile_render (const tile_t *tile, const grid_t *grid)
 {
 
-  BeginMode2D ((Camera2D){
-      .offset = (Vector2){ GetScreenWidth () / 2.0f + input_ctrl->pan.x,
-                           GetScreenHeight () / 2.0f + input_ctrl->pan.y },
-      .zoom = input_ctrl->zoom,
-      .rotation = 0.0f,
-      .target = (Vector2){ 0, 0 } });
-  renderer_draw_board (board);
-  EndMode2D ();
-  renderer_draw_hover_info (board, input_ctrl);
+  if (!tile)
+    {
+      printf ("ERROR: tile is null\n");
+      return;
+    }
+  if (!grid)
+    {
+      printf ("ERROR: grid is null\n");
+      return;
+    }
+  if (!grid->vtable)
+    {
+      printf ("ERROR: grid->vtable is null\n");
+      return;
+    }
+  if (!grid->vtable->render_cell)
+    {
+      printf ("ERROR: grid->vtable->draw_cell_with_colors is null\n");
+      return;
+    }
+  // Draw the colored hex cell.
+  grid->vtable->render_cell (grid, tile->cell, tile_get_color (tile->data),
+                             BLANK);
+
+  // Compute the center of the hex cell using the to_pixel function.
+  point_t center = grid->vtable->to_pixel (grid, tile->cell);
+
+  // Create a string representing the hex coordinates.
+  char coord_text[32];
+  grid_cell_to_string (&tile->cell, coord_text, sizeof (coord_text));
+
+  // Draw the coordinate text centered on the cell.
+  // Adjust the x and y values (here subtracting 10) as needed.
+  DrawText (coord_text, (int)center.x - 10, (int)center.y - 10, 8, BLACK);
 }

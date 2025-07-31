@@ -1,3 +1,6 @@
+#ifndef BOARD_H
+#define BOARD_H
+
 #include "../grid/grid_system.h"
 #include "../tile/tile_manager.h"
 #include "../tile/pool_manager.h"
@@ -27,4 +30,9 @@ void remove_tile(board_t *board, tile_t* tile);
 
 void cycle_tile_type(board_t *board, tile_t *tile);
 
+bool
+valid_tile (board_t *board, tile_t *tile);
+
 //static pool_t* find_new_tile_pool_candidates(board_t *board, tile_t *tile);
+
+#endif /* BOARD_H */

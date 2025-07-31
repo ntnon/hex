@@ -6,28 +6,24 @@
 #ifndef TILE_POOL_H
 #define TILE_POOL_H
 
-#include "../third_party/uthash.h"
 #include "../grid/grid_types.h" // For grid_cell_t
 #include "../tile/tile_map.h"
 #include "../grid/edge_map.h"
 #include "tile.h"
-#include "raylib.h"
+#include <stdlib.h>
+
 // --- Enums ---
 /**
  * @brief Enum representing the type or color of a tile pool.
  */
- #define MAX_ACCEPTED_TILE_TYPES 8
 
  typedef struct tile_pool {
      int id;
-     bool is_mixed;
-     Color color;
-     tile_t* center;
      int highest_n;
+     grid_cell_t center;
      edge_map_entry_t *edges;
      tile_map_t *tiles;
-     tile_type_t accepted_tile_types[MAX_ACCEPTED_TILE_TYPES]; // <-- new field
-     size_t num_accepted_tile_types;                          // <-- new field
+     tile_type_t accepted_tile_type;
  } pool_t;
 
 // --- Pool Lifecycle Functions ---
@@ -43,12 +39,6 @@
 pool_t * pool_create (void);
 int pool_score(const pool_t *pool);
 
-void pool_add_accepted_tile_type(pool_t* pool, tile_type_t type);
-
-/**
- * @brief Frees all memory associated with a tile pool, including its members.
- * @param pool A pointer to the pool_t to be freed.
- */
 void pool_free(pool_t* pool);
 
 // --- Pool Membership Functions ---
@@ -82,6 +72,22 @@ bool pool_accepts_tile_type(const pool_t *pool, tile_type_t type);
 
 void pool_update_edges (const grid_t *grid, pool_t *pool);
 
+void pool_update_center(pool_t *pool);
+
 int compare_pools_by_score(const void *a, const void *b);
+
+int
+pool_find_tile_friendly_neighbor_count (tile_map_t *tile_map,
+                                        const tile_t *tile, const grid_t *grid);
+
+int
+pool_find_max_tile_neighbors_in_pool (pool_t *pool, const grid_t *grid);
+
+void
+pool_calculate_score (pool_t *pool, const grid_t *grid);
+
+void
+pool_add_tile (pool_t *pool, const tile_t *tile_ptr);
+
 
 #endif // TILE_POOL_H

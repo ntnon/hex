@@ -60,7 +60,7 @@ pool_map_add (pool_map_t *map, pool_t *pool)
   pool_map_entry_t *existing = pool_map_find_by_id (map, pool->id);
   if (existing)
     {
-      printf (stderr, "ERROR: Duplicate pool ID %d\n", pool->id);
+      fprintf (stderr, "ERROR: Duplicate pool ID %d\n", pool->id);
       HASH_DEL (map->root, existing);
       free (existing);
       map->num_pools--;

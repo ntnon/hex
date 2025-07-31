@@ -14,14 +14,40 @@ pool_create ()
 
   pool->id = -1;
   // Since we're not given a tile here, we don't set accepted_tile_types.
-  pool->num_accepted_tile_types = 0;
   // Create the pool's internal tile map container.
   pool->tiles = tile_map_create ();
   pool->edges = edge_map_create ();
-  pool->is_mixed = false;
   pool->highest_n = 0;
+  pool->accepted_tile_type = TILE_UNDEFINED; // Default to empty type.
 
   return pool;
+}
+
+void
+pool_update_center (pool_t *pool)
+{
+  if (!pool || !pool->tiles || pool->tiles->num_tiles == 0)
+    return;
+
+  // Find the center tile based on the average position of all tiles in the
+  // pool.
+  tile_map_entry_t *entry, *tmp;
+  grid_cell_t center_cell = { 0 };
+  int total_x = 0, total_y = 0, count = 0;
+
+  HASH_ITER (hh, pool->tiles->root, entry, tmp)
+  {
+    total_x += entry->cell.coord.square.x;
+    total_y += entry->cell.coord.square.y;
+    count++;
+  }
+
+  if (count > 0)
+    {
+      center_cell.coord.square.x = total_x / count;
+      center_cell.coord.square.y = total_y / count;
+      pool->center = center_cell;
+    }
 }
 
 bool
@@ -31,57 +57,15 @@ pool_contains_tile (const pool_t *pool, const tile_t *tile_ptr)
 }
 
 // Helper: Returns true if the tile's type is allowed in the pool.
-static bool
-pool_tile_type_allowed (pool_t *pool, const tile_t *tile)
-{
-  // If no accepted type has been recorded, allow it.
-  if (pool->num_accepted_tile_types == 0)
-    return true;
 
-  for (size_t i = 0; i < pool->num_accepted_tile_types; i++)
-    {
-      if (pool->accepted_tile_types[i] == tile->type)
-        return true;
-    }
-  return false;
-}
-
-// Helper: Updates the pool's accepted tile types with the new tile's type.
-static void
-pool_update_accepted_tile_types (pool_t *pool, const tile_t *tile)
+bool
+pool_accepts_tile_type (const pool_t *pool, tile_type_t type)
 {
-  if (pool->num_accepted_tile_types == 0)
-    {
-      pool->accepted_tile_types[0] = tile->type;
-      pool->num_accepted_tile_types = 1;
-    }
-  else
-    {
-      bool found = false;
-      for (size_t i = 0; i < pool->num_accepted_tile_types; i++)
-        {
-          if (pool->accepted_tile_types[i] == tile->type)
-            {
-              found = true;
-              break;
-            }
-        }
-      if (!found)
-        {
-          if (pool->num_accepted_tile_types < MAX_ACCEPTED_TILE_TYPES)
-            {
-              pool->accepted_tile_types[pool->num_accepted_tile_types++]
-                  = tile->type;
-            }
-          else
-            {
-              printf ("Error: Maximum number of accepted tile types reached "
-                      "in pool %d.\n",
-                      pool->id);
-            }
-          pool->is_mixed = true;
-        }
-    }
+  if (pool->accepted_tile_type == TILE_UNDEFINED)
+    return true; // If no specific type is set, allow all types.
+
+  // Check if the tile's type matches the pool's accepted type.
+  return pool->accepted_tile_type == type;
 }
 
 // Main function: Adds a tile to a pool if it passes validations.
@@ -98,18 +82,21 @@ pool_add_tile_to_pool (pool_t *pool, const tile_t *tile)
       return false;
     }
 
-  if (pool->num_accepted_tile_types != 0
-      && !pool_tile_type_allowed (pool, tile))
+  if (!pool_accepts_tile_type (pool, tile->data.type))
     {
-      printf ("Tile type %d not allowed in pool %d\n", tile->type, pool->id);
+      printf ("Tile type %d not allowed in pool %d\n", tile->data.type,
+              pool->id);
       return false;
     }
 
   // Add the tile to the pool's internal tile map.
   tile_map_add (pool->tiles, (tile_t *)tile);
 
-  // Update the accepted tile types in the pool.
-  pool_update_accepted_tile_types (pool, tile);
+  if (pool->accepted_tile_type == TILE_UNDEFINED)
+    {
+      // If the pool has no accepted tile type, set it to the tile's type.
+      pool->accepted_tile_type = tile->data.type;
+    }
 
   return true;
 }
@@ -146,18 +133,6 @@ compare_pools_by_score (const void *a, const void *b)
   return score_b - score_a;
 }
 
-bool
-pool_accepts_tile_type (const pool_t *pool, tile_type_t type)
-{
-  for (size_t i = 0; i < pool->num_accepted_tile_types; ++i)
-    {
-      if (pool->accepted_tile_types[i] == type)
-        return true;
-    }
-  return false;
-}
-// UPDATE POOL STATE
-
 void
 pool_update_edges (const grid_t *grid, pool_t *pool)
 {
@@ -172,28 +147,6 @@ pool_update_edges (const grid_t *grid, pool_t *pool)
   pool->edges = collected_edges; // Assign the new set
 };
 
-void
-pool_add_accepted_tile_type (pool_t *pool, tile_type_t type)
-{
-  // Check for duplicate
-  for (size_t i = 0; i < pool->num_accepted_tile_types; ++i)
-    {
-      if (pool->accepted_tile_types[i] == type)
-        return; // Already present, do not add
-    }
-  // Add if not present and within bounds
-  if (pool->num_accepted_tile_types < MAX_ACCEPTED_TILE_TYPES)
-    {
-      pool->accepted_tile_types[pool->num_accepted_tile_types++] = type;
-    }
-  else
-    {
-      // Optionally handle error: too many types
-      printf ("Error: Maximum number of accepted tile types reached.\n");
-    }
-  pool->is_mixed = true;
-}
-
 int
 pool_find_tile_friendly_neighbor_count (tile_map_t *tile_map,
                                         const tile_t *tile, const grid_t *grid)
@@ -202,26 +155,13 @@ pool_find_tile_friendly_neighbor_count (tile_map_t *tile_map,
   grid_cell_t neighbor_cells[num_neighbors];
   grid->vtable->get_neighbor_cells (tile->cell, neighbor_cells);
 
-  char key_buffer[32];
-  grid_cell_to_string (&tile->cell, key_buffer, sizeof (key_buffer));
-
   int neighbor_count = 0;
   for (int i = 0; i < num_neighbors; ++i)
     {
-      grid_cell_to_string (&neighbor_cells[i], key_buffer,
-                           sizeof (key_buffer));
-
       bool entry = tile_map_contains (tile_map, neighbor_cells[i]);
       if (entry)
         {
           neighbor_count++;
-          grid_cell_to_string (&neighbor_cells[i], key_buffer,
-                               sizeof (key_buffer));
-        }
-      else
-        {
-          grid_cell_to_string (&neighbor_cells[i], key_buffer,
-                               sizeof (key_buffer));
         }
     }
   return neighbor_count;
@@ -253,7 +193,7 @@ pool_find_max_tile_neighbors_in_pool (pool_t *pool, const grid_t *grid)
 }
 
 void
-pool_calculate (pool_t *pool, const grid_t *grid)
+pool_calculate_score (pool_t *pool, const grid_t *grid)
 {
   pool->highest_n = pool_find_max_tile_neighbors_in_pool (pool, grid);
 }
@@ -261,5 +201,5 @@ pool_calculate (pool_t *pool, const grid_t *grid)
 void
 pool_update (pool_t *pool, const grid_t *grid)
 {
-  pool_calculate (pool, grid);
+  pool_calculate_score (pool, grid);
 }

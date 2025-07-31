@@ -14,6 +14,7 @@
  * @brief Enum representing the different types/colors of tiles.
  */
 typedef enum {
+    TILE_UNDEFINED = -1, // Used for uninitialized tiles
     TILE_EMPTY = 0,
     TILE_MAGENTA,
     TILE_CYAN,
@@ -21,12 +22,16 @@ typedef enum {
     TILE_COUNT
 } tile_type_t;
 
+typedef struct {
+    tile_type_t type;
+    int value;
+} tile_data_t;
+
 // --- Tile Structure ---
 // Represents a single tile placed on a cell.
 typedef struct {
     grid_cell_t cell;      // The cell this tile occupies. Crucially, this will be our hash key.
-    int value;             // Any specific value for the tile (e.g., resource amount).
-    tile_type_t type;      // The visual type/color of the tile.
+    tile_data_t data;            // Any specific value for the tile (e.g., resource amount).
     // ... other tile-specific data can go here ...
 } tile_t;
 
@@ -37,8 +42,22 @@ typedef struct {
  * @param type The type (color/category) of the tile.
  * @return The initialized tile_t.
  */
-tile_t* tile_create_ptr(grid_cell_t cell, tile_type_t type, int value);
+tile_t* tile_create_ptr(grid_cell_t cell,tile_data_t data);
+
+tile_data_t tile_data_create (tile_type_t type, int value);
+tile_data_t tile_data_create_random(void);
+
 tile_t* tile_create_random_ptr(grid_cell_t cell);
-Color tile_get_color(const tile_t *tile);
+
+
+
+void tile_set_coords(tile_t *tile, grid_cell_t coord);
+void tile_add_coords(tile_t *tile, grid_cell_t coord);
+
+Color
+tile_get_color (const tile_data_t tile_data);
+
+void tile_destroy(tile_t *tile);
+void tile_cycle(tile_t *tile);
 
 #endif // TILE_H

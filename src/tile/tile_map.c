@@ -67,15 +67,14 @@ tile_map_remove (tile_map_t *map, grid_cell_t cell)
 }
 
 void
-tile_map_foreach (tile_map_t *map, void (*fn) (tile_map_entry_t *, void *),
-                  void *user_data)
+tile_map_foreach_tile (tile_map_t *map, void (*fn) (tile_t *, void *),
+                       void *user_data)
 {
   if (!map)
     return;
   tile_map_entry_t *entry, *tmp;
-  HASH_ITER (hh, map->root, entry, tmp) { fn (entry, user_data); }
+  HASH_ITER (hh, map->root, entry, tmp) { fn (entry->tile, user_data); }
 }
-
 void
 tile_map_add (tile_map_t *map, tile_t *tile)
 {

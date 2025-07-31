@@ -4,7 +4,6 @@
 #include "../third_party/uthash.h"
 #include "../grid/grid_types.h"
 #include "tile.h"
-#include "raylib.h"
 
 // --- Individual Hash Table Entry ---
 // 'cell' is the key, and 'tile' is the associated value.
@@ -39,6 +38,7 @@ void tile_map_remove(tile_map_t *map, grid_cell_t cell);
 void tile_map_add(tile_map_t *map, tile_t *tile);
 
 // Iterate over each tile map entry.
-void tile_map_foreach(tile_map_t *map, void (*fn)(tile_map_entry_t *, void *), void *user_data);
-
+void
+tile_map_foreach_tile (tile_map_t *map, void (*fn) (tile_t *, void *),
+                       void *user_data);
 #endif // TILE_MAP_H
