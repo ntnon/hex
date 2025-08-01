@@ -1,6 +1,7 @@
 #include "../game/board.h"
 #include "../game/inventory.h"
 #include "../screen/game_screen.h"
+#include "../screen/menu_screen.h"
 
 // void
 // render (const board_t *board,
@@ -17,3 +18,6 @@ inventory_get_slot_rect (const inventory_t *inv, int i);
 void render_inventory(inventory_t *inventory);
 void render_inventory_item(const inventory_t *inventory, int index, bool selected);
 void render_game_screen(const game_screen_t *game_screen);
+
+void
+render_menu_screen (menu_screen_t *menu);
