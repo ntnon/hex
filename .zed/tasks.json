@@ -43,19 +43,24 @@
     //           "args": ["--login"]
     //         }
     //     }
-    "shell": "system",
+    "shell": "system"
     // Represents the tags for inline runnable indicators, or spawning multiple tasks at once.
-    "tags": []
   },
   {
-    "label": "Clean, Premake, Entr",
-    "command": "make clean &&cd build && ./premake5.osx gmake2 && cd .. && ./entr.sh",
+    "label": "premake, clean, bear",
+    "command": "cd build && ./premake5.osx gmake2 && cd .. && make clean && bear -- make",
     "shell": "system",
     "reveal": "always"
   },
   {
-    "label": "premake, clean, bear",
-    "command": "cd build && ./premake5.osx gmake2 && cd .. && make clean && make && bear -- make",
+    "label": "Run",
+    "command": "./run.sh",
+    "shell": "system",
+    "reveal": "always"
+  },
+  {
+    "label": "Hot Reload",
+    "command": "./hot_reload.sh",
     "shell": "system",
     "reveal": "always"
   }
