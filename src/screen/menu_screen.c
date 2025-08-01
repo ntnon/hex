@@ -1,5 +1,4 @@
 #include "../../include/screen/menu_screen.h"
-#include "raylib.h"
 
 #define BUTTON_WIDTH 200
 #define BUTTON_HEIGHT 50

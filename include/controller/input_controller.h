@@ -2,7 +2,6 @@
 #define INPUT_CONTROLLER_H
 
 #include "../screen/screen_manager.h"
-#include "raylib.h"
 #include <stdbool.h>
 
 // Forward declarations

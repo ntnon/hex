@@ -4,6 +4,7 @@
 #include "../grid/grid_system.h"
 #include "../tile/tile_manager.h"
 #include "../tile/pool_manager.h"
+#include "../utility/array_shuffle.h"
 
 typedef struct  {
     grid_t *grid;
@@ -19,7 +20,7 @@ void clear_board(board_t *board);
 
 void free_board(board_t *board);
 
-void randomize_board(board_t *board);
+void board_randomize(board_t *board);
 
 void add_tile(board_t *board, tile_t* tile);
 

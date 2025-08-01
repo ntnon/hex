@@ -1,6 +1,5 @@
 #include "../../include/screen/pause_screen.h"
 #include "../../include/screen/screen_manager.h"
-#include "raylib.h"
 
 #define BUTTON_WIDTH 200
 #define BUTTON_HEIGHT 50

@@ -1,6 +1,10 @@
-#include "../include/renderer.h"
+#include "../include/render/renderer.h"
 #include "../include/grid/grid_cell_utils.h"
+
 #include "raylib.h"
+
+#include "render/color.h"
+#include "render/render_utils.h"
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
@@ -132,6 +136,7 @@ update_tiled_grid_cache (const board_t *board)
 void
 render_board (const board_t *board)
 {
+
   if (!board)
     {
       printf ("ERROR: board is null\n");
@@ -187,15 +192,9 @@ render_tile (const tile_t *tile, const grid_t *grid)
       printf ("ERROR: grid->vtable is null\n");
       return;
     }
-  if (!grid->vtable->render_cell)
-    {
-      printf ("ERROR: grid->vtable->draw_cell_with_colors is null\n");
-      return;
-    }
 
   // Draw the colored hex cell.
-  grid->vtable->render_cell (grid, tile->cell, tile_get_color (tile->data),
-                             BLANK);
+  render_hex_cell (grid, tile->cell, tile_get_color (tile->data), M_BLANK);
 
   // Compute the center of the hex cell using the to_pixel function.
   point_t center = grid->vtable->to_pixel (grid, tile->cell);
@@ -210,8 +209,16 @@ render_tile (const tile_t *tile, const grid_t *grid)
 }
 
 void
-render_hex_cell (const grid_t *grid, grid_cell_t cell, Color fill_color,
-                 Color edge_color)
+render_hex_grid (const grid_t *grid)
+{
+  for (size_t i = 0; i < grid->num_cells; ++i)
+    {
+      render_hex_cell (grid, grid->cells[i], M_LIGHTGRAY, M_GRAY);
+    }
+}
+void
+render_hex_cell (const grid_t *grid, grid_cell_t cell, color_t fill_color,
+                 color_t edge_color)
 {
   int corners_count = 6;
   point_t corners[6];
@@ -224,12 +231,14 @@ render_hex_cell (const grid_t *grid, grid_cell_t cell, Color fill_color,
       verts[j].y = (float)corners[j].y;
     }
 
-  DrawTriangleFan (verts, corners_count, fill_color);
+  Color ray_fill_color = to_raylib_color (fill_color);
+  Color ray_edge_color = to_raylib_color (edge_color);
+  DrawTriangleFan (verts, corners_count, ray_fill_color);
 
   for (int j = 0; j < corners_count; ++j)
     {
       int next = (j + 1) % corners_count;
-      DrawLineV (verts[j], verts[next], edge_color);
+      DrawLineV (verts[j], verts[next], ray_edge_color);
     }
 }
 
@@ -292,14 +301,8 @@ tile_render (const tile_t *tile, const grid_t *grid)
       printf ("ERROR: grid->vtable is null\n");
       return;
     }
-  if (!grid->vtable->render_cell)
-    {
-      printf ("ERROR: grid->vtable->draw_cell_with_colors is null\n");
-      return;
-    }
-  // Draw the colored hex cell.
-  grid->vtable->render_cell (grid, tile->cell, tile_get_color (tile->data),
-                             BLANK);
+
+  render_hex_cell (grid, tile->cell, tile_get_color (tile->data), M_BLANK);
 
   // Compute the center of the hex cell using the to_pixel function.
   point_t center = grid->vtable->to_pixel (grid, tile->cell);
@@ -311,4 +314,58 @@ tile_render (const tile_t *tile, const grid_t *grid)
   // Draw the coordinate text centered on the cell.
   // Adjust the x and y values (here subtracting 10) as needed.
   DrawText (coord_text, (int)center.x - 10, (int)center.y - 10, 8, BLACK);
+}
+
+rect_t
+inventory_get_slot_rect (const inventory_t *inv, int i)
+{
+  int size = inventory_get_size (inv);
+  int screen_width = GetScreenWidth ();
+  int screen_height = GetScreenHeight ();
+  int slot_size = 64;
+  int slot_padding = 12;
+  int total_width = size * slot_size + (size - 1) * slot_padding;
+  int start_x = (screen_width - total_width) / 2;
+  int y = screen_height - slot_size - 24;
+  int x = start_x + i * (slot_size + slot_padding);
+  return (rect_t){ x, y, slot_size, slot_size };
+}
+
+void
+render_inventory_item (const inventory_t *inv, int i, bool selected)
+{
+  Rectangle slot = rect_to_ray_rectangle (inventory_get_slot_rect (inv, i));
+  Color fill = to_raylib_color (tile_get_color (inv->items.a[i]));
+
+  DrawRectangleRec (slot, fill);
+
+  if (selected)
+    {
+      DrawRectangleLinesEx (slot, 4, GOLD);
+    }
+  else
+    {
+      DrawRectangleLinesEx (slot, 2, DARKGRAY);
+    }
+}
+
+void
+render_inventory (inventory_t *inv)
+{
+  Vector2 mouse = GetMousePosition ();
+  bool mouse_clicked = IsMouseButtonPressed (MOUSE_BUTTON_LEFT);
+
+  for (int i = 0; i < inventory_get_size (inv); i++)
+    {
+      Rectangle slot
+          = rect_to_ray_rectangle (inventory_get_slot_rect (inv, i));
+
+      // Handle click selection
+      if (mouse_clicked && CheckCollisionPointRec (mouse, slot))
+        {
+          inventory_set_index (inv, i);
+        }
+
+      render_inventory_item (inv, i, i == inv->selected_index);
+    }
 }

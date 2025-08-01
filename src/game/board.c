@@ -1,5 +1,4 @@
-#include "../../include/board/board.h"
-#include "../../include/utility.h"
+#include "../../include/game/board.h"
 #include <stdio.h>
 
 #define MAX_POOL_CANDIDATES 10
@@ -22,6 +21,7 @@ layout_t layout = {
 board_t *
 board_create (grid_type_e grid_type, int radius)
 {
+  printf ("Creating board... %d\n", radius);
   board_t *board = malloc (sizeof (board_t));
   if (!board)
     {
@@ -156,9 +156,9 @@ remove_tile (board_t *board, tile_t *tile)
 }
 
 void
-randomize_board (board_t *board)
+board_randomize (board_t *board)
 {
-  printf ("randomizing board\n");
+
   grid_cell_t *cells = board->grid->cells;
   shuffle_array (cells, board->grid->num_cells, sizeof (grid_cell_t),
                  swap_grid_cell);

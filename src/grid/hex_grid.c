@@ -1,6 +1,4 @@
 #include "../../include/grid/grid_system.h"
-#include "../../include/renderer.h"
-#include "raylib.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -147,15 +145,6 @@ grid_create (grid_type_e type, layout_t layout, int size)
   return grid;
 }
 
-void
-draw_grid (const grid_t *grid)
-{
-  for (size_t i = 0; i < grid->num_cells; ++i)
-    {
-      render_hex_cell (grid, grid->cells[i], LIGHTGRAY, GRAY);
-    }
-}
-
 bool
 is_valid_cell (const grid_t *grid, grid_cell_t check_cell)
 {
@@ -196,10 +185,8 @@ const grid_vtable_t hex_grid_vtable = {
   .get_corners = get_corners,
   .generate_cells = generate_cells,
   .grid_create = grid_create,
-  .draw_grid = draw_grid,
   .num_neighbors = 6,
   .is_valid_cell = is_valid_cell,
-  .render_cell = render_hex_cell,
   .grid_free = grid_free,
 };
 /*

@@ -1,5 +1,4 @@
 #include "../../include/tile/tile_manager.h"
-#include "../../include/utility.h"
 #include <stdio.h>
 
 tile_manager_t *

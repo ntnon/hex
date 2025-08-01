@@ -3,7 +3,6 @@
 
 #include "grid_types.h"
 #include <stdlib.h>
-#include "raylib.h"
 
 // Forward-declare the main grid struct to be used in the v-table definition
 typedef struct grid_t grid_t;
@@ -68,16 +67,11 @@ typedef struct {
     void (*generate_cells)(grid_t* grid, int size);
 
     grid_t *(*grid_create)(grid_type_e type, layout_t layout, int size);
-    void (*draw_grid)(const grid_t* grid);
-
 
     int num_neighbors;
 
     bool (*is_valid_cell)(const grid_t* grid, grid_cell_t check_cell);
 
-    void
-    (*render_cell) (const grid_t *grid, grid_cell_t cell, Color fill_color,
-                           Color edge_color);
     void(*grid_free)(grid_t* grid);
 
 } grid_vtable_t;
@@ -112,7 +106,6 @@ grid_t* grid_create(grid_type_e type, layout_t layout, int size);
  */
 void grid_free(grid_t* grid);
 
-void draw_grid(const grid_t *grid);
 
 bool is_valid_cell(const grid_t* grid, grid_cell_t check_cell);
 

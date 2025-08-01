@@ -2,6 +2,7 @@
 #include "../include/third_party/raygui.h"
 #include "controller/input_controller.h"
 #include "raylib.h"
+#include "render/renderer.h"
 #include "screen/game_screen.h"
 #include "screen/menu_screen.h"
 #include "screen/pause_screen.h"
@@ -30,13 +31,13 @@ main (void)
 
   // Initialize screen data
   menu_screen_t menu_screen;
-  menu_screen_init (&menu_screen);
+  menu_screen_init (&menu_screen, initial_width, initial_height);
 
   game_screen_t game_screen;
-  game_screen_init (&game_screen);
+  game_screen_init (&game_screen, initial_width, initial_height);
 
   pause_screen_t pause_screen;
-  pause_screen_init (&pause_screen);
+  pause_screen_init (&pause_screen, initial_width, initial_height);
 
   // Register screens with input controller
   input_controller_register_screen (&input_ctrl, SCREEN_MENU,
@@ -64,7 +65,7 @@ main (void)
 
       // Render current screen
       BeginDrawing ();
-      ClearBackground (RAYWHITE);
+      ClearBackground (WHITE);
 
       input_controller_render (&input_ctrl, &screen_mgr);
 

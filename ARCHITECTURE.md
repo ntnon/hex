@@ -104,7 +104,7 @@ void screen_name_render_handler(void *screen_data);
 - Keyboard shortcuts for selection (1-9 keys)
 - Visual rendering with selection highlighting
 
-**Board System** (`board/board.h/.c`):
+**Board System** (`game/board.h/.c`):
 - Hex grid management
 - Tile placement and interaction
 - Pool and resource management
@@ -189,13 +189,13 @@ To add a new input area within an existing screen:
 ```c
 void game_input_handler(void *screen_data) {
     game_screen_t *game = (game_screen_t *)screen_data;
-    
+
     // Handle board input
     board_input_controller_update(game->board_controller, ...);
-    
+
     // Handle UI input
     ui_input_controller_update(game->ui_controller, ...);
-    
+
     // Handle inventory input
     // ... etc
 }

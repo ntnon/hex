@@ -1,5 +1,5 @@
-#include "../include/utility.h"
 #include "../include/grid/grid_types.h"
+#include "../include/utility/array_shuffle.h"
 #include <stdio.h>
 
 void

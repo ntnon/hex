@@ -1,4 +1,4 @@
-#include "../include/grid/grid_types.h"
+#include "../grid/grid_types.h"
 #include <stdlib.h> // for rand()
 #include <time.h>   // for seeding rand()
 

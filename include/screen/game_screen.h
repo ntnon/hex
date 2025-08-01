@@ -1,11 +1,13 @@
-#ifndef game_H
-#define game_H
+#ifndef GAME_H
+#define GAME_H
 
 #include "screen_manager.h"
-#include "raylib.h"
 
-#include "../board/board.h"
+#include "../game/board.h"
 #include "../game/inventory.h"
+#include "../controller/game_controller.h"
+#include "../types.h"
+#include "../controller/input_state.h"
 
 // Define game actions (if needed)
 typedef enum {
@@ -16,20 +18,23 @@ typedef enum {
 
 // Define the game screen structure
 typedef struct {
+        rect_t ui_bounds;
     // Game state variables (e.g., score, player position)
     int score;
     // Add other relevant game state variables
     // Example: player_t player;
     board_t *board;
     inventory_t *inventory;
-
+    //game_controller_t controller;
+    ui_area_t active_area;
     // Define the bounds for any game UI elements
-    Rectangle ui_bounds;
+
 } game_screen_t;
 
 // Function prototypes for game screen management
-void game_screen_init(game_screen_t *game);
-game_action_t game_screen_update(game_screen_t *game, Vector2 mouse, bool mouse_pressed);
+game_screen_t *game_screen_create(void);
+void game_screen_init(game_screen_t *game, int width, int height);
+game_action_t game_screen_update(game_screen_t *game, input_state_t *input);
 void game_screen_draw(const game_screen_t *game);
 void game_screen_unload(game_screen_t *game);
 

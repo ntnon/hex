@@ -1,7 +1,8 @@
 #ifndef SCREEN_MANAGER_H
 #define SCREEN_MANAGER_H
 
-#include "raylib.h"
+#include "controller/input_state.h" //used by all screens
+#include "types.h"
 
 typedef enum {
     SCREEN_MENU,

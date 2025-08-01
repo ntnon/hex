@@ -7,7 +7,7 @@
 #define TILE_H
 
 #include "../grid/grid_types.h" // For grid_cell_t
-#include "raylib.h"          // For Color
+#include "../render/color.h"
 
 // --- Enums ---
 /**
@@ -19,7 +19,7 @@ typedef enum {
     TILE_MAGENTA,
     TILE_CYAN,
     TILE_YELLOW,
-    TILE_COUNT
+    TILE_TYPE_COUNT
 } tile_type_t;
 
 typedef struct {
@@ -54,8 +54,8 @@ tile_t* tile_create_random_ptr(grid_cell_t cell);
 void tile_set_coords(tile_t *tile, grid_cell_t coord);
 void tile_add_coords(tile_t *tile, grid_cell_t coord);
 
-Color
-tile_get_color (const tile_data_t tile_data);
+color_t
+tile_get_color_from_type (const tile_data_t tile_data);
 
 void tile_destroy(tile_t *tile);
 void tile_cycle(tile_t *tile);

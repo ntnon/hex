@@ -3,7 +3,7 @@
 
 #include "screen_manager.h"
 
-#include "raylib.h"
+//#include "raylib.h"
 #include <stdbool.h>
 
 typedef enum {
@@ -15,7 +15,7 @@ typedef enum {
 } pause_action_t;
 
 typedef struct {
-    Rectangle bounds;
+    rect_t bounds;
     const char *label;
     pause_action_t action;
 } pause_button_t;
@@ -26,8 +26,8 @@ typedef struct {
     pause_action_t last_action;
 } pause_screen_t;
 
-void pause_screen_init(pause_screen_t *pause);
-pause_action_t pause_screen_update(pause_screen_t *pause, Vector2 mouse, bool mouse_pressed);
+void pause_screen_init(pause_screen_t *pause, int width, int height);
+pause_action_t pause_screen_update(pause_screen_t *pause, input_state_t *input);
 void pause_screen_draw(const pause_screen_t *pause);
 void pause_screen_unload(pause_screen_t *pause);
 

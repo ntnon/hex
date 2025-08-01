@@ -1,5 +1,6 @@
 #include "../../include/tile/tile.h"
 #include "../../include/grid/grid_types.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -28,7 +29,7 @@ tile_data_t
 tile_data_create_random (void)
 {
   tile_data_t data;
-  data.type = (tile_type_t)rand () % 3 + 1;
+  data.type = (tile_type_t)rand () % TILE_TYPE_COUNT + 0;
   data.value = rand () % 5 + 1;
   return data;
 }
@@ -37,24 +38,6 @@ tile_t *
 tile_create_random_ptr (grid_cell_t cell)
 {
   return tile_create_ptr (cell, tile_data_create_random ());
-}
-
-Color
-tile_get_color (const tile_data_t tile_data)
-{
-  switch (tile_data.type)
-    {
-    case TILE_MAGENTA:
-      return MAGENTA;
-    case TILE_CYAN:
-      return SKYBLUE;
-    case TILE_YELLOW:
-      return GREEN;
-    case TILE_EMPTY:
-      return BLACK;
-    default:
-      return LIGHTGRAY; // Or any color you want for empty/unknown
-    }
 }
 
 void
