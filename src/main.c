@@ -1,14 +1,12 @@
-#define RAYGUI_IMPLEMENTATION
-#include "../include/third_party/raygui.h"
-#include "controller/input_controller.h"
+#include <stdbool.h>
+#include <stdio.h>
+
 #include "raylib.h"
 #include "render/renderer.h"
 #include "screen/game_screen.h"
 #include "screen/menu_screen.h"
-#include "screen/pause_screen.h"
 #include "screen/screen_manager.h"
-#include <stdbool.h>
-#include <stdio.h>
+#include "screen/settings_screen.h"
 
 int
 main (void)
@@ -26,9 +24,6 @@ main (void)
   screen_manager_t screen_mgr;
   screen_manager_init (&screen_mgr);
 
-  input_controller_t input_ctrl;
-  input_controller_init (&input_ctrl);
-
   // Initialize screen data
   menu_screen_t menu_screen;
   menu_screen_init (&menu_screen, initial_width, initial_height);
@@ -36,21 +31,35 @@ main (void)
   game_screen_t game_screen;
   game_screen_init (&game_screen, initial_width, initial_height);
 
-  pause_screen_t pause_screen;
-  pause_screen_init (&pause_screen, initial_width, initial_height);
+  settings_screen_t settings_screen;
+  settings_screen_init (&settings_screen, initial_width, initial_height);
 
-  // Register screens with input controller
-  input_controller_register_screen (&input_ctrl, SCREEN_MENU,
-                                    menu_input_handler, menu_action_handler,
-                                    menu_render_handler, &menu_screen);
+  screen_manager_register (
+      &screen_mgr, SCREEN_MENU,
+      (screen_callbacks_t){ .screen_data = &menu_screen,
+                            .input_handler = menu_input_handler,
+                            .action_handler = menu_action_handler,
+                            .render_handler = menu_render_handler,
+                            .unload_handler = menu_screen_unload,
+                            .registered = true });
 
-  input_controller_register_screen (&input_ctrl, SCREEN_GAME,
-                                    game_input_handler, game_action_handler,
-                                    game_render_handler, &game_screen);
+  screen_manager_register (
+      &screen_mgr, SCREEN_GAME,
+      (screen_callbacks_t){ .screen_data = &game_screen,
+                            .input_handler = game_input_handler,
+                            .action_handler = game_action_handler,
+                            .render_handler = game_render_handler,
+                            .unload_handler = game_screen_unload,
+                            .registered = true });
 
-  input_controller_register_screen (&input_ctrl, SCREEN_PAUSE,
-                                    pause_input_handler, pause_action_handler,
-                                    pause_render_handler, &pause_screen);
+  // screen_manager_register (
+  //     &screen_mgr, SCREEN_SETTINGS,
+  //     (screen_callbacks_t){ .screen_data = &settings_screen,
+  //                           .input_handler = settings_input_handler,
+  //                           .action_handler = settings_action_handler,
+  //                           .render_handler = settings_render_handler,
+  //                           .unload_handler = settings_screen_unload,
+  //                           .registered = true});
 
   // Set initial screen
   screen_manager_switch (&screen_mgr, SCREEN_MENU);
@@ -59,24 +68,27 @@ main (void)
   bool running = true;
   while (running && !WindowShouldClose ())
     {
+      input_state_t input;
+      get_input_state (&input);
 
-      // Handle input and actions for current screen
-      input_controller_update (&input_ctrl, &screen_mgr, &running);
+      screen_callbacks_t *screen = &screen_mgr.screens[screen_mgr.current];
 
-      // Render current screen
+      if (screen->input_handler)
+        screen->input_handler (screen->screen_data, &input);
+
+      if (screen->action_handler)
+        screen->action_handler (screen->screen_data, &screen_mgr, &running);
+
       BeginDrawing ();
       ClearBackground (WHITE);
 
-      input_controller_render (&input_ctrl, &screen_mgr);
+      if (screen->render_handler)
+        screen->render_handler (screen->screen_data);
 
       EndDrawing ();
     }
 
-  // Cleanup
-  game_screen_unload (&game_screen);
-  menu_screen_unload (&menu_screen);
-  pause_screen_unload (&pause_screen);
-  input_controller_destroy (&input_ctrl);
+  screen_manager_cleanup (&screen_mgr);
 
   CloseWindow ();
   return 0;

@@ -41,40 +41,31 @@ game_screen_draw (const game_screen_t *game)
 }
 
 void
-game_screen_unload (game_screen_t *game)
+game_screen_unload (void *game_screen)
 {
-  if (!game)
+  if (!game_screen)
     return;
+
+  game_screen_t *game = (game_screen_t *)game_screen;
+
   if (game->board)
     {
-
       free_board (game->board);
+      game->board = NULL;
     }
+
   if (game->inventory)
     {
       free_inventory (game->inventory);
+      game->inventory = NULL;
     }
 }
-
 void
-game_input_handler (void *screen_data)
+game_input_handler (void *screen_data, input_state_t *input)
 {
   game_screen_t *game = (game_screen_t *)screen_data;
   if (!game)
     return;
-
-  input_state_t *input_state = (input_state_t *)screen_data;
-  if (!input_state)
-    return;
-
-  // Update game logic based on input
-  game_action_t action = game_screen_update (game, input_state);
-
-  // Handle any specific actions (e.g., pause, quit)
-  if (action == GAME_ACTION_QUIT)
-    {
-      // Handle quit action
-    }
 }
 
 void

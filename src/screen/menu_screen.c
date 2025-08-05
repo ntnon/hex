@@ -40,10 +40,11 @@ menu_screen_update (menu_screen_t *menu, input_state_t *input)
 }
 
 void
-menu_screen_unload (menu_screen_t *menu)
+menu_screen_unload (void *screen_data)
 {
   // No dynamic resources to free in this implementation
 }
+
 void
 menu_input_handler (void *screen_data, input_state_t *input)
 {
