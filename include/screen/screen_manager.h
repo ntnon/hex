@@ -1,5 +1,6 @@
 #include "controller/input_state.h" //used by all screens
 #include "types.h"
+#include "ui/ui_context.h"
 
 #ifndef SCREEN_MANAGER_H
 #define SCREEN_MANAGER_H
@@ -31,10 +32,10 @@ struct screen_manager_t {
 };
 
 // Function declarations
-void screen_manager_init(screen_manager_t *manager);
+void screen_manager_init (screen_manager_t *manager, ui_context_t *ui_ctx);
+
 void screen_manager_switch(screen_manager_t *manager, screen_type_t new_screen);
 screen_type_t screen_manager_get_current(screen_manager_t *manager);
 void screen_manager_register(screen_manager_t *manager, screen_type_t type, screen_callbacks_t callbacks);
-void screen_manager_cleanup(screen_manager_t *manager);
 
 #endif // SCREEN_MANAGER_H

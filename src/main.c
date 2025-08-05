@@ -7,6 +7,7 @@
 #include "screen/menu_screen.h"
 #include "screen/screen_manager.h"
 #include "screen/settings_screen.h"
+#include "ui/ui_context.h"
 
 int
 main (void)
@@ -21,8 +22,11 @@ main (void)
   InitWindow (initial_width, initial_height, "HexHex");
 
   // Initialize core systems
+  ui_context_t ui_ctx;
+  ui_context_init (&ui_ctx);
+
   screen_manager_t screen_mgr;
-  screen_manager_init (&screen_mgr);
+  screen_manager_init (&screen_mgr, &ui_ctx);
 
   // Initialize screen data
   menu_screen_t menu_screen;
@@ -82,13 +86,24 @@ main (void)
       BeginDrawing ();
       ClearBackground (WHITE);
 
+      ui_context_begin_frame (&ui_ctx);
+
       if (screen->render_handler)
         screen->render_handler (screen->screen_data);
 
+      // Render UI using screen handlers
+      ui_screen_handlers_t *handlers = &ui_ctx.handlers[screen_mgr.current];
+      if (handlers->render)
+        {
+          handlers->render (&ui_ctx);
+        }
+
+      ui_context_end_frame (&ui_ctx);
       EndDrawing ();
     }
 
   screen_manager_cleanup (&screen_mgr);
+  ui_context_cleanup (&ui_ctx);
 
   CloseWindow ();
   return 0;
