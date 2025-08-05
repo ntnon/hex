@@ -12,13 +12,12 @@ menu_screen_init (menu_screen_t *menu, int width, int height)
 }
 
 void
-menu_screen_unload (void *screen_data)
+menu_screen_unload (menu_screen_t *menu)
 {
   menu_screen_t *menu = (menu_screen_t *)screen_data;
   if (!menu)
     return;
 }
-
 void
 menu_input_handler (void *screen_data, input_state_t *input)
 {

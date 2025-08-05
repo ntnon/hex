@@ -1,10 +1,15 @@
 #include "../../include/screen/screen_manager.h"
+<<<<<<< HEAD
 #include "../../include/ui/ui_context.h"
 #include <stdio.h>
+=======
+
+>>>>>>> parent of 53165fd (continued decoupling of raylib and game logic.)
 void
 screen_manager_init (screen_manager_t *manager, ui_context_t *ui_ctx)
 {
   manager->current = SCREEN_MENU;
+<<<<<<< HEAD
   manager->ui_ctx = ui_ctx;
 
   for (int i = 0; i < SCREEN_MAX; ++i)
@@ -16,6 +21,8 @@ screen_manager_init (screen_manager_t *manager, ui_context_t *ui_ctx)
       manager->screens[i].render_handler = NULL;
       manager->screens[i].unload_handler = NULL;
     }
+=======
+>>>>>>> parent of 53165fd (continued decoupling of raylib and game logic.)
 }
 
 void
@@ -64,6 +71,7 @@ screen_manager_get_current (screen_manager_t *manager)
 {
   return manager->current;
 }
+<<<<<<< HEAD
 
 void
 screen_manager_cleanup (screen_manager_t *manager)
@@ -113,3 +121,5 @@ screen_manager_register (screen_manager_t *manager, screen_type_t screen_type,
 
   *target = callbacks;
 }
+=======
+>>>>>>> parent of 53165fd (continued decoupling of raylib and game logic.)

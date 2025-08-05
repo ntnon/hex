@@ -1,21 +1,14 @@
-#include <float.h>
-#include <math.h>
-#include <stdio.h>
-
-#define CLAY_IMPLEMENTATION
-#include "../include/third_party/clay.h" // UI system
+#include "../include/render/renderer.h"
+#include "../include/grid/grid_cell_utils.h"
+#include "screen/menu_screen.h"
 
 #include "raylib.h"
 
-// Custom abstractions
-#include "adapter/raylib_bridge.h"
+#include "adapter/raylib_bridge.c"
 #include "render/color.h"
-
-#include "../include/grid/grid_cell_utils.h"
-#include "../include/render/renderer.h"
-// #include "screen/game_screen.h"
-#include "screen/menu_screen.h"
-#include "screen/settings_screen.h"
+#include <float.h>
+#include <math.h>
+#include <stdio.h>
 
 #define TILE_CACHE_SIZE 1000 // Maximum size for each tile
 
@@ -398,35 +391,5 @@ render_menu_screen (menu_screen_t *menu)
           = menu->buttons[i].bounds.x + (float)(BUTTON_WIDTH - text_width) / 2;
       int text_y = menu->buttons[i].bounds.y + (float)(BUTTON_HEIGHT - 24) / 2;
       DrawText (menu->buttons[i].label, text_x, text_y, 24, BLACK);
-    }
-}
-
-void
-render_settings_screen (settings_screen_t *settings)
-{
-  // Draw semi-transparent overlay
-  DrawRectangle (0, 0, GetScreenWidth (), GetScreenHeight (),
-                 (Color){ 0, 0, 0, 100 });
-
-  // Draw settings title
-  const char *title = "SETTINGS";
-  int title_width = MeasureText (title, 48);
-  DrawText (title, (GetScreenWidth () - title_width) / 2,
-            GetScreenHeight () / 2 - 150, 48, WHITE);
-
-  Vector2 mouse = GetMousePosition ();
-
-  for (int i = 0; i < settings->button_count; i++)
-    {
-      Rectangle bounds = rect_to_ray_rectangle (settings->buttons[i].bounds);
-      Color btn_color
-          = CheckCollisionPointRec (mouse, bounds) ? LIGHTGRAY : GRAY;
-      DrawRectangleRec (bounds, btn_color);
-      DrawRectangleLinesEx (bounds, 2, DARKGRAY);
-
-      int text_width = MeasureText (settings->buttons[i].label, 24);
-      int text_x = bounds.x + (float)(BUTTON_WIDTH - text_width) / 2;
-      int text_y = bounds.y + (float)(BUTTON_HEIGHT - 24) / 2;
-      DrawText (settings->buttons[i].label, text_x, text_y, 24, BLACK);
     }
 }

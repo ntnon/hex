@@ -35,10 +35,11 @@ typedef struct {
 game_screen_t *game_screen_create(void);
 void game_screen_init(game_screen_t *game, int width, int height);
 game_action_t game_screen_update(game_screen_t *game, input_state_t *input);
-void game_screen_unload(void *game);
+void game_screen_draw(const game_screen_t *game);
+void game_screen_unload(game_screen_t *game);
 
 // Input and action handlers for integration with input controller
-void game_input_handler(void *screen_data, input_state_t *input);
+void game_input_handler(void *screen_data);
 void game_action_handler(void *screen_data, screen_manager_t *mgr, bool *running);
 void game_render_handler(void *screen_data);
 
