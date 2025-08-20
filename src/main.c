@@ -1,15 +1,15 @@
+#include "raylib.h"
 #include <stdbool.h>
 #include <stdio.h>
-
-#include "game/board.h"
-#include "game/camera.h"
-
-#include "raylib.h"
-#include "render/renderer.h"
 
 #define CLAY_IMPLEMENTATION
 #include "../include/third_party/clay.h" // UI system
 #include "render/clay_renderer_raylib.h"
+
+#include "game/board.h"
+#include "game/camera.h"
+#include "game/game_controller.h"
+#include "render/renderer.h"
 #include "ui.h"
 
 int main(void) {
@@ -21,29 +21,30 @@ int main(void) {
   board_randomize(game.board);
   inventory_fill(game.inventory, 5);
 
-  Camera2D camera = {0};
-  camera.target = (Vector2){0.0f, 0.0f};
-  camera.offset = (Vector2){GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f};
-  camera.zoom = 1.0f;
+  game_controller_t controller = {0};
+  controller_init(&controller, &game);
+
+  input_state_t input;
 
   ui_load_fonts();
   UI_Context ui = ui_init(initial_width, initial_height);
 
   while (!WindowShouldClose()) {
-    input_state_t input;
+
     get_input_state(&input);
+    controller_update(&controller, &input);
 
-    Clay_SetLayoutDimensions(
-     (Clay_Dimensions){.width = GetScreenWidth(), .height = GetScreenHeight()});
-    Clay_RenderCommandArray renderCommands = ui_build_layout(&game);
+    Clay_RenderCommandArray renderCommands =
+      ui_build_layout(&game, &controller);
 
-    update_camera(&camera, &input);
     BeginDrawing();
     ClearBackground(WHITE);
     Clay_Raylib_Render(renderCommands, UI_FONTS);
-    BeginMode2D(camera);
+    controller_handle_events(&controller);
+
+    BeginMode2D(controller.camera);
     Clay_BoundingBox topRect =
-     Clay_GetElementData(CLAY_ID("right")).boundingBox;
+      Clay_GetElementData(CLAY_ID("right")).boundingBox;
     BeginScissorMode(topRect.x, topRect.y, topRect.width, topRect.height);
     render_board(game.board);
     EndScissorMode();
