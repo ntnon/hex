@@ -1,19 +1,23 @@
+#include "../third_party/clay.h"
 #include "../game/board.h"
 #include "../game/inventory.h"
+#include "raylib.h"
 
 
 // void
 // render (const board_t *board,
-//                const board_input_controller_t *input_ctrl);
+//                const board_input_controller_t *input_ctrl);@
+Color to_raylib_color(Clay_Color color);
+Clay_Color color_from_tile(tile_data_t tile_type);
 void render_board(const board_t *board);
 void render_hex_grid(const grid_t *grid);
 void render_tile(const tile_t *tile, const grid_t *grid);
 void
-render_hex_cell (const grid_t *grid, grid_cell_t cell, color_t fill_color,
-                 color_t edge_color);
+render_hex_cell (const grid_t *grid, grid_cell_t cell, Clay_Color fill_color,
+                 Clay_Color edge_color);
 
 //inventory helper functions
-rect_t
+Rectangle
 inventory_get_slot_rect (const inventory_t *inv, int i);
 void render_inventory_item(const inventory_t *inventory, int index, bool selected);
 void render_inventory(inventory_t *inventory);

@@ -1,4 +1,6 @@
 #include "ui.h"
+
+// COLORS
 const Clay_Color M_LIGHTGRAY = {200, 200, 200, 255}; // Light Gray
 const Clay_Color M_GRAY = {130, 130, 130, 255};      // Gray
 const Clay_Color M_DARKGRAY = {80, 80, 80, 255};     // Dark Gray
@@ -27,6 +29,7 @@ const Clay_Color M_MAGENTA = {255, 0, 255, 255};     // Magenta
 const Clay_Color M_RAYWHITE = {245, 245, 245,
                                255}; // My own White (raylib logo)
 
+// FONTS
 const uint32_t FONT_ID_LATO = 5;
 
 // Text configs
@@ -41,3 +44,16 @@ const Clay_TextElementConfig TEXT_CONFIG_MEDIUM = {.fontId = FONT_ID_LATO,
                                                    .letterSpacing =
                                                     FONT_DEFAULT_SPACING,
                                                    .textColor = M_GRAY};
+
+Font UI_FONTS[MAX_FONTS] = {0};
+
+void ui_load_fonts(void) {
+  UI_FONTS[0] = LoadFont("resources/sprite_fonts/alagard.png");
+  UI_FONTS[1] = LoadFont("resources/sprite_fonts/pixelplay.png");
+  UI_FONTS[2] = LoadFont("resources/sprite_fonts/mecha.png");
+  UI_FONTS[3] = LoadFont("resources/sprite_fonts/setback.png");
+  UI_FONTS[4] = LoadFont("resources/sprite_fonts/romulus.png");
+  UI_FONTS[5] = LoadFont("resources/sprite_fonts/pixantiqua.png");
+  UI_FONTS[6] = LoadFont("resources/sprite_fonts/alpha_beta.png");
+  UI_FONTS[7] = LoadFont("resources/sprite_fonts/jupiter_crash.png");
+}
