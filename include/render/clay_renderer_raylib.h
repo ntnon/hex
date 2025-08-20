@@ -14,6 +14,6 @@ void Clay_Raylib_Close(void);
 void Clay_Raylib_Render(Clay_RenderCommandArray renderCommands, Font *fonts);
 
 // Text measurement function for Clay
-Clay_Dimensions Raylib_MeasureText(Clay_StringSlice text, Clay_TextElementConfig *config, void *userData);
+Clay_Dimensions Clay_Raylib_MeasureText(Clay_StringSlice text, Clay_TextElementConfig *config, void *userData);
 
 #endif // CLAY_RENDERER_RAYLIB_H

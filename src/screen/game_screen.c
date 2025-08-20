@@ -1,4 +1,4 @@
-#include "controller/input_state.h"
+#include "game/input_state.h"
 #include "render/renderer.h"
 
 #define UI_HEIGHT 50

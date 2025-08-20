@@ -4,7 +4,7 @@
 #include <math.h>
 
 void
-get_input_state (input_state_t *out)
+get_input_state_adapter (input_state_t *out)
 {
   static vec2_t last_mouse = { 0 };
 

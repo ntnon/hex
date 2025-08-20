@@ -1,7 +1,7 @@
 #ifndef MENU_H
 #define MENU_H
 #include "screen_manager.h"
-#include "controller/input_state.h"
+#include "game/input_state.h"
 #include "../types.h"
 
 #define BUTTON_WIDTH 200

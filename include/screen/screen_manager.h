@@ -1,4 +1,4 @@
-#include "controller/input_state.h" //used by all screens
+#include "game/input_state.h" //used by all screens
 #include "types.h"
 
 #ifndef SCREEN_MANAGER_H

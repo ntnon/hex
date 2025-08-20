@@ -7,7 +7,7 @@
 #include "../game/inventory.h"
 #include "../controller/game_controller.h"
 #include "../types.h"
-#include "../controller/input_state.h"
+#include "../game/input_state.h"
 
 // Define game actions (if needed)
 typedef enum {

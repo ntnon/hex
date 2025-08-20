@@ -2,7 +2,7 @@
 #define CLAY_UI_H
 
 #include "../third_party/clay.h"
-#include "../controller/input_state.h"
+#include "../game/input_state.h"
 #include <stdbool.h>
 
 typedef enum {
@@ -18,11 +18,11 @@ typedef struct {
     ui_screen_type_t next_screen;
     bool screen_changed;
     bool quit_requested;
-    
+
     // Clay context
     Clay_Arena clay_memory;
     uint32_t clay_memory_size;
-    
+
     // Screen dimensions
     float screen_width;
     float screen_height;

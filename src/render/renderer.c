@@ -1,9 +1,7 @@
+#include "tile/tile_map.h"
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
-
-#define CLAY_IMPLEMENTATION
-#include "../include/third_party/clay.h" // UI system
 
 #include "raylib.h"
 
@@ -162,24 +160,28 @@ render_board (const board_t *board)
       printf ("ERROR: board->tile_manager is null\n");
       return;
     }
-
-  // Build tiled cache if not already built.
-  if (!tiledCacheInitialized)
-    update_tiled_grid_cache (board);
-
-  // Draw each cached tile at its proper world offset.
-  for (int ty = 0; ty < tileCountY; ty++)
-    {
-      for (int tx = 0; tx < tileCountX; tx++)
-        {
-          int index = ty * tileCountX + tx;
-          TileCache *tile = &tileCaches[index];
-          // RenderTextures in Raylib are y-flipped.
-          Rectangle srcRec = { 0, 0, (float)tile->texture.texture.width,
-                               -(float)tile->texture.texture.height };
-          DrawTextureRec (tile->texture.texture, srcRec, tile->offset, WHITE);
-        }
-    }
+  tile_map_foreach_tile (board->tile_manager->tiles, draw_tile_wrapper,
+                         (void *)board->grid);
+  /*
+   *
+    // Build tiled cache if not already built.
+    if (!tiledCacheInitialized)
+      update_tiled_grid_cache (board);
+    // Draw each cached tile at its proper world offset.
+    for (int ty = 0; ty < tileCountY; ty++)
+      {
+        for (int tx = 0; tx < tileCountX; tx++)
+          {
+            int index = ty * tileCountX + tx;
+            TileCache *tile = &tileCaches[index];
+            // RenderTextures in Raylib are y-flipped.
+            Rectangle srcRec = { 0, 0, (float)tile->texture.texture.width,
+                                 -(float)tile->texture.texture.height };
+            DrawTextureRec (tile->texture.texture, srcRec, tile->offset,
+   WHITE);
+          }
+      }
+   */
 }
 void
 render_tile (const tile_t *tile, const grid_t *grid)

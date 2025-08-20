@@ -1,4 +1,7 @@
 ---
-BasedOnStyle: GNU
+BasedOnStyle: LLVM
 IndentWidth: 2
+UseTab: Never
+ContinuationIndentWidth: 1
+
 ---

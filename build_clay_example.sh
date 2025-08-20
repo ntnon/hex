@@ -48,10 +48,10 @@ if [ ! -f "$INCLUDE_DIR/third_party/clay.h" ]; then
 fi
 
 # Check if input_state.h exists (create minimal version if needed)
-if [ ! -f "$INCLUDE_DIR/controller/input_state.h" ]; then
+if [ ! -f "$INCLUDE_DIR/game/input_state.h" ]; then
     echo "Creating minimal input_state.h..."
     mkdir -p "$INCLUDE_DIR/controller"
-    cat > "$INCLUDE_DIR/controller/input_state.h" << 'EOF'
+    cat > "$INCLUDE_DIR/game/input_state.h" << 'EOF'
 #ifndef INPUT_STATE_H
 #define INPUT_STATE_H
 

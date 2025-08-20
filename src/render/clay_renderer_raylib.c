@@ -102,9 +102,9 @@ GetScreenToWorldPointWithZDistance (Vector2 position, Camera camera,
   return ray;
 }
 
-static inline Clay_Dimensions
-Raylib_MeasureText (Clay_StringSlice text, Clay_TextElementConfig *config,
-                    void *userData)
+Clay_Dimensions
+Clay_Raylib_MeasureText (Clay_StringSlice text, Clay_TextElementConfig *config,
+                         void *userData)
 {
   // Measure string size for Font
   Clay_Dimensions textSize = { 0 };
@@ -115,13 +115,24 @@ Raylib_MeasureText (Clay_StringSlice text, Clay_TextElementConfig *config,
   int lineCharCount = 0;
 
   float textHeight = config->fontSize;
-  Font *fonts = (Font *)userData;
-  Font fontToUse = fonts[config->fontId];
-  // Font failed to load, likely the fonts are in the wrong place relative to
-  // the execution dir. RayLib ships with a default font, so we can continue
-  // with that built in one.
-  if (!fontToUse.glyphs)
+  Font fontToUse;
+
+  // Check if userData is provided and contains fonts
+  if (userData != NULL)
     {
+      Font *fonts = (Font *)userData;
+      fontToUse = fonts[config->fontId];
+      // Font failed to load, likely the fonts are in the wrong place relative
+      // to the execution dir. RayLib ships with a default font, so we can
+      // continue with that built in one.
+      if (!fontToUse.glyphs)
+        {
+          fontToUse = GetFontDefault ();
+        }
+    }
+  else
+    {
+      // No userData provided, use default font
       fontToUse = GetFontDefault ();
     }
 

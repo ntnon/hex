@@ -1,6 +1,6 @@
 #include "../../include/screen/settings_screen.h"
 #include "../../include/screen/screen_manager.h"
-#include "controller/input_state.h"
+#include "game/input_state.h"
 #include "render/renderer.h"
 
 #define BUTTON_WIDTH 200

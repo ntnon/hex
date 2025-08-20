@@ -1,7 +1,7 @@
 // #include <stdbool.h>
 // #include <stdio.h>
 
-// #include "controller/input_state.h"
+// #include "game/input_state.h"
 // #include "raylib.h"
 // #include "ui/clay_ui.h"
 
