@@ -2,7 +2,7 @@
 #define INVENTORY_H
 
 #include "../tile/tile.h"
-#include "../types.h"
+#include "raylib.h"
 #include "../third_party/kvec.h"
 
 
@@ -26,7 +26,7 @@ void inventory_render(inventory_t* inv);
 void free_inventory(inventory_t* inv);
 void inventory_destroy_item(inventory_t *inv, int index);
 bool
-inventory_hit_test (inventory_t *inv, vec2_t mouse);
+inventory_hit_test (inventory_t *inv, Vector2 mouse);
 void inventory_handle_input(inventory_t *inv);
 
 void inventory_use_selected(inventory_t *inv);
