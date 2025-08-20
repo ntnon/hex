@@ -78,3 +78,11 @@ UI_Context ui_init(int screen_width, int screen_height);
 void ui_shutdown(UI_Context *ctx);
 
 #endif // UI_INIT_H
+
+#ifndef UI_EVENT_H
+#define UI_EVENT_H
+
+void on_hover_element(Clay_ElementId elementId, Clay_PointerData pointer,
+                      intptr_t userData)
+
+#endif
