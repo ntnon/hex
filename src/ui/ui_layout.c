@@ -1,6 +1,13 @@
+#include "stdio.h"
 #include "ui.h"
 
-Clay_RenderCommandArray ui_build_layout(game_t *game) {
+Clay_RenderCommandArray ui_build_layout(game_t *game,
+                                        game_controller_t *controller) {
+  Clay_SetPointerState(
+    (Clay_Vector2){controller->input.mouse.x, controller->input.mouse.y},
+    controller->input.mouse_right_pressed);
+  Clay_SetLayoutDimensions(
+    (Clay_Dimensions){.width = GetScreenWidth(), .height = GetScreenHeight()});
   Clay_BeginLayout();
 
   CLAY({.id = CLAY_ID("main"),
@@ -12,20 +19,25 @@ Clay_RenderCommandArray ui_build_layout(game_t *game) {
         .backgroundColor = M_BEIGE}) {
 
     CLAY(
-     {.id = CLAY_ID("right"),
-      .layout = {.sizing = (Clay_Sizing){.height = CLAY_SIZING_GROW(),
-                                         .width = CLAY_SIZING_PERCENT(0.8)}},
-      .cornerRadius = 5,
-      .backgroundColor = M_BROWN}){
-     // Optional: insert game board rendering hook here later
+      {.id = CLAY_ID("right"),
+       .layout = {.sizing = (Clay_Sizing){.height = CLAY_SIZING_GROW(),
+                                          .width = CLAY_SIZING_PERCENT(0.8)}},
+       .cornerRadius = 5,
+       .backgroundColor = M_BROWN}) {
+      Clay_OnHover(handle_hover, (intptr_t)controller);
+      // Optional: insert game board rendering hook here later
     };
 
-    CLAY(
-     {.id = CLAY_ID("left"),
+    CLAY({
+      .id = CLAY_ID("left"),
       .layout = {.sizing = (Clay_Sizing){.height = CLAY_SIZING_GROW(),
                                          .width = CLAY_SIZING_PERCENT(0.2)}},
       .cornerRadius = 5,
-      .backgroundColor = M_LIGHTGRAY});
+      .backgroundColor = M_LIGHTGRAY,
+
+    }) {
+      Clay_OnHover(handle_hover, (intptr_t)controller);
+    };
   };
 
   return Clay_EndLayout();
