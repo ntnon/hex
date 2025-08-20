@@ -305,33 +305,6 @@
       "-fsanitize=undefined",
       "-c",
       "-o",
-      "obj/x64/Debug/hexhex/clay_ui_test.o",
-      "../../src/clay_ui_test.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/clay_ui_test.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/clay_ui_test.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-DDEBUG",
-      "-DPLATFORM_DESKTOP",
-      "-DGRAPHICS_API_OPENGL_33",
-      "-I../../src",
-      "-I../../include",
-      "-I../external/raylib-master/src",
-      "-I../external/raylib-master/src/external",
-      "-I../external/raylib-master/src/external/glfw/include",
-      "-m64",
-      "-Wshadow",
-      "-g",
-      "-std=c17",
-      "-Wno-deprecated-declarations",
-      "-fsanitize=address",
-      "-fsanitize=undefined",
-      "-c",
-      "-o",
       "obj/x64/Debug/hexhex/edge_map.o",
       "../../src/grid/edge_map.c"
     ],
@@ -365,6 +338,33 @@
     "directory": "/Users/nydon/code/hexhex/build/build_files",
     "file": "/Users/nydon/code/hexhex/src/game/game.c",
     "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/game.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-DDEBUG",
+      "-DPLATFORM_DESKTOP",
+      "-DGRAPHICS_API_OPENGL_33",
+      "-I../../src",
+      "-I../../include",
+      "-I../external/raylib-master/src",
+      "-I../external/raylib-master/src/external",
+      "-I../external/raylib-master/src/external/glfw/include",
+      "-m64",
+      "-Wshadow",
+      "-g",
+      "-std=c17",
+      "-Wno-deprecated-declarations",
+      "-fsanitize=address",
+      "-fsanitize=undefined",
+      "-c",
+      "-o",
+      "obj/x64/Debug/hexhex/game_controller.o",
+      "../../src/game/game_controller.c"
+    ],
+    "directory": "/Users/nydon/code/hexhex/build/build_files",
+    "file": "/Users/nydon/code/hexhex/src/game/game_controller.c",
+    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/game_controller.o"
   },
   {
     "arguments": [
@@ -797,32 +797,5 @@
     "directory": "/Users/nydon/code/hexhex/build/build_files",
     "file": "/Users/nydon/code/hexhex/src/ui/ui_layout.c",
     "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/ui_layout.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-DDEBUG",
-      "-DPLATFORM_DESKTOP",
-      "-DGRAPHICS_API_OPENGL_33",
-      "-I../../src",
-      "-I../../include",
-      "-I../external/raylib-master/src",
-      "-I../external/raylib-master/src/external",
-      "-I../external/raylib-master/src/external/glfw/include",
-      "-m64",
-      "-Wshadow",
-      "-g",
-      "-std=c17",
-      "-Wno-deprecated-declarations",
-      "-fsanitize=address",
-      "-fsanitize=undefined",
-      "-c",
-      "-o",
-      "obj/x64/Debug/hexhex/ui_styles.o",
-      "../../src/ui/ui_styles.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/ui/ui_styles.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/ui_styles.o"
   }
 ]
