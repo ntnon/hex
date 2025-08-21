@@ -14,6 +14,8 @@ typedef struct {
     Camera2D camera;
     Clay_ElementId hovered_element_id;
     Clay_ElementData hovered_element_data;
+    Clay_BoundingBox game_bounds;
+    bool is_initialized;
 } game_controller_t;
 
 void controller_init(game_controller_t *controller, game_t *game);

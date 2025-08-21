@@ -3,6 +3,7 @@
 #include "game/input_state.h"
 #include "stdio.h"
 #include "ui.h"
+#include "utility/geometry.h"
 
 void controller_init(game_controller_t *controller, game_t *game) {
   controller->game = game;
@@ -10,20 +11,20 @@ void controller_init(game_controller_t *controller, game_t *game) {
 
   // Initialize input state
   input_state_init(&controller->input);
-
-  // Initialize camera
-  controller->camera = (Camera2D){0};
-  controller->camera.target = (Vector2){0.0f, 0.0f};
-  controller->camera.offset =
-    (Vector2){GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f};
-  controller->camera.zoom = 1.0f;
 }
 
 void controller_update(game_controller_t *controller, input_state_t *input) {
   // Update controller's input state with current input
   controller->input = *input;
   // Update camera with current input
-  update_camera(&controller->camera, input);
+
+  // printf("bounding box: %f, %f, %f, %f\n", controller->game_bounds.x,
+  //        controller->game_bounds.y, controller->game_bounds.width,
+  //        controller->game_bounds.height);
+
+  if (point_in_bounds(input->mouse, controller->game_bounds)) {
+    update_camera(&controller->camera, input);
+  }
 }
 
 void controller_hover(game_controller_t *controller, Clay_ElementId elementId) {
@@ -33,7 +34,6 @@ void controller_hover(game_controller_t *controller, Clay_ElementId elementId) {
 void controller_set_hover(game_controller_t *ctrl, ui_event_t evt) {
   ctrl->input.hovered_element_id = evt.element_id;
   ctrl->input.drag_bounds = evt.element_data.boundingBox;
-  printf("bound: %f\n", ctrl->input.drag_bounds.width);
 }
 
 void controller_clear_hover(game_controller_t *ctrl, ui_event_t evt) {

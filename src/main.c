@@ -21,17 +21,23 @@ int main(void) {
   inventory_fill(game.inventory, 5);
 
   game_controller_t controller = {0};
-  controller_init(&controller, &game);
 
   input_state_t input;
 
   ui_load_fonts();
   UI_Context ui = ui_init(initial_width, initial_height);
 
-  while (!WindowShouldClose()) {
+  ui_build_layout(&controller);
+  controller_init(&controller, &game); // must happen after ui_init
+  controller.game_bounds = Clay_GetElementData(CLAY_ID("right")).boundingBox;
 
+  camera_init(&controller.camera, controller.game_bounds.width,
+              controller.game_bounds.height);
+
+  while (!WindowShouldClose()) {
     get_input_state(&input);
     controller_update(&controller, &input);
+    controller.game_bounds = Clay_GetElementData(CLAY_ID("right")).boundingBox;
 
     Clay_RenderCommandArray renderCommands = ui_build_layout(&controller);
 
@@ -42,9 +48,9 @@ int main(void) {
 
     BeginMode2D(controller.camera);
 
-    Clay_BoundingBox topRect =
-      Clay_GetElementData(CLAY_ID("right")).boundingBox;
-    BeginScissorMode(topRect.x, topRect.y, topRect.width, topRect.height);
+    BeginScissorMode(controller.game_bounds.x, controller.game_bounds.y,
+                     controller.game_bounds.width,
+                     controller.game_bounds.height);
     render_board(game.board);
     EndScissorMode();
 

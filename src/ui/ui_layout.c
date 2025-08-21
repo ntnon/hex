@@ -16,7 +16,7 @@ Clay_RenderCommandArray ui_build_layout(game_controller_t *controller) {
                                            .height = CLAY_SIZING_GROW()},
                    .childGap = 5,
                    .padding = CLAY_PADDING_ALL(8)},
-        .backgroundColor = M_BEIGE}) {
+        .backgroundColor = M_LIGHTGRAY}) {
 
     CLAY({
       .id = CLAY_ID("right"),
@@ -31,7 +31,7 @@ Clay_RenderCommandArray ui_build_layout(game_controller_t *controller) {
     CLAY({
       .id = CLAY_ID("left"),
       .cornerRadius = 5,
-      .backgroundColor = M_LIGHTGRAY,
+      .backgroundColor = M_BEIGE,
       .layout = {.sizing = (Clay_Sizing){.height = CLAY_SIZING_GROW(),
                                          .width = CLAY_SIZING_PERCENT(0.2)}},
     }) {

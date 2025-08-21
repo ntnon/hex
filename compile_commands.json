@@ -386,6 +386,33 @@
       "-fsanitize=undefined",
       "-c",
       "-o",
+      "obj/x64/Debug/hexhex/geometry.o",
+      "../../src/utility/geometry.c"
+    ],
+    "directory": "/Users/nydon/code/hexhex/build/build_files",
+    "file": "/Users/nydon/code/hexhex/src/utility/geometry.c",
+    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/geometry.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-DDEBUG",
+      "-DPLATFORM_DESKTOP",
+      "-DGRAPHICS_API_OPENGL_33",
+      "-I../../src",
+      "-I../../include",
+      "-I../external/raylib-master/src",
+      "-I../external/raylib-master/src/external",
+      "-I../external/raylib-master/src/external/glfw/include",
+      "-m64",
+      "-Wshadow",
+      "-g",
+      "-std=c17",
+      "-Wno-deprecated-declarations",
+      "-fsanitize=address",
+      "-fsanitize=undefined",
+      "-c",
+      "-o",
       "obj/x64/Debug/hexhex/grid_cell_utils.o",
       "../../src/grid/grid_cell_utils.c"
     ],
@@ -797,5 +824,32 @@
     "directory": "/Users/nydon/code/hexhex/build/build_files",
     "file": "/Users/nydon/code/hexhex/src/ui/ui_layout.c",
     "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/ui_layout.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-DDEBUG",
+      "-DPLATFORM_DESKTOP",
+      "-DGRAPHICS_API_OPENGL_33",
+      "-I../../src",
+      "-I../../include",
+      "-I../external/raylib-master/src",
+      "-I../external/raylib-master/src/external",
+      "-I../external/raylib-master/src/external/glfw/include",
+      "-m64",
+      "-Wshadow",
+      "-g",
+      "-std=c17",
+      "-Wno-deprecated-declarations",
+      "-fsanitize=address",
+      "-fsanitize=undefined",
+      "-c",
+      "-o",
+      "obj/x64/Debug/hexhex/ui_styles.o",
+      "../../src/ui/ui_styles.c"
+    ],
+    "directory": "/Users/nydon/code/hexhex/build/build_files",
+    "file": "/Users/nydon/code/hexhex/src/ui/ui_styles.c",
+    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/ui_styles.o"
   }
 ]
