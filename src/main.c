@@ -1,4 +1,3 @@
-#include "raylib.h"
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -34,22 +33,22 @@ int main(void) {
     get_input_state(&input);
     controller_update(&controller, &input);
 
-    Clay_RenderCommandArray renderCommands =
-      ui_build_layout(&game, &controller);
+    Clay_RenderCommandArray renderCommands = ui_build_layout(&controller);
 
     BeginDrawing();
     ClearBackground(WHITE);
     Clay_Raylib_Render(renderCommands, UI_FONTS);
-    controller_handle_events(&controller);
+    controller_process_events(&controller);
 
     BeginMode2D(controller.camera);
+
     Clay_BoundingBox topRect =
       Clay_GetElementData(CLAY_ID("right")).boundingBox;
     BeginScissorMode(topRect.x, topRect.y, topRect.width, topRect.height);
     render_board(game.board);
     EndScissorMode();
+
     EndDrawing();
   }
-
   Clay_Raylib_Close();
 }

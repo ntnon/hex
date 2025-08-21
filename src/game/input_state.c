@@ -1,6 +1,4 @@
 #include "game/input_state.h"
-#include <stdbool.h>
-
 #include "raylib.h"
 #include "stdio.h"
 #include <math.h>
@@ -27,6 +25,9 @@ void input_state_init(input_state_t *state) {
   state->key_ctrl = false;
 
   state->mouse_dragging = false;
+  state->mouse_dragging = false;
+  state->drag_bounds = (Clay_BoundingBox){0, 0, 0, 0};
+  state->hovered_element_id = (Clay_ElementId){0};
 }
 
 void get_input_state(input_state_t *out) {
@@ -56,10 +57,25 @@ void get_input_state(input_state_t *out) {
 
   // --- Drag detection ---
   // Drag is left-button down + movement above threshold
-  out->mouse_dragging =
-    out->mouse_left_down && (fabsf(out->mouse_delta.x) > drag_threshold ||
-                             fabsf(out->mouse_delta.y) > drag_threshold);
+  // --- Drag detection ---
 
+  // Check if mouse is inside the active drag bounds
+  bool mouse_in_drag_bounds =
+    out->mouse.x >= out->drag_bounds.x &&
+    out->mouse.x <= out->drag_bounds.x + out->drag_bounds.width &&
+    out->mouse.y >= out->drag_bounds.y &&
+    out->mouse.y <= out->drag_bounds.y + out->drag_bounds.height;
+
+  if (!mouse_in_drag_bounds) {
+    // Kill drag immediately if we leave bounds
+    out->mouse_dragging = false;
+    out->mouse_right_down =
+      false; // optional: prevents resuming until button re-press
+  } else {
+    out->mouse_dragging =
+      out->mouse_right_down && (fabsf(out->mouse_delta.x) > drag_threshold ||
+                                fabsf(out->mouse_delta.y) > drag_threshold);
+  }
   // --- Modifier keys ---
   out->key_shift = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
   out->key_ctrl = IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL);
@@ -69,36 +85,15 @@ void get_input_state(input_state_t *out) {
   out->mouse_wheel_delta = GetMouseWheelMove();
 
   // --- Debug prints ---
-  if (out->mouse_left_pressed)
-    printf("Mouse left pressed\n");
-  if (out->mouse_left_released)
-    printf("Mouse left released\n");
-  if (out->mouse_right_pressed)
-    printf("Mouse right pressed\n");
-  if (out->mouse_right_released)
-    printf("Mouse right released\n");
-  if (out->mouse_dragging)
-    printf("Dragging... delta=(%.2f, %.2f)\n", out->mouse_delta.x,
-           out->mouse_delta.y);
-}
-
-bool point_in_rect(Vector2 p, Rectangle r) {
-  return p.x >= r.x && p.x <= r.x + r.width && p.y >= r.y &&
-         p.y <= r.y + r.height;
-}
-
-bool rect_pressed(input_state_t *input, Rectangle bounds) {
-  return point_in_rect(input->mouse, bounds) && input->mouse_left_pressed;
-}
-
-bool rect_released(input_state_t *input, Rectangle bounds) {
-  return point_in_rect(input->mouse, bounds) && input->mouse_left_released;
-}
-
-void input_reset_drag(input_state_t *state) {
-  state->mouse_dragging = false;
-  state->mouse_left_down = false;
-  state->mouse_left_pressed = false;
-  state->mouse_left_released = false;
-  state->mouse_delta = (Vector2){0, 0};
+  // if (out->mouse_left_pressed)
+  //   printf("Mouse left pressed\n");
+  // if (out->mouse_left_released)
+  //   printf("Mouse left released\n");
+  // if (out->mouse_right_pressed)
+  //   printf("Mouse right pressed\n");
+  // if (out->mouse_right_released)
+  //   printf("Mouse right released\n");
+  // if (out->mouse_dragging)
+  //   printf("Dragging... delta=(%.2f, %.2f)\n", out->mouse_delta.x,
+  //          out->mouse_delta.y);
 }

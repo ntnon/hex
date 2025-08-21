@@ -1,6 +1,8 @@
 #include "third_party/clay.h"
 #include "raylib.h"
 #include "game/game_controller.h"
+#include <stdint.h>
+#include "ui_types.h"
 
 #ifndef UI_STYLES_H
 #define UI_STYLES_H
@@ -40,11 +42,9 @@ extern Font UI_FONTS[MAX_FONTS];
 
 void ui_load_fonts(void);
 
-
 // Text configs
 extern const Clay_TextElementConfig TEXT_CONFIG_LARGE;
 extern const Clay_TextElementConfig TEXT_CONFIG_MEDIUM;
-
 
 #endif // UI_STYLES_H
 
@@ -52,7 +52,7 @@ extern const Clay_TextElementConfig TEXT_CONFIG_MEDIUM;
 #define UI_LAYOUT_H
 
 // Build and return the layout for the main UI
-Clay_RenderCommandArray ui_build_layout(game_t *game, game_controller_t *controller);
+Clay_RenderCommandArray ui_build_layout(game_controller_t *controller);
 
 #endif // UI_LAYOUT_H
 
@@ -60,8 +60,6 @@ Clay_RenderCommandArray ui_build_layout(game_t *game, game_controller_t *control
 #ifndef UI_INIT_H
 #define UI_INIT_H
 
-#include "third_party/clay.h"
-#include <stdint.h>
 
 typedef struct {
     Clay_Arena arena;
@@ -77,18 +75,6 @@ void ui_shutdown(UI_Context *ctx);
 
 #ifndef UI_EVENT_H
 #define UI_EVENT_H
-
-typedef enum {
-    UI_EVENT_NONE,
-    UI_EVENT_HOVER_START,
-    UI_EVENT_HOVER_END,
-    UI_EVENT_CLICK,
-} ui_event_type_t;
-
-typedef struct {
-    ui_event_type_t type;
-    Clay_ElementId element_id;
-} ui_event_t;
 
 #define MAX_UI_EVENTS 64
 

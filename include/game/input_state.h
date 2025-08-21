@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include "raylib.h"
+#include "third_party/clay.h"
 
 typedef struct {
     Vector2 mouse;
@@ -25,6 +26,9 @@ typedef struct {
 
     // Optional drag helpers
     bool mouse_dragging;
+    bool cancel_drag;
+    Clay_BoundingBox drag_bounds;
+    Clay_ElementId hovered_element_id;
 } input_state_t;
 
 void input_state_init(input_state_t* state);
