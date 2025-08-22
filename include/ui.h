@@ -4,6 +4,21 @@
 #include <stdint.h>
 #include "ui_types.h"
 
+
+#ifndef UI_LAYOUT_H
+#define UI_LAYOUT_H
+
+#define UI_ID_MAIN CLAY_ID("main")
+#define UI_ID_GAME CLAY_ID("game")
+#define UI_ID_INVENTORY CLAY_ID("inventory")
+#define UI_ID_NONE CLAY_ID("none")
+
+
+// Build and return the layout for the main UI
+Clay_RenderCommandArray ui_build_layout(game_controller_t *controller);
+
+#endif // UI_LAYOUT_H
+
 #ifndef UI_STYLES_H
 #define UI_STYLES_H
 
@@ -47,15 +62,6 @@ extern const Clay_TextElementConfig TEXT_CONFIG_LARGE;
 extern const Clay_TextElementConfig TEXT_CONFIG_MEDIUM;
 
 #endif // UI_STYLES_H
-
-#ifndef UI_LAYOUT_H
-#define UI_LAYOUT_H
-
-// Build and return the layout for the main UI
-Clay_RenderCommandArray ui_build_layout(game_controller_t *controller);
-
-#endif // UI_LAYOUT_H
-
 
 #ifndef UI_INIT_H
 #define UI_INIT_H

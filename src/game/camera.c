@@ -4,8 +4,6 @@
 void camera_init(Camera2D *camera, int screen_width, int screen_height) {
   camera->zoom = 0.6f;
   camera->rotation = 0.0f;
-  printf("Hello World!\n");
-  printf("%d, %d\n", screen_width, screen_height);
   camera->target = (Vector2){0.0f, 0.0f}; // center on world origin
   camera->offset = (Vector2){(float)screen_width / 2,
                              (float)screen_height / 2}; // center of screen

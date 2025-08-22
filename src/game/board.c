@@ -12,10 +12,11 @@ const orientation_t layout_pointy_t = {.f0 = 1.732050808,
                                        .b2 = 0.0,
                                        .b3 = 0.666666667,
                                        .start_angle = 0.5};
-layout_t layout = {
- .orientation = layout_pointy_t,
- .size = {70.0, 70.0}, // Hex size (adjust as needed)
- .origin = {0.0, 0.0}  // Center of the screen (adjust as needed)
+layout_t default_layout = {
+  .orientation = layout_pointy_t,
+  .size = {70.0, 70.0}, // Hex size (adjust as needed)
+  .origin = {0.0, 0.0}, // Center of the screen (adjust as needed)
+  .scale = 1.0f         // scale factor for hex size (adjust as needed)
 };
 
 board_t *board_create(grid_type_e grid_type, int radius) {
@@ -29,7 +30,7 @@ board_t *board_create(grid_type_e grid_type, int radius) {
   board->pool_manager = pool_manager_create();
   board->tile_manager = tile_manager_create();
   board->tile_to_pool = tile_to_pool_map_create();
-  board->grid = grid_create(grid_type, layout, radius);
+  board->grid = grid_create(grid_type, default_layout, radius);
   return board;
 }
 
@@ -91,13 +92,13 @@ void add_tile(board_t *board, tile_t *tile) {
   get_neighbor_pools(board, tile, candidate_pools, 6);
 
   size_t num_filtered_pools =
-   pool_map_filter_by_tile_type(candidate_pools, 6, tile->data.type,
-                                filtered_candidate_pools, MAX_POOL_CANDIDATES);
+    pool_map_filter_by_tile_type(candidate_pools, 6, tile->data.type,
+                                 filtered_candidate_pools, MAX_POOL_CANDIDATES);
 
   if (num_filtered_pools == 0) {
 
     target_pool = pool_manager_create_pool(
-     board->pool_manager); // create new pool for the tile
+      board->pool_manager); // create new pool for the tile
   } else {
     qsort(filtered_candidate_pools, num_filtered_pools, sizeof(pool_t *),
           compare_pools_by_score);
@@ -116,8 +117,8 @@ void add_tile(board_t *board, tile_t *tile) {
   if (num_filtered_pools > 1) {
     // Merge all connected pools into the target pool
     target_pool =
-     pool_manager_merge_pools(board->pool_manager, &board->tile_to_pool,
-                              filtered_candidate_pools, num_filtered_pools);
+      pool_manager_merge_pools(board->pool_manager, &board->tile_to_pool,
+                               filtered_candidate_pools, num_filtered_pools);
   }
 
   pool_update(target_pool, board->grid);

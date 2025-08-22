@@ -7,23 +7,24 @@
 
 void controller_init(game_controller_t *controller, game_t *game) {
   controller->game = game;
-  controller->hovered_element_id = CLAY_ID("none");
+  controller->last_clicked_ui_element_id = UI_ID_NONE;
+  controller->hovered_element_id = UI_ID_NONE;
+  controller->game_bounds = Clay_GetElementData(UI_ID_GAME).boundingBox;
+
+  camera_init(&controller->game_camera, controller->game_bounds.width,
+              controller->game_bounds.height);
 
   // Initialize input state
   input_state_init(&controller->input);
 }
 
 void controller_update(game_controller_t *controller, input_state_t *input) {
-  // Update controller's input state with current input
   controller->input = *input;
-  // Update camera with current input
-
-  // printf("bounding box: %f, %f, %f, %f\n", controller->game_bounds.x,
-  //        controller->game_bounds.y, controller->game_bounds.width,
-  //        controller->game_bounds.height);
-
-  if (point_in_bounds(input->mouse, controller->game_bounds)) {
-    update_camera(&controller->camera, input);
+  
+  // Update game camera with current input
+  if (point_in_bounds(input->mouse, controller->game_bounds) &&
+      controller->last_clicked_ui_element_id.id == UI_ID_GAME.id) {
+    update_camera(&controller->game_camera, input);
   }
 }
 
@@ -54,6 +55,7 @@ void controller_process_events(game_controller_t *ctrl) {
       break;
     case UI_EVENT_CLICK:
       printf("click\n");
+      ctrl->last_clicked_ui_element_id = evt.element_id;
       break;
     default:
       break;

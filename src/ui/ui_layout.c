@@ -5,12 +5,13 @@
 Clay_RenderCommandArray ui_build_layout(game_controller_t *controller) {
   Clay_SetPointerState(
     (Clay_Vector2){controller->input.mouse.x, controller->input.mouse.y},
-    controller->input.mouse_right_pressed);
+    controller->input.mouse_left_down);
+
   Clay_SetLayoutDimensions(
     (Clay_Dimensions){.width = GetScreenWidth(), .height = GetScreenHeight()});
   Clay_BeginLayout();
 
-  CLAY({.id = CLAY_ID("main"),
+  CLAY({.id = UI_ID_MAIN,
         .layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT,
                    .sizing = (Clay_Sizing){.width = CLAY_SIZING_GROW(),
                                            .height = CLAY_SIZING_GROW()},
@@ -19,7 +20,7 @@ Clay_RenderCommandArray ui_build_layout(game_controller_t *controller) {
         .backgroundColor = M_LIGHTGRAY}) {
 
     CLAY({
-      .id = CLAY_ID("right"),
+      .id = UI_ID_GAME,
       .cornerRadius = 5,
       .backgroundColor = M_BROWN,
       .layout = {.sizing = (Clay_Sizing){.height = CLAY_SIZING_GROW(),
@@ -29,7 +30,7 @@ Clay_RenderCommandArray ui_build_layout(game_controller_t *controller) {
     };
 
     CLAY({
-      .id = CLAY_ID("left"),
+      .id = UI_ID_INVENTORY,
       .cornerRadius = 5,
       .backgroundColor = M_BEIGE,
       .layout = {.sizing = (Clay_Sizing){.height = CLAY_SIZING_GROW(),

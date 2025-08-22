@@ -11,11 +11,13 @@ typedef struct input_area_info input_area_info_t;
 typedef struct {
     game_t *game;
     input_state_t input;
-    Camera2D camera;
+    Camera2D game_camera;
+    Clay_ElementId last_clicked_ui_element_id;
     Clay_ElementId hovered_element_id;
     Clay_ElementData hovered_element_data;
     Clay_BoundingBox game_bounds;
     bool is_initialized;
+
 } game_controller_t;
 
 void controller_init(game_controller_t *controller, game_t *game);

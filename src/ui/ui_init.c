@@ -8,11 +8,12 @@ static void HandleClayErrors(Clay_ErrorData errorData) {
 }
 
 UI_Context ui_init(int screen_width, int screen_height) {
+  ui_load_fonts();
   UI_Context ctx = {0};
 
   Clay_Raylib_Initialize(screen_width, screen_height, "HexHex",
-                         FLAG_WINDOW_HIGHDPI | FLAG_WINDOW_RESIZABLE |
-                          FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
+                         FLAG_WINDOW_HIGHDPI | FLAG_MSAA_4X_HINT |
+                           FLAG_VSYNC_HINT);
 
   // Allocate memory for Clay
   uint64_t clayRequiredMemory = Clay_MinMemorySize();
@@ -20,8 +21,9 @@ UI_Context ui_init(int screen_width, int screen_height) {
   ctx.arena.capacity = clayRequiredMemory;
 
   Clay_Initialize(
-   ctx.arena, (Clay_Dimensions){.width = screen_width, .height = screen_height},
-   (Clay_ErrorHandler){HandleClayErrors});
+    ctx.arena,
+    (Clay_Dimensions){.width = screen_width, .height = screen_height},
+    (Clay_ErrorHandler){HandleClayErrors});
 
   Clay_SetMeasureTextFunction(Clay_Raylib_MeasureText, UI_FONTS);
 
