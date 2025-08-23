@@ -286,7 +286,7 @@ Rectangle inventory_get_slot_rect(const inventory_t *inv, int i) {
 
 void render_inventory_item(const inventory_t *inv, int i, bool selected) {
   Rectangle slot = inventory_get_slot_rect(inv, i);
-  Color fill = to_raylib_color(color_from_tile(inv->items.a[i]));
+  Color fill = to_raylib_color(color_from_tile(inv->items.a[i].tile_data));
 
   DrawRectangleRec(slot, fill);
 

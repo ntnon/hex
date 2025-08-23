@@ -56,12 +56,15 @@ int main(void) {
   game_init(&game);
 
   game_controller_t controller;
-
-  UI_Context ui = ui_init(initial_width, initial_height);
   controller_init(&controller, &game);
 
+  UI_Context ui = ui_init(initial_width, initial_height);
+
+  // Initial layout build to get game bounds
   ui_build_layout(&controller);
   Clay_BoundingBox game_bounds = Clay_GetElementData(UI_ID_GAME).boundingBox;
+  controller.game_bounds = (Clay_BoundingBox){
+    game_bounds.x, game_bounds.y, game_bounds.width, game_bounds.height};
 
   camera_set_offset(&controller.game_camera, game_bounds.width,
                     game_bounds.height);
@@ -74,36 +77,18 @@ int main(void) {
 
     BeginDrawing();
     ClearBackground(WHITE);
+
+    // Render Clay UI
     Clay_Raylib_Render(renderCommands, UI_FONTS);
+
+    // Process controller events
     controller_process_events(&controller);
 
-    BeginMode2D(controller.game_camera);
-
-    BeginScissorMode(controller.game_bounds.x, controller.game_bounds.y,
-                     controller.game_bounds.width,
-                     controller.game_bounds.height);
-
-    render_hex_grid(game.board->grid);
-    // render_board(game.board);
-    EndScissorMode();
-    for (int i = 0; i < inventory_get_size(controller.game->inventory); i++) {
-        Clay_ElementId id = { .id = UI_ID_INVENTORY_ITEM_BASE_STRING + i };
-        Clay_BoundingBox box = Clay_GetElementData(id).boundingBox;
-    
-        // Render your custom thing inside this box
-        BeginScissorMode(box.x, box.y, box.width, box.height);
-    
-        // Example: draw item preview
-        Item *item = inventory_get_item(controller->game->inventory, i);
-        if (item) {
-            DrawText(i, box.x + 5, box.y + 5, 10, BLACK);
-            // or DrawTexture inside box
-        }
-    
-        EndScissorMode();
-    }
     EndDrawing();
   }
 
   Clay_Raylib_Close();
+  CloseWindow();
+
+  return 0;
 }

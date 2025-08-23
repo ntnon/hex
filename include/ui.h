@@ -15,6 +15,8 @@
 
 #define UI_ID_INVENTORY_ITEM_BASE_STRING "inventory_item_base_"
 
+bool is_id_valid(const Clay_ElementId id);
+
 // Build and return the layout for the main UI
 Clay_RenderCommandArray ui_build_layout(game_controller_t *controller);
 

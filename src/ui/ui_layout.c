@@ -1,9 +1,12 @@
+#include "game/inventory.h"
 #include "raylib.h"
-#include "render/clay_renderer_raylib.h"
+// #include "render/clay_renderer_raylib.h"
 #include "render/renderer.h"
 #include "stdio.h"
-#include "tile/tile.h"
 #include "ui.h"
+
+bool is_id_valid(const Clay_ElementId id) { return id.id == UI_ID_NONE.id; }
+
 Clay_RenderCommandArray ui_build_layout(game_controller_t *controller) {
   Clay_SetPointerState(
     (Clay_Vector2){controller->input.mouse.x, controller->input.mouse.y},
@@ -52,20 +55,20 @@ Clay_RenderCommandArray ui_build_layout(game_controller_t *controller) {
       Clay_OnHover(handle_hover, (intptr_t)controller);
 
       int inventory_size = inventory_get_size(controller->game->inventory);
-      printf("inventory_size, %d\n", inventory_size);
       for (int i = 0; i < inventory_size; i++) {
-        char item_name[64];
-        CLAY(
-          {.id = CLAY_ID(JUST STORE THE INVENTORY ID AND USE THAT,
-                         DUHHHHH), // optional unique ID
-           .backgroundColor = M_BEIGE,
-           .cornerRadius = 5,
-           .layout = {.layoutDirection = CLAY_TOP_TO_BOTTOM,
-                      .padding = CLAY_PADDING_ALL(7),
-                      .sizing = (Clay_Sizing){.height = CLAY_SIZING_GROW(),
-                                              .width = CLAY_SIZING_GROW()}}}){
+        Clay_ElementId id =
+          inventory_get_element_id(controller->game->inventory, i);
+        if (is_id_valid(id)) {
 
-        };
+          CLAY({.id = id.id, // optional unique ID
+                .backgroundColor = M_BEIGE,
+                .cornerRadius = 5,
+                .layout = {.layoutDirection = CLAY_TOP_TO_BOTTOM,
+                           .padding = CLAY_PADDING_ALL(7),
+                           .sizing =
+                             (Clay_Sizing){.height = CLAY_SIZING_GROW(),
+                                           .width = CLAY_SIZING_GROW()}}}){};
+        }
       }
     };
   };
