@@ -5,7 +5,7 @@
 #include "stdio.h"
 #include "ui.h"
 
-bool is_id_valid(const Clay_ElementId id) { return id.id == UI_ID_NONE.id; }
+bool is_id_valid(const Clay_ElementId id) { return id.id != UI_ID_NONE.id; }
 
 Clay_RenderCommandArray ui_build_layout(game_controller_t *controller) {
   Clay_SetPointerState(
@@ -55,11 +55,11 @@ Clay_RenderCommandArray ui_build_layout(game_controller_t *controller) {
       Clay_OnHover(handle_hover, (intptr_t)controller);
 
       int inventory_size = inventory_get_size(controller->game->inventory);
+
       for (int i = 0; i < inventory_size; i++) {
         Clay_ElementId id =
           inventory_get_element_id(controller->game->inventory, i);
         if (is_id_valid(id)) {
-
           CLAY({.id = id.id, // optional unique ID
                 .backgroundColor = M_BEIGE,
                 .cornerRadius = 5,
