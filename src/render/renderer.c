@@ -91,11 +91,11 @@ static void update_tiled_grid_cache(const board_t *board) {
 
       // Determine the size for this tile (handle edges)
       tile->width = ((tx + 1) * TILE_CACHE_SIZE > totalWidth)
-                     ? (totalWidth - tx * TILE_CACHE_SIZE)
-                     : TILE_CACHE_SIZE;
-      tile->height = ((ty + 1) * TILE_CACHE_SIZE > totalHeight)
-                      ? (totalHeight - ty * TILE_CACHE_SIZE)
+                      ? (totalWidth - tx * TILE_CACHE_SIZE)
                       : TILE_CACHE_SIZE;
+      tile->height = ((ty + 1) * TILE_CACHE_SIZE > totalHeight)
+                       ? (totalHeight - ty * TILE_CACHE_SIZE)
+                       : TILE_CACHE_SIZE;
 
       // The world offset for this tile.
       tile->offset.x = min_x + tx * TILE_CACHE_SIZE;
@@ -212,7 +212,7 @@ void render_tile(const tile_t *tile, const grid_t *grid) {
 
 void render_hex_grid(const grid_t *grid) {
   for (size_t i = 0; i < grid->num_cells; ++i) {
-    render_hex_cell(grid, grid->cells[i], M_LIGHTGRAY, M_GRAY);
+    render_hex_cell(grid, grid->cells[i], M_BLANK, M_GRAY);
   }
 }
 

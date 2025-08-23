@@ -12,15 +12,16 @@ const orientation_t layout_pointy_t = {.f0 = 1.732050808,
                                        .b2 = 0.0,
                                        .b3 = 0.666666667,
                                        .start_angle = 0.5};
+
 layout_t default_layout = {
   .orientation = layout_pointy_t,
   .size = {70.0, 70.0}, // Hex size (adjust as needed)
   .origin = {0.0, 0.0}, // Center of the screen (adjust as needed)
-  .scale = 1.0f         // scale factor for hex size (adjust as needed)
+  .scale = 1.0f,        // scale factor for hex size (adjust as needed)
+  .radius = 5,          // radius of the hexagon (adjust as needed)
 };
 
 board_t *board_create(grid_type_e grid_type, int radius) {
-  printf("Creating board... %d\n", radius);
   board_t *board = malloc(sizeof(board_t));
   if (!board) {
     fprintf(stderr, "Failed to allocate memory for board\n");

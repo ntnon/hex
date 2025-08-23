@@ -1,12 +1,16 @@
 #include "game/camera.h"
 #include "stdio.h"
 
-void camera_init(Camera2D *camera, int screen_width, int screen_height) {
+void camera_init(Camera2D *camera) {
   camera->zoom = 0.6f;
   camera->rotation = 0.0f;
   camera->target = (Vector2){0.0f, 0.0f}; // center on world origin
-  camera->offset = (Vector2){(float)screen_width / 2,
-                             (float)screen_height / 2}; // center of screen
+  camera->offset = (Vector2){0, 0};       // center of screen
+}
+
+void camera_set_offset(Camera2D *camera, int screen_width, int screen_height) {
+  camera->offset = camera->offset =
+    (Vector2){(float)screen_width / 2, (float)screen_height / 2};
 }
 
 void update_camera(Camera2D *camera, const input_state_t *input) {

@@ -11,33 +11,64 @@
 #include "ui.h"
 
 /*
- * User choose to improve:
- * - single tiles
- * - pools
- * - tile colors
- * - pieces
+
+Apply effect to entity:
+1. Local
+- Tile
+- Pool
+2. Global
+- All pools of a color
+- All tiles of a color
+- All pools
+- All tiles
+3. Future (pieces)
+- Add tile to piece
+- Remove tile from piece
+- Boost tile in piece
+- Boost all tiles in piece
+
+Effects and alterations:
+1. Increase / Decrease production
+- Flat
+- Percentage
+2. Add product
+3. Remove product
+4. Change color of entity
+5. Remove entity
+6. Move entity
+
+Modifiers:
+1. Recurring
+- For each n-th loop
+2. One time
+- For each (entity/cycle)
+3. Gated
+- Condition gate (e.g green production > 20% of total production)
+- Luck based gate (roll )
+
  */
 
 int main(void) {
-  const int initial_width = 1000;
+  const int initial_width = 1300;
   const int initial_height = 700;
 
   game_t game;
   game_init(&game);
 
-  game_controller_t controller = {0};
-  input_state_t input;
+  game_controller_t controller;
 
   UI_Context ui = ui_init(initial_width, initial_height);
+  controller_init(&controller, &game);
 
-  // build an initial layout, to know where to place elements
   ui_build_layout(&controller);
-  controller_init(&controller, &game); // must happen after ui_init
+  Clay_BoundingBox game_bounds = Clay_GetElementData(UI_ID_GAME).boundingBox;
+
+  camera_set_offset(&controller.game_camera, game_bounds.width,
+                    game_bounds.height);
 
   while (!WindowShouldClose()) {
-    get_input_state(&input);
-    controller_update(&controller, &input);
-    controller.game_bounds = Clay_GetElementData(UI_ID_GAME).boundingBox;
+    get_input_state(&controller.input);
+    controller_update(&controller, &controller.input);
 
     Clay_RenderCommandArray renderCommands = ui_build_layout(&controller);
 
@@ -53,10 +84,26 @@ int main(void) {
                      controller.game_bounds.height);
 
     render_hex_grid(game.board->grid);
-    render_board(game.board);
+    // render_board(game.board);
     EndScissorMode();
-
+    for (int i = 0; i < inventory_get_size(controller.game->inventory); i++) {
+        Clay_ElementId id = { .id = UI_ID_INVENTORY_ITEM_BASE_STRING + i };
+        Clay_BoundingBox box = Clay_GetElementData(id).boundingBox;
+    
+        // Render your custom thing inside this box
+        BeginScissorMode(box.x, box.y, box.width, box.height);
+    
+        // Example: draw item preview
+        Item *item = inventory_get_item(controller->game->inventory, i);
+        if (item) {
+            DrawText(i, box.x + 5, box.y + 5, 10, BLACK);
+            // or DrawTexture inside box
+        }
+    
+        EndScissorMode();
+    }
     EndDrawing();
   }
+
   Clay_Raylib_Close();
 }

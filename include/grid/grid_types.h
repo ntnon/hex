@@ -80,7 +80,8 @@ typedef struct {
     orientation_t orientation;
     point_t size;           // Size of a single cell (e.g., width and height)
     point_t origin;         // Pixel offset for the grid's origin (0,0)
-    double scale;           // Scale multiplier for the entire grid (1.0 = normal, 2.0 = double size)
+    double scale;
+int radius;    // Scale multiplier for the entire grid (1.0 = normal, 2.0 = double size)
 } layout_t;
 
 

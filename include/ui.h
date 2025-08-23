@@ -13,6 +13,7 @@
 #define UI_ID_INVENTORY CLAY_ID("inventory")
 #define UI_ID_NONE CLAY_ID("none")
 
+#define UI_ID_INVENTORY_ITEM_BASE_STRING "inventory_item_base_"
 
 // Build and return the layout for the main UI
 Clay_RenderCommandArray ui_build_layout(game_controller_t *controller);

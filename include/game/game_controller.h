@@ -21,6 +21,8 @@ typedef struct {
 } game_controller_t;
 
 void controller_init(game_controller_t *controller, game_t *game);
+void controller_add_game_bounds(game_controller_t *controller, Clay_BoundingBox bounds);
+
 void controller_update(game_controller_t *controller, input_state_t *input);
 void controller_process_events(game_controller_t *controller);
 void controller_hover(game_controller_t *controller, Clay_ElementId elementId);
