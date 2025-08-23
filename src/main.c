@@ -56,19 +56,15 @@ int main(void) {
   game_init(&game);
 
   game_controller_t controller;
-  controller_init(&controller, &game);
 
   UI_Context ui = ui_init(initial_width, initial_height);
+  controller_init(&controller, &game);
 
-  // Initial layout build to get game bounds
   ui_build_layout(&controller);
   Clay_BoundingBox game_bounds = Clay_GetElementData(UI_ID_GAME).boundingBox;
-  controller.game_bounds = (Clay_BoundingBox){
-    game_bounds.x, game_bounds.y, game_bounds.width, game_bounds.height};
 
   camera_set_offset(&controller.game_camera, game_bounds.width,
                     game_bounds.height);
-
   while (!WindowShouldClose()) {
     get_input_state(&controller.input);
     controller_update(&controller, &controller.input);
