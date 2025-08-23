@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+<<<<<<< HEAD
 #include "controller/input_state.h"
 #include "raylib.h"
 #include "ui/ui_context.h"
@@ -18,19 +19,35 @@
 #include <stdbool.h>
 #include <stdio.h>
 >>>>>>> parent of 53165fd (continued decoupling of raylib and game logic.)
+=======
+#define CLAY_IMPLEMENTATION
+#include "../include/third_party/clay.h" // UI system
+#include "render/clay_renderer_raylib.h"
 
-int
-main (void)
-{
-  // Window initialization
-  const int initial_width = 800;
-  const int initial_height = 600;
+#include "game/camera.h"
+#include "game/game_controller.h"
+#include "render/renderer.h"
+#include "ui.h"
+>>>>>>> pre_slop
 
-  SetConfigFlags (FLAG_WINDOW_HIGHDPI);
-  SetConfigFlags (FLAG_WINDOW_RESIZABLE);
-  SetTargetFPS (60);
-  InitWindow (initial_width, initial_height, "HexHex");
+/*
 
+Apply effect to entity:
+1. Local
+- Tile
+- Pool
+2. Global
+- All pools of a color
+- All tiles of a color
+- All pools
+- All tiles
+3. Future (pieces)
+- Add tile to piece
+- Remove tile from piece
+- Boost tile in piece
+- Boost all tiles in piece
+
+<<<<<<< HEAD
   // Initialize Clay
   Clay_Initialize ((Clay_Arena){ 1024 * 1024 }, (Clay_Dimensions){ 1024 },
                    (Clay_ErrorHandler){});
@@ -44,14 +61,30 @@ main (void)
 =======
   input_controller_t input_ctrl;
   input_controller_init (&input_ctrl);
+=======
+Effects and alterations:
+1. Increase / Decrease production
+- Flat
+- Percentage
+2. Add product
+3. Remove product
+4. Change color of entity
+5. Remove entity
+6. Move entity
+>>>>>>> pre_slop
 
-  // Initialize screen data
-  menu_screen_t menu_screen;
-  menu_screen_init (&menu_screen, initial_width, initial_height);
+Modifiers:
+1. Recurring
+- For each n-th loop
+2. One time
+- For each (entity/cycle)
+3. Gated
+- Condition gate (e.g green production > 20% of total production)
+- Luck based gate (roll )
 
-  game_screen_t game_screen;
-  game_screen_init (&game_screen, initial_width, initial_height);
+ */
 
+<<<<<<< HEAD
   pause_screen_t pause_screen;
   pause_screen_init (&pause_screen, initial_width, initial_height);
 
@@ -131,10 +164,66 @@ main (void)
 
       input_controller_render (&input_ctrl, &screen_mgr);
 >>>>>>> parent of 53165fd (continued decoupling of raylib and game logic.)
+=======
+int main(void) {
+  const int initial_width = 1300;
+  const int initial_height = 700;
 
-      EndDrawing ();
+  game_t game;
+  game_init(&game);
+
+  game_controller_t controller;
+
+  UI_Context ui = ui_init(initial_width, initial_height);
+  controller_init(&controller, &game);
+
+  ui_build_layout(&controller);
+  Clay_BoundingBox game_bounds = Clay_GetElementData(UI_ID_GAME).boundingBox;
+
+  camera_set_offset(&controller.game_camera, game_bounds.width,
+                    game_bounds.height);
+
+  while (!WindowShouldClose()) {
+    get_input_state(&controller.input);
+    controller_update(&controller, &controller.input);
+
+    Clay_RenderCommandArray renderCommands = ui_build_layout(&controller);
+
+    BeginDrawing();
+    ClearBackground(WHITE);
+    Clay_Raylib_Render(renderCommands, UI_FONTS);
+    controller_process_events(&controller);
+
+    BeginMode2D(controller.game_camera);
+
+    BeginScissorMode(controller.game_bounds.x, controller.game_bounds.y,
+                     controller.game_bounds.width,
+                     controller.game_bounds.height);
+>>>>>>> pre_slop
+
+    render_hex_grid(game.board->grid);
+    // render_board(game.board);
+    EndScissorMode();
+    for (int i = 0; i < inventory_get_size(controller.game->inventory); i++) {
+        Clay_ElementId id = { .id = UI_ID_INVENTORY_ITEM_BASE_STRING + i };
+        Clay_BoundingBox box = Clay_GetElementData(id).boundingBox;
+    
+        // Render your custom thing inside this box
+        BeginScissorMode(box.x, box.y, box.width, box.height);
+    
+        // Example: draw item preview
+        Item *item = inventory_get_item(controller->game->inventory, i);
+        if (item) {
+            DrawText(i, box.x + 5, box.y + 5, 10, BLACK);
+            // or DrawTexture inside box
+        }
+    
+        EndScissorMode();
     }
+    EndDrawing();
+  }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
   ui_context_cleanup (&ui_ctx);
 =======
@@ -147,4 +236,7 @@ main (void)
 >>>>>>> parent of 53165fd (continued decoupling of raylib and game logic.)
   CloseWindow ();
   return 0;
+=======
+  Clay_Raylib_Close();
+>>>>>>> pre_slop
 }

@@ -1,20 +1,20 @@
-#include "../include/render/renderer.h"
-#include "../include/grid/grid_cell_utils.h"
-#include "screen/menu_screen.h"
-
-#include "raylib.h"
-
-#include "adapter/raylib_bridge.c"
-#include "render/color.h"
+#include "tile/tile.h"
+#include "tile/tile_map.h"
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
 
+#include "raylib.h"
+
+#include "ui.h"
+
+#include "../include/grid/grid_cell_utils.h"
+#include "../include/render/renderer.h"
+
 #define TILE_CACHE_SIZE 1000 // Maximum size for each tile
 
 // Structure to hold a cached tile
-typedef struct
-{
+typedef struct {
   RenderTexture2D texture;
   // Its offset in the overall grid cache (world-space position of this tile's
   // top-left)
@@ -29,15 +29,13 @@ typedef struct
 static bool tiledCacheInitialized = false;
 static TileCache *tileCaches = NULL;
 static int tileCountX = 0, tileCountY = 0;
-static Vector2 gridCacheMin = { 0 }; // overall grid bounding box minimum
+static Vector2 gridCacheMin = {0}; // overall grid bounding box minimum
 
 // Helper: Draw each tile from the tile map; user_data is a pointer to the
 // grid.
-static void
-draw_tile_wrapper (tile_t *tile, void *user_data)
-{
+static void draw_tile_wrapper(tile_t *tile, void *user_data) {
   const grid_t *grid = (const grid_t *)user_data;
-  render_tile (tile, grid);
+  render_tile(tile, grid);
 }
 
 /*
@@ -47,320 +45,266 @@ draw_tile_wrapper (tile_t *tile, void *user_data)
  * cells, then splits that into smaller tiles (each up to TILE_CACHE_SIZE in
  * size).
  */
-static void
-update_tiled_grid_cache (const board_t *board)
-{
+static void update_tiled_grid_cache(const board_t *board) {
 
   const grid_t *grid = board->grid;
   float min_x = FLT_MAX, min_y = FLT_MAX;
   float max_x = -FLT_MAX, max_y = -FLT_MAX;
 
   // Compute overall grid bounding box from all hex cell corners.
-  for (size_t i = 0; i < grid->num_cells; i++)
-    {
-      grid_cell_t cell = grid->cells[i];
-      point_t corners[6];
-      grid->vtable->get_corners (grid, cell, corners);
-      for (int j = 0; j < 6; j++)
-        {
-          if (corners[j].x < min_x)
-            min_x = corners[j].x;
-          if (corners[j].y < min_y)
-            min_y = corners[j].y;
-          if (corners[j].x > max_x)
-            max_x = corners[j].x;
-          if (corners[j].y > max_y)
-            max_y = corners[j].y;
-        }
+  for (size_t i = 0; i < grid->num_cells; i++) {
+    grid_cell_t cell = grid->cells[i];
+    point_t corners[6];
+    grid->vtable->get_corners(grid, cell, corners);
+    for (int j = 0; j < 6; j++) {
+      if (corners[j].x < min_x)
+        min_x = corners[j].x;
+      if (corners[j].y < min_y)
+        min_y = corners[j].y;
+      if (corners[j].x > max_x)
+        max_x = corners[j].x;
+      if (corners[j].y > max_y)
+        max_y = corners[j].y;
     }
+  }
   gridCacheMin.x = min_x;
   gridCacheMin.y = min_y;
-  int totalWidth = (int)ceilf (max_x - min_x);
-  int totalHeight = (int)ceilf (max_y - min_y);
+  int totalWidth = (int)ceilf(max_x - min_x);
+  int totalHeight = (int)ceilf(max_y - min_y);
 
   // Calculate how many tiles are needed in each direction.
   tileCountX = (totalWidth + TILE_CACHE_SIZE - 1) / TILE_CACHE_SIZE;
   tileCountY = (totalHeight + TILE_CACHE_SIZE - 1) / TILE_CACHE_SIZE;
 
   // Allocate array for tile caches.
-  tileCaches = malloc (sizeof (TileCache) * tileCountX * tileCountY);
-  if (!tileCaches)
-    {
-      printf ("Failed to allocate tileCaches\n");
-      return;
-    }
+  tileCaches = malloc(sizeof(TileCache) * tileCountX * tileCountY);
+  if (!tileCaches) {
+    printf("Failed to allocate tileCaches\n");
+    return;
+  }
 
   // Create each tile cache.
-  for (int ty = 0; ty < tileCountY; ty++)
-    {
-      for (int tx = 0; tx < tileCountX; tx++)
-        {
-          int index = ty * tileCountX + tx;
-          TileCache *tile = &tileCaches[index];
+  for (int ty = 0; ty < tileCountY; ty++) {
+    for (int tx = 0; tx < tileCountX; tx++) {
+      int index = ty * tileCountX + tx;
+      TileCache *tile = &tileCaches[index];
 
-          // Determine the size for this tile (handle edges)
-          tile->width = ((tx + 1) * TILE_CACHE_SIZE > totalWidth)
-                            ? (totalWidth - tx * TILE_CACHE_SIZE)
-                            : TILE_CACHE_SIZE;
-          tile->height = ((ty + 1) * TILE_CACHE_SIZE > totalHeight)
-                             ? (totalHeight - ty * TILE_CACHE_SIZE)
-                             : TILE_CACHE_SIZE;
+      // Determine the size for this tile (handle edges)
+      tile->width = ((tx + 1) * TILE_CACHE_SIZE > totalWidth)
+                      ? (totalWidth - tx * TILE_CACHE_SIZE)
+                      : TILE_CACHE_SIZE;
+      tile->height = ((ty + 1) * TILE_CACHE_SIZE > totalHeight)
+                       ? (totalHeight - ty * TILE_CACHE_SIZE)
+                       : TILE_CACHE_SIZE;
 
-          // The world offset for this tile.
-          tile->offset.x = min_x + tx * TILE_CACHE_SIZE;
-          tile->offset.y = min_y + ty * TILE_CACHE_SIZE;
+      // The world offset for this tile.
+      tile->offset.x = min_x + tx * TILE_CACHE_SIZE;
+      tile->offset.y = min_y + ty * TILE_CACHE_SIZE;
 
-          tile->texture = LoadRenderTexture (tile->width, tile->height);
-          // Optional: Setup bilinear filtering
+      tile->texture = LoadRenderTexture(tile->width, tile->height);
+      // Optional: Setup bilinear filtering
 
-          BeginTextureMode (tile->texture);
-          ClearBackground (BLANK);
-          // Setup a camera so that the tile's region of the grid is drawn.
-          Camera2D cam = { 0 };
-          cam.offset = (Vector2){ 0, 0 };
-          // Translate so that the tile's top left becomes (0,0) in the
-          // texture.
-          cam.target = (Vector2){ tile->offset.x, tile->offset.y };
-          cam.rotation = 0.0f;
-          cam.zoom = 1.0f;
-          BeginMode2D (cam);
-          // Render every tile from the board.
-          tile_map_foreach_tile (board->tile_manager->tiles, draw_tile_wrapper,
-                                 (void *)grid);
-          EndMode2D ();
-          EndTextureMode ();
-        }
+      BeginTextureMode(tile->texture);
+      ClearBackground(BLANK);
+      // Setup a camera so that the tile's region of the grid is drawn.
+      Camera2D cam = {0};
+      cam.offset = (Vector2){0, 0};
+      // Translate so that the tile's top left becomes (0,0) in the
+      // texture.
+      cam.target = (Vector2){tile->offset.x, tile->offset.y};
+      cam.rotation = 0.0f;
+      cam.zoom = 1.0f;
+      BeginMode2D(cam);
+      // Render every tile from the board.
+      tile_map_foreach_tile(board->tile_manager->tiles, draw_tile_wrapper,
+                            (void *)grid);
+      EndMode2D();
+      EndTextureMode();
     }
+  }
   tiledCacheInitialized = true;
 }
 
-void
-render_board (const board_t *board)
-{
+void render_board(const board_t *board) {
 
-  if (!board)
-    {
-      printf ("ERROR: board is null\n");
-      return;
-    }
+  if (!board) {
+    printf("ERROR: board is null\n");
+    return;
+  }
 
-  if (!board->grid)
-    {
-      printf ("ERROR: board->grid is null\n");
-      return;
-    }
+  if (!board->grid) {
+    printf("ERROR: board->grid is null\n");
+    return;
+  }
 
-  if (!board->tile_manager)
-    {
-      printf ("ERROR: board->tile_manager is null\n");
-      return;
-    }
-
-  // Build tiled cache if not already built.
-  if (!tiledCacheInitialized)
-    update_tiled_grid_cache (board);
-
-  // Draw each cached tile at its proper world offset.
-  for (int ty = 0; ty < tileCountY; ty++)
-    {
-      for (int tx = 0; tx < tileCountX; tx++)
-        {
-          int index = ty * tileCountX + tx;
-          TileCache *tile = &tileCaches[index];
-          // RenderTextures in Raylib are y-flipped.
-          Rectangle srcRec = { 0, 0, (float)tile->texture.texture.width,
-                               -(float)tile->texture.texture.height };
-          DrawTextureRec (tile->texture.texture, srcRec, tile->offset, WHITE);
-        }
-    }
+  if (!board->tile_manager) {
+    printf("ERROR: board->tile_manager is null\n");
+    return;
+  }
+  tile_map_foreach_tile(board->tile_manager->tiles, draw_tile_wrapper,
+                        (void *)board->grid);
+  /*
+   *
+    // Build tiled cache if not already built.
+    if (!tiledCacheInitialized)
+      update_tiled_grid_cache (board);
+    // Draw each cached tile at its proper world offset.
+    for (int ty = 0; ty < tileCountY; ty++)
+      {
+        for (int tx = 0; tx < tileCountX; tx++)
+          {
+            int index = ty * tileCountX + tx;
+            TileCache *tile = &tileCaches[index];
+            // RenderTextures in Raylib are y-flipped.
+            Rectangle srcRec = { 0, 0, (float)tile->texture.texture.width,
+                                 -(float)tile->texture.texture.height };
+            DrawTextureRec (tile->texture.texture, srcRec, tile->offset,
+   WHITE);
+          }
+      }
+   */
 }
-void
-render_tile (const tile_t *tile, const grid_t *grid)
-{
 
-  if (!tile)
-    {
-      printf ("ERROR: tile is null\n");
-      return;
-    }
-  if (!grid)
-    {
-      printf ("ERROR: grid is null\n");
-      return;
-    }
-  if (!grid->vtable)
-    {
-      printf ("ERROR: grid->vtable is null\n");
-      return;
-    }
+Clay_Color color_from_tile(tile_data_t tile_data) {
+
+  switch (tile_data.type) {
+  case TILE_MAGENTA:
+    return M_MAGENTA;
+  case TILE_CYAN:
+    return M_SKYBLUE;
+  case TILE_YELLOW:
+    return M_YELLOW;
+  default:
+    printf("ERROR: unknown tile type\n");
+    return M_BLANK;
+  }
+}
+
+void render_tile(const tile_t *tile, const grid_t *grid) {
+
+  if (!tile) {
+    printf("ERROR: tile is null\n");
+    return;
+  }
+  if (!grid) {
+    printf("ERROR: grid is null\n");
+    return;
+  }
+  if (!grid->vtable) {
+    printf("ERROR: grid->vtable is null\n");
+    return;
+  }
 
   // Draw the colored hex cell.
-  render_hex_cell (grid, tile->cell, tile_get_color (tile->data), M_BLANK);
+  render_hex_cell(grid, tile->cell, color_from_tile(tile->data), M_BLANK);
 
   // Compute the center of the hex cell using the to_pixel function.
-  point_t center = grid->vtable->to_pixel (grid, tile->cell);
+  point_t center = grid->vtable->to_pixel(grid, tile->cell);
 
   // Create a string representing the hex coordinates.
   char coord_text[32];
-  grid_cell_to_string (&tile->cell, coord_text, sizeof (coord_text));
+  grid_cell_to_string(&tile->cell, coord_text, sizeof(coord_text));
 
   // Draw the coordinate text centered on the cell.
   // Adjust the x and y values (here subtracting 10) as needed.
-  DrawText (coord_text, (int)center.x - 10, (int)center.y - 10, 8, BLACK);
+  DrawText(coord_text, (int)center.x - 10, (int)center.y - 10, 8, BLACK);
 }
 
-void
-render_hex_grid (const grid_t *grid)
-{
-  for (size_t i = 0; i < grid->num_cells; ++i)
-    {
-      render_hex_cell (grid, grid->cells[i], M_LIGHTGRAY, M_GRAY);
-    }
+void render_hex_grid(const grid_t *grid) {
+  for (size_t i = 0; i < grid->num_cells; ++i) {
+    render_hex_cell(grid, grid->cells[i], M_BLANK, M_GRAY);
+  }
 }
-void
-render_hex_cell (const grid_t *grid, grid_cell_t cell, color_t fill_color,
-                 color_t edge_color)
-{
+
+Color to_raylib_color(Clay_Color color) {
+  return (Color){color.r, color.g, color.b, color.a};
+}
+
+void render_hex_cell(const grid_t *grid, grid_cell_t cell,
+                     Clay_Color fill_color, Clay_Color edge_color) {
   int corners_count = 6;
   point_t corners[6];
-  grid->vtable->get_corners (grid, cell, corners);
+  grid->vtable->get_corners(grid, cell, corners);
 
   Vector2 verts[6];
-  for (int j = 0; j < corners_count; ++j)
-    {
-      verts[j].x = (float)corners[j].x;
-      verts[j].y = (float)corners[j].y;
-    }
+  for (int j = 0; j < corners_count; ++j) {
+    verts[j].x = (float)corners[j].x;
+    verts[j].y = (float)corners[j].y;
+  }
 
-  Color ray_fill_color = to_raylib_color (fill_color);
-  Color ray_edge_color = to_raylib_color (edge_color);
-  DrawTriangleFan (verts, corners_count, ray_fill_color);
+  Color ray_fill_color = to_raylib_color(fill_color);
+  Color ray_edge_color = to_raylib_color(edge_color);
+  DrawTriangleFan(verts, corners_count, ray_fill_color);
 
-  for (int j = 0; j < corners_count; ++j)
-    {
-      int next = (j + 1) % corners_count;
-      DrawLineV (verts[j], verts[next], ray_edge_color);
-    }
+  for (int j = 0; j < corners_count; ++j) {
+    int next = (j + 1) % corners_count;
+    DrawLineV(verts[j], verts[next], ray_edge_color);
+  }
 }
 
-// void
-// render_hover_info (const board_t *board, const board_input_controller_t
-// *ctrl)
-// {
-//   if (!ctrl->has_hovered_cell)
-//     return;
-//   tile_t *tile = cell_to_tile_ptr (board->tile_manager, ctrl->hovered_cell);
-//   if (!tile)
-//     return;
-//   Vector2 mouse = GetMousePosition ();
-//   char info[128];
+void tile_render(const tile_t *tile, const grid_t *grid) {
 
-//   pool_t *pool = tile_to_pool_map_get_pool_by_tile (board->tile_to_pool,
-//   tile); int pool_id = pool ? pool->id : -1; int pool_max_friendly_neighbors
-//   = pool ? pool->highest_n : -1;
+  if (!tile) {
+    printf("ERROR: tile is null\n");
+    return;
+  }
+  if (!grid) {
+    printf("ERROR: grid is null\n");
+    return;
+  }
+  if (!grid->vtable) {
+    printf("ERROR: grid->vtable is null\n");
+    return;
+  }
 
-//   snprintf (info, sizeof (info), "Type: %d\nValue: %d\nPool: %d\nMFN: %d",
-//             tile->data.type, tile->data.value, pool_id,
-//             pool_max_friendly_neighbors);
-
-//   int height = 60, width = 120;
-//   DrawRectangle (mouse.x + 16, mouse.y + 16, width, height, Fade (GRAY,
-//   0.9f)); DrawText (info, mouse.x + 24, mouse.y + 24, 16, BLACK);
-// }
-
-// void
-// render (const board_t *board, const board_input_controller_t *input_ctrl)
-// {
-
-//   BeginMode2D ((Camera2D){
-//       .offset = (Vector2){ GetScreenWidth () / 2.0f + input_ctrl->pan.x,
-//                            GetScreenHeight () / 2.0f + input_ctrl->pan.y },
-//       .zoom = input_ctrl->zoom,
-//       .rotation = 0.0f,
-//       .target = (Vector2){ 0, 0 } });
-//   render_board (board);
-//   EndMode2D ();
-//   render_hover_info (board, input_ctrl);
-// }
-
-void
-tile_render (const tile_t *tile, const grid_t *grid)
-{
-
-  if (!tile)
-    {
-      printf ("ERROR: tile is null\n");
-      return;
-    }
-  if (!grid)
-    {
-      printf ("ERROR: grid is null\n");
-      return;
-    }
-  if (!grid->vtable)
-    {
-      printf ("ERROR: grid->vtable is null\n");
-      return;
-    }
-
-  render_hex_cell (grid, tile->cell, tile_get_color (tile->data), M_BLANK);
+  render_hex_cell(grid, tile->cell, color_from_tile(tile->data), M_BLANK);
 
   // Compute the center of the hex cell using the to_pixel function.
-  point_t center = grid->vtable->to_pixel (grid, tile->cell);
+  point_t center = grid->vtable->to_pixel(grid, tile->cell);
 
   // Create a string representing the hex coordinates.
   char coord_text[32];
-  grid_cell_to_string (&tile->cell, coord_text, sizeof (coord_text));
+  grid_cell_to_string(&tile->cell, coord_text, sizeof(coord_text));
 
   // Draw the coordinate text centered on the cell.
   // Adjust the x and y values (here subtracting 10) as needed.
-  DrawText (coord_text, (int)center.x - 10, (int)center.y - 10, 8, BLACK);
+  DrawText(coord_text, (int)center.x - 10, (int)center.y - 10, 8, BLACK);
 }
 
-rect_t
-inventory_get_slot_rect (const inventory_t *inv, int i)
-{
-  int size = inventory_get_size (inv);
-  int screen_width = GetScreenWidth ();
-  int screen_height = GetScreenHeight ();
+Rectangle inventory_get_slot_rect(const inventory_t *inv, int i) {
+  int size = inventory_get_size(inv);
+  int screen_width = GetScreenWidth();
+  int screen_height = GetScreenHeight();
   int slot_size = 64;
   int slot_padding = 12;
   int total_width = size * slot_size + (size - 1) * slot_padding;
   int start_x = (screen_width - total_width) / 2;
   int y = screen_height - slot_size - 24;
   int x = start_x + i * (slot_size + slot_padding);
-  return (rect_t){ x, y, slot_size, slot_size };
+  return (Rectangle){x, y, slot_size, slot_size};
 }
 
-void
-render_inventory_item (const inventory_t *inv, int i, bool selected)
-{
-  Rectangle slot = rect_to_ray_rectangle (inventory_get_slot_rect (inv, i));
-  Color fill = to_raylib_color (tile_get_color (inv->items.a[i]));
+void render_inventory_item(const inventory_t *inv, int i, bool selected) {
+  Rectangle slot = inventory_get_slot_rect(inv, i);
+  Color fill = to_raylib_color(color_from_tile(inv->items.a[i]));
 
-  DrawRectangleRec (slot, fill);
+  DrawRectangleRec(slot, fill);
 
-  if (selected)
-    {
-      DrawRectangleLinesEx (slot, 4, GOLD);
-    }
-  else
-    {
-      DrawRectangleLinesEx (slot, 2, DARKGRAY);
-    }
+  if (selected) {
+    DrawRectangleLinesEx(slot, 4, GOLD);
+  } else {
+    DrawRectangleLinesEx(slot, 2, DARKGRAY);
+  }
 }
 
-void
-render_inventory (inventory_t *inv)
-{
-  Vector2 mouse = GetMousePosition ();
-  bool mouse_clicked = IsMouseButtonPressed (MOUSE_BUTTON_LEFT);
+void render_inventory(inventory_t *inv) {
+  Vector2 mouse = GetMousePosition();
+  bool mouse_clicked = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
 
-  for (int i = 0; i < inventory_get_size (inv); i++)
-    {
-      Rectangle slot
-          = rect_to_ray_rectangle (inventory_get_slot_rect (inv, i));
+  for (int i = 0; i < inventory_get_size(inv); i++) {
+    Rectangle slot = inventory_get_slot_rect(inv, i);
 
+<<<<<<< HEAD
       // Handle click selection
       if (mouse_clicked && CheckCollisionPointRec (mouse, slot))
         {
@@ -392,4 +336,13 @@ render_menu_screen (menu_screen_t *menu)
       int text_y = menu->buttons[i].bounds.y + (float)(BUTTON_HEIGHT - 24) / 2;
       DrawText (menu->buttons[i].label, text_x, text_y, 24, BLACK);
     }
+=======
+    // Handle click selection
+    if (mouse_clicked && CheckCollisionPointRec(mouse, slot)) {
+      inventory_set_index(inv, i);
+    }
+
+    render_inventory_item(inv, i, i == inv->selected_index);
+  }
+>>>>>>> pre_slop
 }

@@ -7,7 +7,7 @@
 #define TILE_H
 
 #include "../grid/grid_types.h" // For grid_cell_t
-#include "../render/color.h"
+#include "../third_party/clay.h"
 
 // --- Enums ---
 /**
@@ -42,7 +42,7 @@ typedef struct {
  * @param type The type (color/category) of the tile.
  * @return The initialized tile_t.
  */
-tile_t* tile_create_ptr(grid_cell_t cell,tile_data_t data);
+tile_t* tile_create_ptr(grid_cell_t cell, tile_data_t data);
 
 tile_data_t tile_data_create (tile_type_t type, int value);
 tile_data_t tile_data_create_random(void);
@@ -54,7 +54,7 @@ tile_t* tile_create_random_ptr(grid_cell_t cell);
 void tile_set_coords(tile_t *tile, grid_cell_t coord);
 void tile_add_coords(tile_t *tile, grid_cell_t coord);
 
-color_t
+Clay_Color
 tile_get_color_from_type (const tile_data_t tile_data);
 
 void tile_destroy(tile_t *tile);
