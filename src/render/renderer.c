@@ -304,39 +304,6 @@ void render_inventory(inventory_t *inv) {
   for (int i = 0; i < inventory_get_size(inv); i++) {
     Rectangle slot = inventory_get_slot_rect(inv, i);
 
-<<<<<<< HEAD
-      // Handle click selection
-      if (mouse_clicked && CheckCollisionPointRec (mouse, slot))
-        {
-          inventory_set_index (inv, i);
-        }
-
-      render_inventory_item (inv, i, i == inv->selected_index);
-    }
-}
-
-void
-render_menu_screen (menu_screen_t *menu)
-{
-  // DrawText ("MY GAME TITLE", GetScreenWidth () / 3, 200, 48, DARKGRAY);
-
-  Vector2 mouse = GetMousePosition ();
-
-  for (int i = 0; i < menu->button_count; i++)
-    {
-      Rectangle bounds = rect_to_ray_rectangle (menu->buttons[i].bounds);
-      Color btn_color
-          = CheckCollisionPointRec (mouse, bounds) ? LIGHTGRAY : GRAY;
-      DrawRectangleRec (bounds, btn_color);
-      DrawRectangleLinesEx (bounds, 2, DARKGRAY);
-
-      int text_width = MeasureText (menu->buttons[i].label, 24);
-      int text_x
-          = menu->buttons[i].bounds.x + (float)(BUTTON_WIDTH - text_width) / 2;
-      int text_y = menu->buttons[i].bounds.y + (float)(BUTTON_HEIGHT - 24) / 2;
-      DrawText (menu->buttons[i].label, text_x, text_y, 24, BLACK);
-    }
-=======
     // Handle click selection
     if (mouse_clicked && CheckCollisionPointRec(mouse, slot)) {
       inventory_set_index(inv, i);
@@ -344,5 +311,4 @@ render_menu_screen (menu_screen_t *menu)
 
     render_inventory_item(inv, i, i == inv->selected_index);
   }
->>>>>>> pre_slop
 }

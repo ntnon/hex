@@ -5,7 +5,6 @@
       "-DDEBUG",
       "-DPLATFORM_DESKTOP",
       "-DGRAPHICS_API_OPENGL_33",
-<<<<<<< HEAD
       "-I../external/raylib-master/src",
       "-I../external/raylib-master/src/external/glfw/include",
       "-m64",
@@ -511,176 +510,23 @@
       "-I../../src",
       "-I../../include",
       "-I../external/raylib-master/src",
+      "-I../external/raylib-master/src/external",
       "-I../external/raylib-master/src/external/glfw/include",
       "-m64",
+      "-Wshadow",
       "-g",
+      "-std=c17",
       "-Wno-deprecated-declarations",
       "-fsanitize=address",
       "-fsanitize=undefined",
       "-c",
       "-o",
-      "obj/x64/Debug/raylib/raudio.o",
-      "../external/raylib-master/src/raudio.c"
+      "obj/x64/Debug/hexhex/main.o",
+      "../../src/main.c"
     ],
     "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/build/external/raylib-master/src/raudio.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/raylib/raudio.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-DDEBUG",
-      "-DPLATFORM_DESKTOP",
-      "-DGRAPHICS_API_OPENGL_33",
-      "-I../external/raylib-master/src",
-      "-I../external/raylib-master/src/external/glfw/include",
-      "-m64",
-      "-g",
-      "-Wno-deprecated-declarations",
-      "-fsanitize=address",
-      "-fsanitize=undefined",
-      "-c",
-      "-o",
-      "obj/x64/Debug/raylib/rcore.o",
-      "../external/raylib-master/src/rcore.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/build/external/raylib-master/src/rcore.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/raylib/rcore.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-DDEBUG",
-      "-DPLATFORM_DESKTOP",
-      "-DGRAPHICS_API_OPENGL_33",
-      "-I../external/raylib-master/src",
-      "-I../external/raylib-master/src/external/glfw/include",
-      "-m64",
-      "-g",
-      "-Wno-deprecated-declarations",
-      "-fsanitize=address",
-      "-fsanitize=undefined",
-      "-x",
-      "objective-c",
-      "-c",
-      "-o",
-      "obj/x64/Debug/raylib/rglfw.o",
-      "../external/raylib-master/src/rglfw.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/build/external/raylib-master/src/rglfw.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/raylib/rglfw.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-DDEBUG",
-      "-DPLATFORM_DESKTOP",
-      "-DGRAPHICS_API_OPENGL_33",
-      "-I../external/raylib-master/src",
-      "-I../external/raylib-master/src/external/glfw/include",
-      "-m64",
-      "-g",
-      "-Wno-deprecated-declarations",
-      "-fsanitize=address",
-      "-fsanitize=undefined",
-      "-c",
-      "-o",
-      "obj/x64/Debug/raylib/rmodels.o",
-      "../external/raylib-master/src/rmodels.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/build/external/raylib-master/src/rmodels.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/raylib/rmodels.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-DDEBUG",
-      "-DPLATFORM_DESKTOP",
-      "-DGRAPHICS_API_OPENGL_33",
-      "-I../external/raylib-master/src",
-      "-I../external/raylib-master/src/external/glfw/include",
-      "-m64",
-      "-g",
-      "-Wno-deprecated-declarations",
-      "-fsanitize=address",
-      "-fsanitize=undefined",
-      "-c",
-      "-o",
-      "obj/x64/Debug/raylib/rshapes.o",
-      "../external/raylib-master/src/rshapes.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/build/external/raylib-master/src/rshapes.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/raylib/rshapes.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-DDEBUG",
-      "-DPLATFORM_DESKTOP",
-      "-DGRAPHICS_API_OPENGL_33",
-      "-I../external/raylib-master/src",
-      "-I../external/raylib-master/src/external/glfw/include",
-      "-m64",
-      "-g",
-      "-Wno-deprecated-declarations",
-      "-fsanitize=address",
-      "-fsanitize=undefined",
-      "-c",
-      "-o",
-      "obj/x64/Debug/raylib/rtext.o",
-      "../external/raylib-master/src/rtext.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/build/external/raylib-master/src/rtext.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/raylib/rtext.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-DDEBUG",
-      "-DPLATFORM_DESKTOP",
-      "-DGRAPHICS_API_OPENGL_33",
-      "-I../external/raylib-master/src",
-      "-I../external/raylib-master/src/external/glfw/include",
-      "-m64",
-      "-g",
-      "-Wno-deprecated-declarations",
-      "-fsanitize=address",
-      "-fsanitize=undefined",
-      "-c",
-      "-o",
-      "obj/x64/Debug/raylib/rtextures.o",
-      "../external/raylib-master/src/rtextures.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/build/external/raylib-master/src/rtextures.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/raylib/rtextures.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-DDEBUG",
-      "-DPLATFORM_DESKTOP",
-      "-DGRAPHICS_API_OPENGL_33",
-      "-I../external/raylib-master/src",
-      "-I../external/raylib-master/src/external/glfw/include",
-      "-m64",
-      "-g",
-      "-Wno-deprecated-declarations",
-      "-fsanitize=address",
-      "-fsanitize=undefined",
-      "-c",
-      "-o",
-      "obj/x64/Debug/raylib/utils.o",
-      "../external/raylib-master/src/utils.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/build/external/raylib-master/src/utils.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/raylib/utils.o"
+    "file": "/Users/nydon/code/hexhex/src/main.c",
+    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/main.o"
   },
   {
     "arguments": [
@@ -702,14 +548,6 @@
       "-fsanitize=undefined",
       "-c",
       "-o",
-<<<<<<< HEAD
-      "obj/x64/Debug/hexhex/board.o",
-      "../../src/game/board.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/game/board.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/board.o"
-=======
       "obj/x64/Debug/hexhex/pool.o",
       "../../src/tile/pool.c"
     ],
@@ -797,7 +635,6 @@
     "directory": "/Users/nydon/code/hexhex/build/build_files",
     "file": "/Users/nydon/code/hexhex/src/render/renderer.c",
     "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/renderer.o"
->>>>>>> pre_slop
   },
   {
     "arguments": [
@@ -819,21 +656,39 @@
       "-fsanitize=undefined",
       "-c",
       "-o",
-<<<<<<< HEAD
-      "obj/x64/Debug/hexhex/board_input_controller.o",
-      "../../src/controller/board_input_controller.c"
+      "obj/x64/Debug/hexhex/string.o",
+      "../../src/utility/string.c"
     ],
     "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/controller/board_input_controller.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/board_input_controller.o"
-=======
+    "file": "/Users/nydon/code/hexhex/src/utility/string.c",
+    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/string.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-DDEBUG",
+      "-DPLATFORM_DESKTOP",
+      "-DGRAPHICS_API_OPENGL_33",
+      "-I../../src",
+      "-I../../include",
+      "-I../external/raylib-master/src",
+      "-I../external/raylib-master/src/external",
+      "-I../external/raylib-master/src/external/glfw/include",
+      "-m64",
+      "-Wshadow",
+      "-g",
+      "-std=c17",
+      "-Wno-deprecated-declarations",
+      "-fsanitize=address",
+      "-fsanitize=undefined",
+      "-c",
+      "-o",
       "obj/x64/Debug/hexhex/tile.o",
       "../../src/tile/tile.c"
     ],
     "directory": "/Users/nydon/code/hexhex/build/build_files",
     "file": "/Users/nydon/code/hexhex/src/tile/tile.c",
     "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/tile.o"
->>>>>>> pre_slop
   },
   {
     "arguments": [
@@ -855,21 +710,12 @@
       "-fsanitize=undefined",
       "-c",
       "-o",
-<<<<<<< HEAD
-      "obj/x64/Debug/hexhex/edge_map.o",
-      "../../src/grid/edge_map.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/grid/edge_map.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/edge_map.o"
-=======
       "obj/x64/Debug/hexhex/tile_manager.o",
       "../../src/tile/tile_manager.c"
     ],
     "directory": "/Users/nydon/code/hexhex/build/build_files",
     "file": "/Users/nydon/code/hexhex/src/tile/tile_manager.c",
     "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/tile_manager.o"
->>>>>>> pre_slop
   },
   {
     "arguments": [
@@ -891,21 +737,12 @@
       "-fsanitize=undefined",
       "-c",
       "-o",
-<<<<<<< HEAD
-      "obj/x64/Debug/hexhex/game_controller.o",
-      "../../src/controller/game_controller.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/controller/game_controller.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/game_controller.o"
-=======
       "obj/x64/Debug/hexhex/tile_map.o",
       "../../src/tile/tile_map.c"
     ],
     "directory": "/Users/nydon/code/hexhex/build/build_files",
     "file": "/Users/nydon/code/hexhex/src/tile/tile_map.c",
     "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/tile_map.o"
->>>>>>> pre_slop
   },
   {
     "arguments": [
@@ -927,21 +764,12 @@
       "-fsanitize=undefined",
       "-c",
       "-o",
-<<<<<<< HEAD
-      "obj/x64/Debug/hexhex/game_screen.o",
-      "../../src/screen/game_screen.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/screen/game_screen.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/game_screen.o"
-=======
       "obj/x64/Debug/hexhex/tile_to_pool_map.o",
       "../../src/tile/tile_to_pool_map.c"
     ],
     "directory": "/Users/nydon/code/hexhex/build/build_files",
     "file": "/Users/nydon/code/hexhex/src/tile/tile_to_pool_map.c",
     "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/tile_to_pool_map.o"
->>>>>>> pre_slop
   },
   {
     "arguments": [
@@ -963,21 +791,12 @@
       "-fsanitize=undefined",
       "-c",
       "-o",
-<<<<<<< HEAD
-      "obj/x64/Debug/hexhex/grid_cell_utils.o",
-      "../../src/grid/grid_cell_utils.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/grid/grid_cell_utils.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/grid_cell_utils.o"
-=======
       "obj/x64/Debug/hexhex/ui_events.o",
       "../../src/ui/ui_events.c"
     ],
     "directory": "/Users/nydon/code/hexhex/build/build_files",
     "file": "/Users/nydon/code/hexhex/src/ui/ui_events.c",
     "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/ui_events.o"
->>>>>>> pre_slop
   },
   {
     "arguments": [
@@ -999,21 +818,12 @@
       "-fsanitize=undefined",
       "-c",
       "-o",
-<<<<<<< HEAD
-      "obj/x64/Debug/hexhex/hex_grid.o",
-      "../../src/grid/hex_grid.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/grid/hex_grid.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/hex_grid.o"
-=======
       "obj/x64/Debug/hexhex/ui_init.o",
       "../../src/ui/ui_init.c"
     ],
     "directory": "/Users/nydon/code/hexhex/build/build_files",
     "file": "/Users/nydon/code/hexhex/src/ui/ui_init.c",
     "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/ui_init.o"
->>>>>>> pre_slop
   },
   {
     "arguments": [
@@ -1035,23 +845,12 @@
       "-fsanitize=undefined",
       "-c",
       "-o",
-<<<<<<< HEAD
-      "obj/x64/Debug/hexhex/input_adapter.o",
-      "../../src/adapter/input_adapter.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/adapter/input_adapter.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/input_adapter.o"
-=======
       "obj/x64/Debug/hexhex/ui_layout.o",
       "../../src/ui/ui_layout.c"
     ],
     "directory": "/Users/nydon/code/hexhex/build/build_files",
     "file": "/Users/nydon/code/hexhex/src/ui/ui_layout.c",
     "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/ui_layout.o"
-<<<<<<< HEAD
-=======
->>>>>>> pre_slop
   },
   {
     "arguments": [
@@ -1073,481 +872,11 @@
       "-fsanitize=undefined",
       "-c",
       "-o",
-<<<<<<< HEAD
-      "obj/x64/Debug/hexhex/input_controller.o",
-      "../../src/controller/input_controller.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/controller/input_controller.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/input_controller.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-DDEBUG",
-      "-DPLATFORM_DESKTOP",
-      "-DGRAPHICS_API_OPENGL_33",
-      "-I../../src",
-      "-I../../include",
-      "-I../external/raylib-master/src",
-      "-I../external/raylib-master/src/external",
-      "-I../external/raylib-master/src/external/glfw/include",
-      "-m64",
-      "-Wshadow",
-      "-g",
-      "-std=c17",
-      "-Wno-deprecated-declarations",
-      "-fsanitize=address",
-      "-fsanitize=undefined",
-      "-c",
-      "-o",
-      "obj/x64/Debug/hexhex/input_hover_render.o",
-      "../../src/controller/input_hover_render.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/controller/input_hover_render.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/input_hover_render.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-DDEBUG",
-      "-DPLATFORM_DESKTOP",
-      "-DGRAPHICS_API_OPENGL_33",
-      "-I../../src",
-      "-I../../include",
-      "-I../external/raylib-master/src",
-      "-I../external/raylib-master/src/external",
-      "-I../external/raylib-master/src/external/glfw/include",
-      "-m64",
-      "-Wshadow",
-      "-g",
-      "-std=c17",
-      "-Wno-deprecated-declarations",
-      "-fsanitize=address",
-      "-fsanitize=undefined",
-      "-c",
-      "-o",
-      "obj/x64/Debug/hexhex/input_state.o",
-      "../../src/controller/input_state.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/controller/input_state.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/input_state.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-DDEBUG",
-      "-DPLATFORM_DESKTOP",
-      "-DGRAPHICS_API_OPENGL_33",
-      "-I../../src",
-      "-I../../include",
-      "-I../external/raylib-master/src",
-      "-I../external/raylib-master/src/external",
-      "-I../external/raylib-master/src/external/glfw/include",
-      "-m64",
-      "-Wshadow",
-      "-g",
-      "-std=c17",
-      "-Wno-deprecated-declarations",
-      "-fsanitize=address",
-      "-fsanitize=undefined",
-      "-c",
-      "-o",
-      "obj/x64/Debug/hexhex/inventory.o",
-      "../../src/game/inventory.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/game/inventory.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/inventory.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-DDEBUG",
-      "-DPLATFORM_DESKTOP",
-      "-DGRAPHICS_API_OPENGL_33",
-      "-I../../src",
-      "-I../../include",
-      "-I../external/raylib-master/src",
-      "-I../external/raylib-master/src/external",
-      "-I../external/raylib-master/src/external/glfw/include",
-      "-m64",
-      "-Wshadow",
-      "-g",
-      "-std=c17",
-      "-Wno-deprecated-declarations",
-      "-fsanitize=address",
-      "-fsanitize=undefined",
-      "-c",
-      "-o",
-      "obj/x64/Debug/hexhex/inventory_controller.o",
-      "../../src/controller/inventory_controller.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/controller/inventory_controller.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/inventory_controller.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-DDEBUG",
-      "-DPLATFORM_DESKTOP",
-      "-DGRAPHICS_API_OPENGL_33",
-      "-I../../src",
-      "-I../../include",
->>>>>>> parent of 53165fd (continued decoupling of raylib and game logic.)
-      "-I../external/raylib-master/src",
-      "-I../external/raylib-master/src/external/glfw/include",
-      "-m64",
-      "-g",
-      "-Wno-deprecated-declarations",
-      "-fsanitize=address",
-      "-fsanitize=undefined",
-      "-c",
-      "-o",
-      "obj/x64/Debug/raylib/raudio.o",
-      "../external/raylib-master/src/raudio.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/build/external/raylib-master/src/raudio.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/raylib/raudio.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-DDEBUG",
-      "-DPLATFORM_DESKTOP",
-      "-DGRAPHICS_API_OPENGL_33",
-      "-I../external/raylib-master/src",
-      "-I../external/raylib-master/src/external/glfw/include",
-      "-m64",
-      "-g",
-      "-Wno-deprecated-declarations",
-      "-fsanitize=address",
-      "-fsanitize=undefined",
-      "-c",
-      "-o",
-      "obj/x64/Debug/raylib/rcore.o",
-      "../external/raylib-master/src/rcore.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/build/external/raylib-master/src/rcore.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/raylib/rcore.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-DDEBUG",
-      "-DPLATFORM_DESKTOP",
-      "-DGRAPHICS_API_OPENGL_33",
-      "-I../external/raylib-master/src",
-      "-I../external/raylib-master/src/external/glfw/include",
-      "-m64",
-      "-g",
-      "-Wno-deprecated-declarations",
-      "-fsanitize=address",
-      "-fsanitize=undefined",
-      "-x",
-      "objective-c",
-      "-c",
-      "-o",
-      "obj/x64/Debug/raylib/rglfw.o",
-      "../external/raylib-master/src/rglfw.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/build/external/raylib-master/src/rglfw.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/raylib/rglfw.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-DDEBUG",
-      "-DPLATFORM_DESKTOP",
-      "-DGRAPHICS_API_OPENGL_33",
-      "-I../external/raylib-master/src",
-      "-I../external/raylib-master/src/external/glfw/include",
-      "-m64",
-      "-g",
-      "-Wno-deprecated-declarations",
-      "-fsanitize=address",
-      "-fsanitize=undefined",
-      "-c",
-      "-o",
-      "obj/x64/Debug/raylib/rmodels.o",
-      "../external/raylib-master/src/rmodels.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/build/external/raylib-master/src/rmodels.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/raylib/rmodels.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-DDEBUG",
-      "-DPLATFORM_DESKTOP",
-      "-DGRAPHICS_API_OPENGL_33",
-      "-I../external/raylib-master/src",
-      "-I../external/raylib-master/src/external/glfw/include",
-      "-m64",
-      "-g",
-      "-Wno-deprecated-declarations",
-      "-fsanitize=address",
-      "-fsanitize=undefined",
-      "-c",
-      "-o",
-      "obj/x64/Debug/raylib/rshapes.o",
-      "../external/raylib-master/src/rshapes.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/build/external/raylib-master/src/rshapes.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/raylib/rshapes.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-DDEBUG",
-      "-DPLATFORM_DESKTOP",
-      "-DGRAPHICS_API_OPENGL_33",
-      "-I../external/raylib-master/src",
-      "-I../external/raylib-master/src/external/glfw/include",
-      "-m64",
-      "-g",
-      "-Wno-deprecated-declarations",
-      "-fsanitize=address",
-      "-fsanitize=undefined",
-      "-c",
-      "-o",
-      "obj/x64/Debug/raylib/rtext.o",
-      "../external/raylib-master/src/rtext.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/build/external/raylib-master/src/rtext.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/raylib/rtext.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-DDEBUG",
-      "-DPLATFORM_DESKTOP",
-      "-DGRAPHICS_API_OPENGL_33",
-      "-I../external/raylib-master/src",
-      "-I../external/raylib-master/src/external/glfw/include",
-      "-m64",
-      "-g",
-      "-Wno-deprecated-declarations",
-      "-fsanitize=address",
-      "-fsanitize=undefined",
-      "-c",
-      "-o",
-      "obj/x64/Debug/raylib/rtextures.o",
-      "../external/raylib-master/src/rtextures.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/build/external/raylib-master/src/rtextures.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/raylib/rtextures.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-DDEBUG",
-      "-DPLATFORM_DESKTOP",
-      "-DGRAPHICS_API_OPENGL_33",
-      "-I../external/raylib-master/src",
-      "-I../external/raylib-master/src/external/glfw/include",
-      "-m64",
-      "-g",
-      "-Wno-deprecated-declarations",
-      "-fsanitize=address",
-      "-fsanitize=undefined",
-      "-c",
-      "-o",
-      "obj/x64/Debug/raylib/utils.o",
-      "../external/raylib-master/src/utils.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/build/external/raylib-master/src/utils.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/raylib/utils.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-DDEBUG",
-      "-DPLATFORM_DESKTOP",
-      "-DGRAPHICS_API_OPENGL_33",
-      "-I../../src",
-      "-I../../include",
-      "-I../external/raylib-master/src",
-      "-I../external/raylib-master/src/external",
-      "-I../external/raylib-master/src/external/glfw/include",
-      "-m64",
-      "-Wshadow",
-      "-g",
-      "-std=c17",
-      "-Wno-deprecated-declarations",
-      "-fsanitize=address",
-      "-fsanitize=undefined",
-      "-c",
-      "-o",
-<<<<<<< HEAD
-      "obj/x64/Debug/hexhex/board.o",
-      "../../src/game/board.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/game/board.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/board.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-DDEBUG",
-      "-DPLATFORM_DESKTOP",
-      "-DGRAPHICS_API_OPENGL_33",
-      "-I../../src",
-      "-I../../include",
-      "-I../external/raylib-master/src",
-      "-I../external/raylib-master/src/external",
-      "-I../external/raylib-master/src/external/glfw/include",
-      "-m64",
-      "-Wshadow",
-      "-g",
-      "-std=c17",
-      "-Wno-deprecated-declarations",
-      "-fsanitize=address",
-      "-fsanitize=undefined",
-      "-c",
-      "-o",
-      "obj/x64/Debug/hexhex/board_input_controller.o",
-      "../../src/controller/board_input_controller.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/controller/board_input_controller.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/board_input_controller.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-DDEBUG",
-      "-DPLATFORM_DESKTOP",
-      "-DGRAPHICS_API_OPENGL_33",
-      "-I../../src",
-      "-I../../include",
-      "-I../external/raylib-master/src",
-      "-I../external/raylib-master/src/external",
-      "-I../external/raylib-master/src/external/glfw/include",
-      "-m64",
-      "-Wshadow",
-      "-g",
-      "-std=c17",
-      "-Wno-deprecated-declarations",
-      "-fsanitize=address",
-      "-fsanitize=undefined",
-      "-c",
-      "-o",
-      "obj/x64/Debug/hexhex/clay_renderer_raylib.o",
-      "../../src/render/clay_renderer_raylib.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/render/clay_renderer_raylib.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/clay_renderer_raylib.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-DDEBUG",
-      "-DPLATFORM_DESKTOP",
-      "-DGRAPHICS_API_OPENGL_33",
-      "-I../../src",
-      "-I../../include",
-      "-I../external/raylib-master/src",
-      "-I../external/raylib-master/src/external",
-      "-I../external/raylib-master/src/external/glfw/include",
-      "-m64",
-      "-Wshadow",
-      "-g",
-      "-std=c17",
-      "-Wno-deprecated-declarations",
-      "-fsanitize=address",
-      "-fsanitize=undefined",
-      "-c",
-      "-o",
-      "obj/x64/Debug/hexhex/edge_map.o",
-      "../../src/grid/edge_map.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/grid/edge_map.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/edge_map.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-DDEBUG",
-      "-DPLATFORM_DESKTOP",
-      "-DGRAPHICS_API_OPENGL_33",
-      "-I../../src",
-      "-I../../include",
-      "-I../external/raylib-master/src",
-      "-I../external/raylib-master/src/external",
-      "-I../external/raylib-master/src/external/glfw/include",
-      "-m64",
-      "-Wshadow",
-      "-g",
-      "-std=c17",
-      "-Wno-deprecated-declarations",
-      "-fsanitize=address",
-      "-fsanitize=undefined",
-      "-c",
-      "-o",
-      "obj/x64/Debug/hexhex/game_controller.o",
-      "../../src/controller/game_controller.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/controller/game_controller.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/game_controller.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-DDEBUG",
-      "-DPLATFORM_DESKTOP",
-      "-DGRAPHICS_API_OPENGL_33",
-      "-I../../src",
-      "-I../../include",
-      "-I../external/raylib-master/src",
-      "-I../external/raylib-master/src/external",
-      "-I../external/raylib-master/src/external/glfw/include",
-      "-m64",
-      "-Wshadow",
-      "-g",
-      "-std=c17",
-      "-Wno-deprecated-declarations",
-      "-fsanitize=address",
-      "-fsanitize=undefined",
-      "-c",
-      "-o",
-      "obj/x64/Debug/hexhex/game_screen.o",
-      "../../src/screen/game_screen.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/screen/game_screen.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/game_screen.o"
-=======
-      "obj/x64/Debug/hexhex/menu_screen.o",
-      "../../src/screen/menu_screen.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/screen/menu_screen.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/menu_screen.o"
->>>>>>> parent of 53165fd (continued decoupling of raylib and game logic.)
-=======
       "obj/x64/Debug/hexhex/ui_styles.o",
       "../../src/ui/ui_styles.c"
     ],
     "directory": "/Users/nydon/code/hexhex/build/build_files",
     "file": "/Users/nydon/code/hexhex/src/ui/ui_styles.c",
     "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/ui_styles.o"
->>>>>>> pre_slop
->>>>>>> 23e3f879c2bc6143a56da623d5917a2d9da0860e
   }
 ]

@@ -1,8 +1,9 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#define CLAY_IMPLEMENTATION
+#include "../include/third_party/clay.h" // UI system
 #include "raylib.h"
-#include "ui/ui_context.h"
 
 #include "render/clay_renderer_raylib.h"
 
