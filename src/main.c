@@ -1,8 +1,9 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#define CLAY_IMPLEMENTATION
-#include "../include/third_party/clay.h" // UI system
+#include "raylib.h"
+#include "ui/ui_context.h"
+
 #include "render/clay_renderer_raylib.h"
 
 #include "game/camera.h"
@@ -26,6 +27,7 @@ Apply effect to entity:
 - Remove tile from piece
 - Boost tile in piece
 - Boost all tiles in piece
+
 
 Effects and alterations:
 1. Increase / Decrease production
