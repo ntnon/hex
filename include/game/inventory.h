@@ -15,14 +15,14 @@ typedef struct {
 typedef struct {
     kvec_t(inventory_item_t) items; // Array of inventory items           // Size of the inventory
     int selected_index;      // Currently selected index
+    int next_element_id;
 } inventory_t;
 
 inventory_t* inventory_create(int size);
 
 int inventory_get_size(const inventory_t *inv);
 
-inventory_item_t
-inventory_create_item (int index);
+inventory_item_t inventory_create_item(inventory_t *inv);
 
 void inventory_fill(inventory_t *inv, int size);
 void inventory_add_item(inventory_t *inv, inventory_item_t item);

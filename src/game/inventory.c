@@ -7,12 +7,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-inventory_item_t inventory_create_item(int index) {
-
-  return (inventory_item_t){
-    .tile_data = tile_data_create_random(),
-    .quantity = 1,
-    .element_id = CLAY_IDI(UI_ID_INVENTORY_ITEM_BASE_STRING, index)};
+inventory_item_t inventory_create_item(inventory_t *inv) {
+  int id = inv->next_element_id++;
+  return (inventory_item_t){.tile_data = tile_data_create_random(),
+                            .quantity = 1,
+                            .element_id =
+                              CLAY_IDI(UI_ID_INVENTORY_ITEM_BASE_STRING, id)};
 }
 
 int inventory_get_size(const inventory_t *inv) { return inv->items.m; }
@@ -49,7 +49,7 @@ void inventory_fill(inventory_t *inv, int size) {
   }
 
   for (int i = 0; i < size; i++) {
-    inventory_add_item(inv, inventory_create_item(inv->items.m));
+    inventory_add_item(inv, inventory_create_item(inv));
   }
 
   printf("inventory filled, %d items\n", size);
