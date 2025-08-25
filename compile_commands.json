@@ -279,10 +279,10 @@
       "-c",
       "-o",
       "obj/x64/Debug/hexhex/clay_renderer_raylib.o",
-      "../../src/render/clay_renderer_raylib.c"
+      "../../src/third_party/clay_renderer_raylib.c"
     ],
     "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/render/clay_renderer_raylib.c",
+    "file": "/Users/nydon/code/hexhex/src/third_party/clay_renderer_raylib.c",
     "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/clay_renderer_raylib.o"
   },
   {
@@ -630,10 +630,10 @@
       "-c",
       "-o",
       "obj/x64/Debug/hexhex/renderer.o",
-      "../../src/render/renderer.c"
+      "../../src/renderer.c"
     ],
     "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/render/renderer.c",
+    "file": "/Users/nydon/code/hexhex/src/renderer.c",
     "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/renderer.o"
   },
   {

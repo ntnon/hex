@@ -9,7 +9,7 @@
 #include "ui.h"
 
 #include "../include/grid/grid_cell_utils.h"
-#include "../include/render/renderer.h"
+#include "../include/renderer.h"
 
 #define TILE_CACHE_SIZE 1000 // Maximum size for each tile
 

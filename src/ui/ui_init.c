@@ -1,4 +1,4 @@
-#include "render/clay_renderer_raylib.h"
+#include "third_party/clay_renderer_raylib.h"
 #include "ui.h"
 #include <stdio.h>
 #include <stdlib.h>

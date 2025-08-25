@@ -60,7 +60,13 @@
   },
   {
     "label": "Hot Reload",
-    "command": "./hot_reload.sh",
+    "command": "find src include | entr -c sh -c 'make && pkill -f hexhex || true && ./bin/Debug/hexhex'",
+    "shell": "system",
+    "reveal": "always"
+  },
+  {
+    "label": "Run",
+    "command": "pkill -f hexhex || true && ./bin/Debug/hexhex &",
     "shell": "system",
     "reveal": "always"
   }

@@ -21,7 +21,7 @@ void controller_update(game_controller_t *controller, input_state_t *input) {
   Clay_BoundingBox bounds = Clay_GetElementData(UI_ID_GAME).boundingBox;
   controller->input = *input;
   controller->game_bounds = bounds;
-
+  update_game(controller->game, input);
   // Update game camera with current input
   if (point_in_bounds(input->mouse, controller->game_bounds) &&
       controller->last_clicked_ui_element_id.id == UI_ID_GAME.id) {

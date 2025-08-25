@@ -6,11 +6,11 @@
 #include "../include/third_party/clay.h" // UI system
 #include "raylib.h"
 
-#include "render/clay_renderer_raylib.h"
+#include "third_party/clay_renderer_raylib.h"
 
 #include "controller/game_controller.h"
 #include "game/camera.h"
-#include "render/renderer.h"
+#include "renderer.h"
 #include "ui.h"
 #include "utility/string.h"
 

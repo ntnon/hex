@@ -121,6 +121,32 @@ static grid_cell_t get_center_cell(const grid_t *grid) {
   return center;
 }
 
+static grid_cell_t *get_cell_at_pixel(const grid_t *grid, point_t p) {
+  if (!grid || !grid->cells) {
+    return NULL;
+  }
+
+  // Convert pixel to grid coordinates
+  grid_cell_t cell = from_pixel(grid, p);
+
+  // Check if the cell is valid within the grid
+  if (!is_valid_cell(grid, cell)) {
+    return NULL;
+  }
+
+  // Find and return pointer to the actual cell in the grid's cells array
+  for (size_t i = 0; i < grid->num_cells; ++i) {
+    grid_cell_t *grid_cell = &grid->cells[i];
+    if (grid_cell->coord.hex.q == cell.coord.hex.q &&
+        grid_cell->coord.hex.r == cell.coord.hex.r &&
+        grid_cell->coord.hex.s == cell.coord.hex.s) {
+      return grid_cell;
+    }
+  }
+
+  return NULL;
+}
+
 static void generate_cells(grid_t *grid, int radius) {
   // Generates all hexes within the given radius
   size_t count = 0;
@@ -190,25 +216,6 @@ void grid_free(grid_t *grid) {
   free(grid);        // Free the grid struct itself
 }
 
-// --- Public vtable instance ---
-
-const grid_vtable_t hex_grid_vtable = {
-  .to_pixel = to_pixel,
-  .from_pixel = from_pixel,
-  .get_neighbor_cell = get_neighbor_cell,
-  .get_neighbor_cells = get_neighbor_cells,
-  .distance = distance,
-  .get_corners = get_corners,
-  .generate_cells = generate_cells,
-  .grid_create = grid_create,
-  .num_neighbors = 6,
-  .is_valid_cell = is_valid_cell,
-  .grid_free = grid_free,
-  .calculate_offset = calculate_offset,
-  .apply_offset = apply_offset,
-  .get_center_cell = get_center_cell,
-};
-
 grid_cell_t grid_get_center_cell(const grid_t *grid) {
   if (!grid || !grid->vtable || !grid->vtable->get_center_cell) {
     grid_cell_t invalid = {.type = GRID_TYPE_UNKNOWN};
@@ -217,15 +224,39 @@ grid_cell_t grid_get_center_cell(const grid_t *grid) {
   return grid->vtable->get_center_cell(grid);
 }
 
-/*
-const orientation_t layout_pointy = { .f0 = 1.732050808,
-                                      .f1 = 0.866025404,
-                                      .f2 = 0.0,
-                                      .f3 = 1.5,
-                                      .b0 = 0.577350269,
-                                      .b1 = -0.333333333,
-                                      .b2 = 0.0,
-                                      .b3 = 0.666666667,
-                                      .start_angle = 0.5 };
+grid_cell_t *grid_get_cell_at_pixel(const grid_t *grid, point_t p) {
+  if (!grid || !grid->vtable || !grid->vtable->get_cell_at_pixel) {
+    return NULL;
+  }
+  return grid->vtable->get_cell_at_pixel(grid, p);
+}
 
- */
+void print_cell(const grid_t *grid, const grid_cell_t cell) {
+  if (cell.type != GRID_TYPE_HEXAGON)
+    return;
+  if (is_valid_cell(grid, cell)) {
+    printf("Hex Coordinate: (%d, %d, %d)\n", cell.coord.hex.q, cell.coord.hex.r,
+           cell.coord.hex.s);
+  }
+  printf("Cell not in grid: (%d, %d, %d)\n", cell.coord.hex.q, cell.coord.hex.r,
+         cell.coord.hex.s);
+}
+
+// --- Public vtable instance ---
+
+const grid_vtable_t hex_grid_vtable = {.to_pixel = to_pixel,
+                                       .from_pixel = from_pixel,
+                                       .get_neighbor_cell = get_neighbor_cell,
+                                       .get_neighbor_cells = get_neighbor_cells,
+                                       .distance = distance,
+                                       .get_corners = get_corners,
+                                       .generate_cells = generate_cells,
+                                       .grid_create = grid_create,
+                                       .num_neighbors = 6,
+                                       .is_valid_cell = is_valid_cell,
+                                       .grid_free = grid_free,
+                                       .calculate_offset = calculate_offset,
+                                       .apply_offset = apply_offset,
+                                       .get_center_cell = get_center_cell,
+                                       .get_cell_at_pixel = get_cell_at_pixel,
+                                       .print_cell = print_cell};

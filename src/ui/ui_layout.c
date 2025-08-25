@@ -1,7 +1,7 @@
 #include "game/inventory.h"
 #include "raylib.h"
-// #include "render/clay_renderer_raylib.h"
-#include "render/renderer.h"
+// #include "third_party/clay_renderer_raylib.h"
+#include "renderer.h"
 #include "stdio.h"
 #include "ui.h"
 

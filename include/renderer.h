@@ -1,5 +1,5 @@
-#include "../third_party/clay.h"
-#include "../game/board.h"
+#include "third_party/clay.h"
+#include "game/board.h"
 
 #include "raylib.h"
 
@@ -16,5 +16,3 @@ void render_tile(const tile_t *tile, const grid_t *grid);
 void
 render_hex_cell (const grid_t *grid, grid_cell_t cell, Clay_Color fill_color,
                  Clay_Color edge_color);
-
-
