@@ -6,10 +6,9 @@
 #ifndef TILE_H
 #define TILE_H
 
-#include "../grid/grid_types.h" // For grid_cell_t
-#include "../third_party/clay.h"
+#include "grid/grid_types.h"
+#include "third_party/clay.h"
 
-// --- Enums ---
 /**
  * @brief Enum representing the different types/colors of tiles.
  */
@@ -27,13 +26,13 @@ typedef struct {
     int value;
 } tile_data_t;
 
-// --- Tile Structure ---
-// Represents a single tile placed on a cell.
+/**
+ * @brief Represents a single tile placed on a cell.
+ */
 typedef struct {
-    grid_cell_t cell;      // The cell this tile occupies. Crucially, this will be our hash key.
-    tile_data_t data;            // Any specific value for the tile (e.g., resource amount).
-    uint32_t pool_id;      // ID of the pool this tile belongs to
-    // ... other tile-specific data can go here ...
+    grid_cell_t cell;    // The cell this tile occupies. Crucially, this will be our hash key.
+    tile_data_t data;    // Any specific value for the tile (e.g., resource amount).
+    uint32_t pool_id;    // ID of the pool this tile belongs to
 } tile_t;
 
 /**
@@ -45,18 +44,15 @@ typedef struct {
  */
 tile_t* tile_create_ptr(grid_cell_t cell, tile_data_t data);
 
-tile_data_t tile_data_create (tile_type_t type, int value);
+tile_data_t tile_data_create(tile_type_t type, int value);
 tile_data_t tile_data_create_random(void);
 
 tile_t* tile_create_random_ptr(grid_cell_t cell);
 
-
-
 void tile_set_coords(tile_t *tile, grid_cell_t coord);
 void tile_add_coords(tile_t *tile, grid_cell_t coord);
 
-Clay_Color
-tile_get_color_from_type (const tile_data_t tile_data);
+Clay_Color tile_get_color_from_type(const tile_data_t tile_data);
 
 void tile_destroy(tile_t *tile);
 void tile_cycle(tile_t *tile);
