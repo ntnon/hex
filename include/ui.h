@@ -1,6 +1,6 @@
 #include "third_party/clay.h"
 #include "raylib.h"
-#include "game/game_controller.h"
+#include "controller/game_controller.h"
 #include <stdint.h>
 #include "ui_types.h"
 

@@ -8,8 +8,8 @@
 
 #include "render/clay_renderer_raylib.h"
 
+#include "controller/game_controller.h"
 #include "game/camera.h"
-#include "game/game_controller.h"
 #include "render/renderer.h"
 #include "ui.h"
 #include "utility/string.h"

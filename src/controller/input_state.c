@@ -1,4 +1,4 @@
-#include "game/input_state.h"
+#include "controller/input_state.h"
 #include "raylib.h"
 #include "stdio.h"
 #include <math.h>

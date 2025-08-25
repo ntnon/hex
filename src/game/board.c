@@ -1,4 +1,5 @@
 #include "../../include/game/board.h"
+#include "../../include/third_party/uthash.h"
 #include <stdio.h>
 
 #define MAX_POOL_CANDIDATES 10
@@ -28,23 +29,24 @@ board_t *board_create(grid_type_e grid_type, int radius) {
     return NULL;
   }
 
-  board->pool_manager = pool_manager_create();
-  board->tile_manager = tile_manager_create();
-  board->tile_to_pool = tile_to_pool_map_create();
+  board->tiles = tile_map_create();
+  board->pools = pool_map_create();
+  board->next_pool_id = 1;
   board->grid = grid_create(grid_type, default_layout, radius);
   return board;
 }
 
 void clear_board(board_t *board) {
-  tile_manager_clear(board->tile_manager);
-  pool_manager_clear(board->pool_manager);
-  tile_to_pool_map_free(&board->tile_to_pool);
+  tile_map_free(board->tiles);
+  pool_map_free(board->pools);
+  board->tiles = tile_map_create();
+  board->pools = pool_map_create();
+  board->next_pool_id = 1;
 }
 
 void free_board(board_t *board) {
-  tile_manager_free(board->tile_manager);
-  pool_manager_free(board->pool_manager);
-  tile_to_pool_map_free(&board->tile_to_pool);
+  tile_map_free(board->tiles);
+  pool_map_free(board->pools);
   grid_free(board->grid);
   free(board);
 }
@@ -57,27 +59,31 @@ bool valid_tile(board_t *board, tile_t *tile) {
   return true;
 }
 
+// Helper function to get tile from cell
+tile_t *get_tile_at_cell(board_t *board, grid_cell_t cell) {
+  tile_map_entry_t *entry = tile_map_find(board->tiles, cell);
+  return entry ? entry->tile : NULL;
+}
+
 void get_neighbor_pools(board_t *board, tile_t *tile, pool_t **out_pools,
                         size_t max_neighbors) {
   grid_cell_t neighbor_cells[6];
-  tile_t *neighbor_tiles[6];
 
   board->grid->vtable->get_neighbor_cells(tile->cell, neighbor_cells);
-  cells_to_tile_ptrs(board->tile_manager, neighbor_cells, 6, neighbor_tiles);
 
   for (size_t i = 0; i < max_neighbors; ++i) {
-    if (neighbor_tiles[i]) {
-      out_pools[i] = tile_to_pool_map_get_pool_by_tile(board->tile_to_pool,
-                                                       neighbor_tiles[i]);
+    tile_t *neighbor_tile = get_tile_at_cell(board, neighbor_cells[i]);
+    if (neighbor_tile) {
+      pool_map_entry_t *pool_entry =
+        pool_map_find_by_id(board->pools, neighbor_tile->pool_id);
+      out_pools[i] = pool_entry ? pool_entry->pool : NULL;
 
-      // This is the actual error case - tile exists but has no pool
       if (!out_pools[i]) {
         fprintf(stderr,
-                "ERROR: Neighbor tile exists but has no pool assignment!\n");
+                "ERROR: Neighbor tile exists but has invalid pool ID!\n");
       }
     } else {
       out_pools[i] = NULL;
-      // This is normal - no tile at this neighbor position
     }
   }
 }
@@ -88,49 +94,88 @@ void add_tile(board_t *board, tile_t *tile) {
 
   pool_t *target_pool = NULL;
   pool_t *candidate_pools[MAX_POOL_CANDIDATES];
-  pool_t *filtered_candidate_pools[MAX_POOL_CANDIDATES];
+  uint32_t compatible_pool_ids[MAX_POOL_CANDIDATES];
+  size_t num_compatible_pools = 0;
 
+  // Get neighboring pools that accept this tile type
   get_neighbor_pools(board, tile, candidate_pools, 6);
 
-  size_t num_filtered_pools =
-    pool_map_filter_by_tile_type(candidate_pools, 6, tile->data.type,
-                                 filtered_candidate_pools, MAX_POOL_CANDIDATES);
+  for (size_t i = 0; i < 6 && num_compatible_pools < MAX_POOL_CANDIDATES; i++) {
+    if (candidate_pools[i] &&
+        pool_accepts_tile_type(candidate_pools[i], tile->data.type)) {
+      // Check if we already have this pool ID
+      bool already_added = false;
+      for (size_t j = 0; j < num_compatible_pools; j++) {
+        if (compatible_pool_ids[j] == candidate_pools[i]->id) {
+          already_added = true;
+          break;
+        }
+      }
+      if (!already_added) {
+        compatible_pool_ids[num_compatible_pools] = candidate_pools[i]->id;
+        num_compatible_pools++;
+      }
+    }
+  }
 
-  if (num_filtered_pools == 0) {
-
-    target_pool = pool_manager_create_pool(
-      board->pool_manager); // create new pool for the tile
+  if (num_compatible_pools == 0) {
+    // Create new pool
+    target_pool = pool_map_create_pool(board->pools);
+    target_pool->accepted_tile_type = tile->data.type;
+    tile->pool_id = target_pool->id;
   } else {
-    qsort(filtered_candidate_pools, num_filtered_pools, sizeof(pool_t *),
-          compare_pools_by_score);
+    // Use the first compatible pool (could implement scoring here later)
+    pool_map_entry_t *pool_entry =
+      pool_map_find_by_id(board->pools, compatible_pool_ids[0]);
+    target_pool = pool_entry->pool;
+    tile->pool_id = target_pool->id;
 
-    target_pool = filtered_candidate_pools[0];
+    // If multiple pools, merge them into the target pool
+    for (size_t i = 1; i < num_compatible_pools; i++) {
+      pool_map_entry_t *merge_entry =
+        pool_map_find_by_id(board->pools, compatible_pool_ids[i]);
+      if (merge_entry && merge_entry->pool) {
+        pool_t *merge_pool = merge_entry->pool;
+
+        // Move all tiles from merge_pool to target_pool
+        tile_map_entry_t *tile_entry, *tmp;
+        HASH_ITER(hh, merge_pool->tiles->root, tile_entry, tmp) {
+          tile_entry->tile->pool_id = target_pool->id;
+          pool_add_tile_to_pool(target_pool, tile_entry->tile);
+        }
+
+        // Remove the merged pool
+        pool_map_remove(board->pools, compatible_pool_ids[i]);
+      }
+    }
   }
 
-  if (!target_pool) {
-    return;
-  }
-  tile_manager_add_tile(board->tile_manager, tile); // add to general tile map
-  pool_manager_add_tile_to_pool(board->pool_manager, target_pool,
-                                tile); // add tile to pool
-  tile_to_pool_map_add(&board->tile_to_pool, tile,
-                       target_pool); // add tile to "tile_to_pool_map"
-  if (num_filtered_pools > 1) {
-    // Merge all connected pools into the target pool
-    target_pool =
-      pool_manager_merge_pools(board->pool_manager, &board->tile_to_pool,
-                               filtered_candidate_pools, num_filtered_pools);
-  }
-
+  // Add tile to board's tile map and pool
+  tile_map_add(board->tiles, tile);
+  pool_add_tile_to_pool(target_pool, tile);
   pool_update(target_pool, board->grid);
 }
 
 void remove_tile(board_t *board, tile_t *tile) {
   if (!valid_tile(board, tile))
     return;
+
+  // Get the pool this tile belongs to
+  pool_map_entry_t *pool_entry =
+    pool_map_find_by_id(board->pools, tile->pool_id);
+  if (pool_entry) {
+    // Remove tile from pool
+    pool_remove_tile(pool_entry->pool, tile);
+    pool_update(pool_entry->pool, board->grid);
+  }
+
+  // Remove tile from board's tile map
+  tile_map_remove(board->tiles, tile->cell);
 }
 
 void board_randomize(board_t *board) {
+  // Clear existing tiles and pools
+  clear_board(board);
 
   grid_cell_t *cells = board->grid->cells;
   shuffle_array(cells, board->grid->num_cells, sizeof(grid_cell_t),
@@ -141,6 +186,7 @@ void board_randomize(board_t *board) {
       // In randomize_board()
       tile_t *tile = tile_create_random_ptr(cells[i]);
       if (tile->data.type != TILE_EMPTY) { // Only add non-empty tiles
+        tile->pool_id = 0;                 // Will be assigned in add_tile
         add_tile(board, tile);
       } else {
         // Free the empty tile since we're not using it
@@ -151,6 +197,21 @@ void board_randomize(board_t *board) {
 }
 
 void cycle_tile_type(board_t *board, tile_t *tile);
+
+void print_board_debug_info(board_t *board) {
+  if (!board) {
+    printf("Board is NULL\n");
+    return;
+  }
+
+  printf("=== Board Debug Info ===\n");
+  printf("Grid type: %d\n", board->grid->type);
+  printf("Grid cells: %zu\n", board->grid->num_cells);
+  printf("Tiles in board: %d\n", board->tiles->num_tiles);
+  printf("Pools in board: %zu\n", board->pools->num_pools);
+  printf("Next pool ID: %u\n", board->next_pool_id);
+  printf("========================\n");
+}
 
 // Function to check if a board merge is valid (no tile overlaps)
 bool is_merge_valid(board_t *target_board, board_t *source_board,
@@ -167,8 +228,7 @@ bool is_merge_valid(board_t *target_board, board_t *source_board,
   // Check each tile in the source board
   for (size_t i = 0; i < source_board->grid->num_cells; i++) {
     grid_cell_t source_cell = source_board->grid->cells[i];
-    tile_t *source_tile =
-      cell_to_tile_ptr(source_board->tile_manager, source_cell);
+    tile_t *source_tile = get_tile_at_cell(source_board, source_cell);
 
     if (source_tile) {
       // Apply offset to get the target position
@@ -182,8 +242,7 @@ bool is_merge_valid(board_t *target_board, board_t *source_board,
       }
 
       // Check if there's already a tile at this position in the target board
-      tile_t *existing_tile =
-        cell_to_tile_ptr(target_board->tile_manager, target_position);
+      tile_t *existing_tile = get_tile_at_cell(target_board, target_position);
       if (existing_tile) {
         return false; // Overlap detected
       }
@@ -209,8 +268,7 @@ bool merge_boards(board_t *target_board, board_t *source_board,
   // Merge each tile from source to target
   for (size_t i = 0; i < source_board->grid->num_cells; i++) {
     grid_cell_t source_cell = source_board->grid->cells[i];
-    tile_t *source_tile =
-      cell_to_tile_ptr(source_board->tile_manager, source_cell);
+    tile_t *source_tile = get_tile_at_cell(source_board, source_cell);
 
     if (source_tile) {
       // Apply offset to get the target position
@@ -232,6 +290,7 @@ bool merge_boards(board_t *target_board, board_t *source_board,
 
       new_tile->cell = target_position;
       new_tile->data = source_tile->data; // Copy tile data
+      new_tile->pool_id = 0;              // Will be assigned in add_tile
 
       // Add the tile to the target board
       add_tile(target_board, new_tile);

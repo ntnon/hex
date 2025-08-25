@@ -1,6 +1,6 @@
 #include "game/board.h"
 #include "game/inventory.h"
-#include "input_state.h"
+#include "controller/input_state.h"
 
 typedef struct game {
     board_t *board;

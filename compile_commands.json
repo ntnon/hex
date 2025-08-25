@@ -360,10 +360,10 @@
       "-c",
       "-o",
       "obj/x64/Debug/hexhex/game_controller.o",
-      "../../src/game/game_controller.c"
+      "../../src/controller/game_controller.c"
     ],
     "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/game/game_controller.c",
+    "file": "/Users/nydon/code/hexhex/src/controller/game_controller.c",
     "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/game_controller.o"
   },
   {
@@ -468,10 +468,10 @@
       "-c",
       "-o",
       "obj/x64/Debug/hexhex/input_state.o",
-      "../../src/game/input_state.c"
+      "../../src/controller/input_state.c"
     ],
     "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/game/input_state.c",
+    "file": "/Users/nydon/code/hexhex/src/controller/input_state.c",
     "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/input_state.o"
   },
   {
@@ -576,10 +576,10 @@
       "-c",
       "-o",
       "obj/x64/Debug/hexhex/pool_manager.o",
-      "../../src/tile/pool_manager.c"
+      "../../src/bye/pool_manager.c"
     ],
     "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/tile/pool_manager.c",
+    "file": "/Users/nydon/code/hexhex/src/bye/pool_manager.c",
     "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/pool_manager.o"
   },
   {
@@ -711,10 +711,10 @@
       "-c",
       "-o",
       "obj/x64/Debug/hexhex/tile_grid.o",
-      "../../src/game/tile_grid.c"
+      "../../src/bye/tile_grid.c"
     ],
     "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/game/tile_grid.c",
+    "file": "/Users/nydon/code/hexhex/src/bye/tile_grid.c",
     "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/tile_grid.o"
   },
   {
@@ -738,10 +738,10 @@
       "-c",
       "-o",
       "obj/x64/Debug/hexhex/tile_manager.o",
-      "../../src/tile/tile_manager.c"
+      "../../src/bye/tile_manager.c"
     ],
     "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/tile/tile_manager.c",
+    "file": "/Users/nydon/code/hexhex/src/bye/tile_manager.c",
     "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/tile_manager.o"
   },
   {
@@ -792,10 +792,10 @@
       "-c",
       "-o",
       "obj/x64/Debug/hexhex/tile_to_pool_map.o",
-      "../../src/tile/tile_to_pool_map.c"
+      "../../src/bye/tile_to_pool_map.c"
     ],
     "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/tile/tile_to_pool_map.c",
+    "file": "/Users/nydon/code/hexhex/src/bye/tile_to_pool_map.c",
     "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/tile_to_pool_map.o"
   },
   {

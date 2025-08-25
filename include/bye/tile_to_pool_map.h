@@ -1,8 +1,8 @@
 #ifndef TILE_TO_POOL_MAP_H
 #define TILE_TO_POOL_MAP_H
 
-#include "tile.h"
-#include "pool.h"
+#include "tile/tile.h"
+#include "tile/pool.h"
 #include "../third_party/uthash.h"
 
 /*==============================

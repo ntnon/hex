@@ -1,5 +1,5 @@
-#include "pool_map.h"
-#include "tile.h"
+#include "tile/pool_map.h"
+#include "tile/tile.h"
 #include "tile_to_pool_map.h"
 
 typedef struct {

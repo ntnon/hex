@@ -1,5 +1,5 @@
 #include "raylib.h"
-#include "input_state.h"
+#include "controller/input_state.h"
 
 void camera_init(Camera2D *camera);
 void update_camera(Camera2D *camera, const input_state_t *input);

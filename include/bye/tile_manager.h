@@ -10,8 +10,8 @@
 #define TILE_MANAGER_H
 
 //#include "../grid/grid_system.h"
-#include "tile.h"
-#include "tile_map.h"
+#include "tile/tile.h"
+#include "tile/tile_map.h"
 
 // --- Tile Manager Structure ---
 /**

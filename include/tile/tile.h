@@ -32,6 +32,7 @@ typedef struct {
 typedef struct {
     grid_cell_t cell;      // The cell this tile occupies. Crucially, this will be our hash key.
     tile_data_t data;            // Any specific value for the tile (e.g., resource amount).
+    uint32_t pool_id;      // ID of the pool this tile belongs to
     // ... other tile-specific data can go here ...
 } tile_t;
 

@@ -1,56 +1,39 @@
-#include "../../include/tile/tile_manager.h"
+#include "../../include/bye/tile_manager.h"
 #include <stdio.h>
 
-tile_manager_t *
-tile_manager_create (void)
-{
-  tile_manager_t *tm = malloc (sizeof (tile_manager_t));
-  if (!tm)
-    {
-      return NULL;
-    }
-  tm->tiles = tile_map_create ();
+tile_manager_t *tile_manager_create(void) {
+  tile_manager_t *tm = malloc(sizeof(tile_manager_t));
+  if (!tm) {
+    return NULL;
+  }
+  tm->tiles = tile_map_create();
   return tm;
 }
 
-tile_t *
-cell_to_tile_ptr (tile_manager_t *tm, grid_cell_t cell)
-{
-  tile_map_entry_t *entry = tile_map_find (tm->tiles, cell);
-  if (!entry)
-    {
-      return NULL;
-    }
+tile_t *cell_to_tile_ptr(tile_manager_t *tm, grid_cell_t cell) {
+  tile_map_entry_t *entry = tile_map_find(tm->tiles, cell);
+  if (!entry) {
+    return NULL;
+  }
   return entry->tile;
 }
 
-void
-cells_to_tile_ptrs (tile_manager_t *tm, const grid_cell_t *cells,
-                    size_t num_cells, tile_t **out_tile_ptrs)
-{
-  for (size_t i = 0; i < num_cells; ++i)
-    {
-      out_tile_ptrs[i] = cell_to_tile_ptr (tm, cells[i]);
-    }
+void cells_to_tile_ptrs(tile_manager_t *tm, const grid_cell_t *cells,
+                        size_t num_cells, tile_t **out_tile_ptrs) {
+  for (size_t i = 0; i < num_cells; ++i) {
+    out_tile_ptrs[i] = cell_to_tile_ptr(tm, cells[i]);
+  }
 }
 
-void
-tile_manager_free (tile_manager_t *tm)
-{
-  tile_map_free (tm->tiles);
-  free (tm);
+void tile_manager_free(tile_manager_t *tm) {
+  tile_map_free(tm->tiles);
+  free(tm);
 }
 
-void
-tile_manager_clear (tile_manager_t *tm)
-{
-  tile_map_free (tm->tiles);
-}
+void tile_manager_clear(tile_manager_t *tm) { tile_map_free(tm->tiles); }
 
-void
-tile_manager_add_tile (tile_manager_t *tm, tile_t *tile)
-{
-  tile_map_add (tm->tiles, tile);
+void tile_manager_add_tile(tile_manager_t *tm, tile_t *tile) {
+  tile_map_add(tm->tiles, tile);
 }
 
 /*

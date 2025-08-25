@@ -1,6 +1,6 @@
-#include "game/game_controller.h"
+#include "controller/game_controller.h"
+#include "controller/input_state.h"
 #include "game/camera.h"
-#include "game/input_state.h"
 #include "stdio.h"
 #include "ui.h"
 #include "utility/geometry.h"
@@ -64,11 +64,12 @@ void controller_process_events(game_controller_t *ctrl) {
 
         board_t *new_board = board_create(ctrl->game->board->grid->type, 2);
         board_randomize(new_board);
-        printf("tiles in new board: %d\n",
-               new_board->tile_manager->tiles->num_tiles);
+        printf("tiles in new board: %d\n", new_board->tiles->num_tiles);
         merge_boards(ctrl->game->board, new_board,
                      grid_get_center_cell(ctrl->game->board->grid),
                      grid_get_center_cell(new_board->grid));
+        free_board(new_board);
+        print_board_debug_info(ctrl->game->board);
       }
 
       break;

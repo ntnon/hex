@@ -2,15 +2,15 @@
 #define BOARD_H
 
 #include "../grid/grid_system.h"
-#include "../tile/tile_manager.h"
-#include "../tile/pool_manager.h"
+#include "../tile/tile_map.h"
+#include "../tile/pool_map.h"
 #include "../utility/array_shuffle.h"
 
 typedef struct  {
     grid_t *grid;
-    tile_manager_t *tile_manager;
-    pool_manager_t *pool_manager;
-    tile_to_pool_entry_t *tile_to_pool;
+    tile_map_t *tiles;
+    pool_map_t *pools;
+    uint32_t next_pool_id;
 }board_t;
 
 board_t *
@@ -41,5 +41,9 @@ bool is_merge_valid(board_t *target_board, board_t *source_board,
 
 bool merge_boards(board_t *target_board, board_t *source_board,
                   grid_cell_t target_center, grid_cell_t source_center);
+
+tile_t *get_tile_at_cell(board_t *board, grid_cell_t cell);
+
+void print_board_debug_info(board_t *board);
 
 #endif /* BOARD_H */

@@ -116,8 +116,7 @@ static void update_tiled_grid_cache(const board_t *board) {
       cam.zoom = 1.0f;
       BeginMode2D(cam);
       // Render every tile from the board.
-      tile_map_foreach_tile(board->tile_manager->tiles, draw_tile_wrapper,
-                            (void *)grid);
+      tile_map_foreach_tile(board->tiles, draw_tile_wrapper, (void *)grid);
       EndMode2D();
       EndTextureMode();
     }
@@ -137,12 +136,11 @@ void render_board(const board_t *board) {
     return;
   }
 
-  if (!board->tile_manager) {
-    printf("ERROR: board->tile_manager is null\n");
+  if (!board->tiles) {
+    printf("ERROR: board->tiles is null\n");
     return;
   }
-  tile_map_foreach_tile(board->tile_manager->tiles, draw_tile_wrapper,
-                        (void *)board->grid);
+  tile_map_foreach_tile(board->tiles, draw_tile_wrapper, (void *)board->grid);
   /*
    *
     // Build tiled cache if not already built.
