@@ -73,7 +73,7 @@ int main(void) {
   ui_build_layout(&controller);
   Clay_BoundingBox game_bounds = Clay_GetElementData(UI_ID_GAME).boundingBox;
 
-  camera_set_offset(&controller.game_camera, game_bounds.width,
+  camera_set_offset(&controller.game->board->camera, game_bounds.width,
                     game_bounds.height);
   while (!WindowShouldClose()) {
     get_input_state(&controller.input);
@@ -85,7 +85,7 @@ int main(void) {
     ClearBackground(BROWN);
     controller_process_events(&controller);
 
-    BeginMode2D(controller.game_camera);
+    BeginMode2D(controller.game->board->camera);
 
     render_hex_grid(game.board->grid);
     render_board(game.board);

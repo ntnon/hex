@@ -5,12 +5,14 @@
 #include "../tile/tile_map.h"
 #include "../tile/pool_map.h"
 #include "../utility/array_shuffle.h"
+#include "raylib.h"
 
 typedef struct  {
     grid_t *grid;
     tile_map_t *tiles;
     pool_map_t *pools;
     uint32_t next_pool_id;
+    Camera2D camera;
 }board_t;
 
 board_t *

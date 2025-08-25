@@ -1,5 +1,6 @@
 #include "game/game.h"
 #include "grid/grid_system.h"
+#include "raylib.h"
 #include "renderer.h"
 #include "stdio.h"
 
@@ -26,10 +27,8 @@ void free_game(game_t *game) {
 void update_game(game_t *game, const input_state_t *input) {
   // Transform mouse coordinates from screen space to world space
   Vector2 world_mouse = GetScreenToWorld2D(
-    (Vector2){input->mouse.x, input->mouse.y}, 
-    game->camera  // You'll need to pass this from controller
-  );
-  
+    (Vector2){input->mouse.x, input->mouse.y}, game->board->camera);
+
   game->hovered_grid_cell = grid_get_cell_at_pixel(
     game->board->grid, (point_t){world_mouse.x, world_mouse.y});
   if (game->hovered_grid_cell) {

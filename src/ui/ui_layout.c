@@ -34,7 +34,7 @@ Clay_RenderCommandArray ui_build_layout(game_controller_t *controller) {
                        (Clay_Sizing){.height = CLAY_SIZING_GROW(),
                                      .width = CLAY_SIZING_PERCENT(0.8)}}}) {
       Clay_OnHover(handle_hover, (intptr_t)controller);
-      BeginMode2D(controller->game_camera);
+      BeginMode2D(controller->game->board->camera);
 
       render_board(controller->game->board);
       EndMode2D();

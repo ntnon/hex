@@ -11,8 +11,6 @@ void controller_init(game_controller_t *controller, game_t *game) {
   controller->hovered_element_id = UI_ID_NONE;
   controller->game_bounds = Clay_GetElementData(UI_ID_GAME).boundingBox;
 
-  camera_init(&controller->game_camera);
-
   // Initialize input state
   input_state_init(&controller->input);
 }
@@ -25,7 +23,7 @@ void controller_update(game_controller_t *controller, input_state_t *input) {
   // Update game camera with current input
   if (point_in_bounds(input->mouse, controller->game_bounds) &&
       controller->last_clicked_ui_element_id.id == UI_ID_GAME.id) {
-    update_camera(&controller->game_camera, input);
+    update_camera(&controller->game->board->camera, input);
   }
 }
 

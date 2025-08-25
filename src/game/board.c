@@ -1,4 +1,5 @@
 #include "../../include/game/board.h"
+#include "../../include/game/camera.h"
 #include "../../include/third_party/uthash.h"
 #include <stdio.h>
 
@@ -33,6 +34,7 @@ board_t *board_create(grid_type_e grid_type, int radius) {
   board->pools = pool_map_create();
   board->next_pool_id = 1;
   board->grid = grid_create(grid_type, default_layout, radius);
+  camera_init(&board->camera);
   return board;
 }
 

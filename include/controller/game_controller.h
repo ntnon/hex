@@ -12,7 +12,6 @@ typedef struct {
     game_t *game;
     input_state_t input;
 
-    Camera2D game_camera;
     Clay_ElementId last_clicked_ui_element_id;
     Clay_ElementId hovered_element_id;
     Clay_ElementData hovered_element_data;
