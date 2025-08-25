@@ -1,6 +1,5 @@
 #include "../third_party/clay.h"
 #include "../game/board.h"
-#include "../game/inventory.h"
 
 #include "raylib.h"
 
@@ -18,6 +17,4 @@ void
 render_hex_cell (const grid_t *grid, grid_cell_t cell, Clay_Color fill_color,
                  Clay_Color edge_color);
 
-Rectangle
-inventory_get_slot_rect (const inventory_t *inv, int i);
-void render_inventory(inventory_t *inventory);
+
