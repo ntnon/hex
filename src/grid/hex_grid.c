@@ -231,15 +231,16 @@ grid_cell_t *grid_get_cell_at_pixel(const grid_t *grid, point_t p) {
   return grid->vtable->get_cell_at_pixel(grid, p);
 }
 
-void print_cell(const grid_t *grid, const grid_cell_t cell) {
+void print_cell(const grid_t *grid, grid_cell_t cell) {
   if (cell.type != GRID_TYPE_HEXAGON)
-    return;
+    printf("Invalid cell");
   if (is_valid_cell(grid, cell)) {
     printf("Hex Coordinate: (%d, %d, %d)\n", cell.coord.hex.q, cell.coord.hex.r,
            cell.coord.hex.s);
+  } else {
+    printf("Cell not in grid: (%d, %d, %d)\n", cell.coord.hex.q,
+           cell.coord.hex.r, cell.coord.hex.s);
   }
-  printf("Cell not in grid: (%d, %d, %d)\n", cell.coord.hex.q, cell.coord.hex.r,
-         cell.coord.hex.s);
 }
 
 // --- Public vtable instance ---
