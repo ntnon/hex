@@ -14,7 +14,7 @@ typedef struct  {
 }board_t;
 
 board_t *
-board_create (grid_type_e   grid_type, int radius);
+board_create (grid_type_e grid_type, int radius);
 
 void clear_board(board_t *board);
 

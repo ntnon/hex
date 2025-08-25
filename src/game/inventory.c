@@ -1,7 +1,5 @@
 #include "../include/game/inventory.h"
 #include "../include/third_party/kvec.h"
-// #include "../../include/grid/grid_types.h"
-// #include "render/clay_renderer_raylib.h"
 #include "ui.h"
 #include "utility/string.h"
 #include <stdio.h>
@@ -9,19 +7,25 @@
 
 inventory_item_t inventory_create_item(inventory_t *inv) {
   int next_id = inv->next_element_id++;
+
+  // Create a small random board for the inventory item
+  board_t *item_board = board_create(GRID_TYPE_HEXAGON, 2);
+  if (item_board) {
+    board_randomize(item_board);
+  }
+
   return (inventory_item_t){
-    .tile_data = tile_data_create_random(),
     .quantity = 1,
-    .id = CLAY_IDI(UI_ID_INVENTORY_ITEM_BASE_STRING, next_id)};
+    .id = CLAY_IDI(UI_ID_INVENTORY_ITEM_BASE_STRING, next_id),
+    .board = item_board};
 }
 
 int inventory_get_size(const inventory_t *inv) { return inv->items.n; }
 
-inventory_item_t inventory_get(const inventory_t *inv, int index) {
+inventory_item_t inventory_get_item(const inventory_t *inv, int index) {
   if (index < 0 || index >= inventory_get_size(inv)) {
     printf("Invalid index: %d\n", index);
-    return (inventory_item_t){
-      .tile_data = {0}, .quantity = 0, .id = UI_ID_NONE};
+    return (inventory_item_t){.quantity = 0, .id = UI_ID_NONE, .board = NULL};
   }
   return kv_A(inv->items, index);
 }
@@ -42,6 +46,7 @@ void inventory_set_index(inventory_t *inv, int index) {
     return;
   }
 }
+
 void inventory_add_item(inventory_t *inv, inventory_item_t item) {
   kv_push(inventory_item_t, inv->items, item);
 }
@@ -80,24 +85,44 @@ inventory_t *inventory_create(int size) {
   return inventory;
 }
 
+void inventory_destroy_item(inventory_t *inv, int index) {
+  if (!inv || index < 0 || index >= inventory_get_size(inv))
+    return;
+
+  inventory_item_t *item = &kv_A(inv->items, index);
+  if (item->board) {
+    free_board(item->board);
+    item->board = NULL;
+  }
+}
+
 void inventory_use_selected(inventory_t *inv) {
   int index = inv->selected_index;
   if (!inv || index < 0 || index >= inventory_get_size(inv))
     return;
 
+  // Free the board before removing the item
+  inventory_destroy_item(inv, index);
+
   // Remove the item
-  kv_remove_at(tile_data_t, inv->items, index);
+  kv_remove_at(inventory_item_t, inv->items, index);
 
   // Adjust selected_index
   inv->selected_index = -1;
 }
 
 void free_inventory(inventory_t *inv) {
-
   if (!inv) {
     return;
   }
+
+  // Free all boards in inventory items
+  for (int i = 0; i < inventory_get_size(inv); i++) {
+    inventory_destroy_item(inv, i);
+  }
+
   kv_destroy(inv->items); // destroy the inventory items
+  free(inv);
   printf("Inventory freed\n");
 }
 
@@ -106,4 +131,15 @@ void inventory_add_random_item(inventory_t *inv) {
     return;
   }
   inventory_add_item(inv, inventory_create_item(inv));
+}
+
+char *inventory_get_element_id(const inventory_t *inv, int index) {
+  if (!inv || index < 0 || index >= inventory_get_size(inv)) {
+    return NULL;
+  }
+
+  inventory_item_t item = inventory_get_item(inv, index);
+  static char id_string[64];
+  snprintf(id_string, sizeof(id_string), "%d", item.id.id);
+  return id_string;
 }

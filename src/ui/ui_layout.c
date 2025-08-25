@@ -62,7 +62,8 @@ Clay_RenderCommandArray ui_build_layout(game_controller_t *controller) {
       int inventory_size = inventory_get_size(controller->game->inventory);
 
       for (int i = 0; i < inventory_size; i++) {
-        inventory_item_t item = inventory_get(controller->game->inventory, i);
+        inventory_item_t item =
+          inventory_get_item(controller->game->inventory, i);
 
         CLAY(
           {.id = item.id,

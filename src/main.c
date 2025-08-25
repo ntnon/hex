@@ -63,6 +63,7 @@ int main(void) {
   game_t game;
   game_init(&game);
 
+  print_board_debug_info(game.board);
   game_controller_t controller;
 
   ui_load_fonts();
@@ -93,7 +94,7 @@ int main(void) {
     Clay_Raylib_Render(renderCommands, UI_FONTS);
 
     for (int i = 0; i < inventory_get_size(controller.game->inventory); i++) {
-      inventory_item_t item = inventory_get(controller.game->inventory, i);
+      inventory_item_t item = inventory_get_item(controller.game->inventory, i);
       if (!is_id_valid(item.id))
         continue;
       Clay_BoundingBox boundingBox = Clay_GetElementData(item.id).boundingBox;

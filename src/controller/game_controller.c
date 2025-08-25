@@ -62,7 +62,7 @@ void controller_process_events(game_controller_t *ctrl) {
         // inventory_add_random_item(ctrl->game->inventory);
         // ctrl->game->board->grid->layout.scale += 0.1f;
 
-        board_t *new_board = board_create(ctrl->game->board->grid->type, 2);
+        board_t *new_board = board_create(ctrl->game->board->grid->type, 0);
         board_randomize(new_board);
         printf("tiles in new board: %d\n", new_board->tiles->num_tiles);
         merge_boards(ctrl->game->board, new_board,
