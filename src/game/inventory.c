@@ -2,25 +2,28 @@
 #include "../include/third_party/kvec.h"
 // #include "../../include/grid/grid_types.h"
 // #include "render/clay_renderer_raylib.h"
-#include "string.h"
 #include "ui.h"
+#include "utility/string.h"
 #include <stdio.h>
 #include <stdlib.h>
 
 inventory_item_t inventory_create_item(inventory_t *inv) {
-  int id = inv->next_element_id++;
-  return (inventory_item_t){.tile_data = tile_data_create_random(),
-                            .quantity = 1,
-                            .element_id =
-                              CLAY_IDI(UI_ID_INVENTORY_ITEM_BASE_STRING, id)};
+  int next_id = inv->next_element_id++;
+  return (inventory_item_t){
+    .tile_data = tile_data_create_random(),
+    .quantity = 1,
+    .id = CLAY_IDI(UI_ID_INVENTORY_ITEM_BASE_STRING, next_id)};
 }
 
 int inventory_get_size(const inventory_t *inv) { return inv->items.m; }
 
-Clay_ElementId inventory_get_element_id(const inventory_t *inv, int index) {
-  if (!inv || index < 0 || index >= inventory_get_size(inv))
-    return UI_ID_NONE;
-  return kv_A(inv->items, index).element_id;
+inventory_item_t inventory_get(const inventory_t *inv, int index) {
+  if (index < 0 || index >= inventory_get_size(inv)) {
+    printf("Invalid index: %d\n", index);
+    return (inventory_item_t){
+      .tile_data = {0}, .quantity = 0, .id = UI_ID_NONE};
+  }
+  return kv_A(inv->items, index);
 }
 
 // Set the selected index in the inventory
@@ -42,6 +45,7 @@ void inventory_set_index(inventory_t *inv, int index) {
 void inventory_add_item(inventory_t *inv, inventory_item_t item) {
   kv_push(inventory_item_t, inv->items, item);
 }
+
 void inventory_fill(inventory_t *inv, int size) {
   if (inv == NULL) {
     printf("Inventory is NULL.\n");
@@ -71,6 +75,7 @@ inventory_t *inventory_create(int size) {
   kv_init(inventory->items);
 
   inventory->selected_index = -1;
+  inventory->next_element_id = 0;
 
   return inventory;
 }

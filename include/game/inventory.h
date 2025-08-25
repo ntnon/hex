@@ -9,7 +9,7 @@
 typedef struct {
     tile_data_t tile_data;
     int quantity;
-    Clay_ElementId element_id;
+    Clay_ElementId id;
 } inventory_item_t;
 // Define inventory structure
 typedef struct {
@@ -21,12 +21,12 @@ typedef struct {
 inventory_t* inventory_create(int size);
 
 int inventory_get_size(const inventory_t *inv);
-
+inventory_item_t inventory_get(const inventory_t *inv, int index);
 inventory_item_t inventory_create_item(inventory_t *inv);
 
 void inventory_fill(inventory_t *inv, int size);
 void inventory_add_item(inventory_t *inv, inventory_item_t item);
-Clay_ElementId inventory_get_element_id(const inventory_t *inv, int index);
+char* inventory_get_element_id(const inventory_t *inv, int index);
 
 void inventory_set_index(inventory_t* inv, int index);
 void inventory_render(inventory_t* inv);
