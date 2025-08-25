@@ -1,6 +1,6 @@
-#include "../../include/game/board.h"
-#include "../../include/game/camera.h"
-#include "../../include/third_party/uthash.h"
+#include "game/board.h"
+#include "game/camera.h"
+#include "third_party/uthash.h"
 #include <stdio.h>
 
 #define MAX_POOL_CANDIDATES 10
@@ -35,6 +35,11 @@ board_t *board_create(grid_type_e grid_type, int radius) {
   board->next_pool_id = 1;
   board->grid = grid_create(grid_type, default_layout, radius);
   camera_init(&board->camera);
+
+  // Initialize preview system
+  board_init_preview_system(board,
+                            10); // Start with capacity for 10 preview tiles
+
   return board;
 }
 
@@ -50,6 +55,7 @@ void free_board(board_t *board) {
   tile_map_free(board->tiles);
   pool_map_free(board->pools);
   grid_free(board->grid);
+  board_free_preview_system(board);
   free(board);
 }
 
@@ -298,6 +304,91 @@ bool merge_boards(board_t *target_board, board_t *source_board,
       add_tile(target_board, new_tile);
     }
   }
+
+  return true;
+}
+
+// Preview system implementation
+void board_init_preview_system(board_t *board, size_t initial_capacity) {
+  if (!board)
+    return;
+
+  board->preview_tiles = malloc(initial_capacity * sizeof(preview_entry_t));
+  board->num_preview_tiles = 0;
+  board->preview_capacity = initial_capacity;
+}
+
+void board_free_preview_system(board_t *board) {
+  if (!board || !board->preview_tiles)
+    return;
+
+  free(board->preview_tiles);
+  board->preview_tiles = NULL;
+  board->num_preview_tiles = 0;
+  board->preview_capacity = 0;
+}
+
+void board_add_preview_tile(board_t *board, tile_t *tile,
+                            grid_cell_t position) {
+  if (!board || !tile)
+    return;
+
+  // Resize if needed
+  if (board->num_preview_tiles >= board->preview_capacity) {
+    board->preview_capacity *= 2;
+    board->preview_tiles = realloc(
+      board->preview_tiles, board->preview_capacity * sizeof(preview_entry_t));
+    if (!board->preview_tiles) {
+      fprintf(stderr, "Failed to reallocate preview tiles array\n");
+      return;
+    }
+  }
+
+  // Add new preview entry
+  preview_entry_t *entry = &board->preview_tiles[board->num_preview_tiles];
+  entry->tile = tile;
+  entry->preview_position = position;
+  entry->is_valid_position =
+    board_is_preview_position_valid(board, tile, position);
+
+  board->num_preview_tiles++;
+}
+
+void board_clear_preview_tiles(board_t *board) {
+  if (!board)
+    return;
+  board->num_preview_tiles = 0;
+}
+
+void board_validate_preview_tiles(board_t *board) {
+  if (!board)
+    return;
+
+  for (size_t i = 0; i < board->num_preview_tiles; i++) {
+    preview_entry_t *entry = &board->preview_tiles[i];
+    entry->is_valid_position = board_is_preview_position_valid(
+      board, entry->tile, entry->preview_position);
+  }
+}
+
+bool board_is_preview_position_valid(board_t *board, tile_t *tile,
+                                     grid_cell_t position) {
+  if (!board || !tile)
+    return false;
+
+  // Check if position is within grid bounds
+  if (!board->grid->vtable->is_valid_cell(board->grid, position)) {
+    return false;
+  }
+
+  // Check if position is already occupied by an existing tile
+  tile_t *existing_tile = get_tile_at_cell(board, position);
+  if (existing_tile) {
+    return false;
+  }
+
+  // Additional validation rules can be added here
+  // e.g., check if tile type is compatible with neighbors
 
   return true;
 }
