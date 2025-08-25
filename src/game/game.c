@@ -1,7 +1,6 @@
 #include "game/game.h"
 #include "grid/grid_system.h"
 #include "raylib.h"
-#include "renderer.h"
 #include "stdio.h"
 
 void game_init(game_t *game) {
@@ -31,6 +30,7 @@ void update_game(game_t *game, const input_state_t *input) {
 
   game->hovered_grid_cell = grid_get_cell_at_pixel(
     game->board->grid, (point_t){world_mouse.x, world_mouse.y});
+
   if (game->hovered_grid_cell) {
     print_cell(game->board->grid, *(game->hovered_grid_cell));
   }
