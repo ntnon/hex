@@ -38,6 +38,13 @@ Clay_RenderCommandArray ui_build_layout(game_controller_t *controller) {
 
       render_board(controller->game->board);
       EndMode2D();
+      CLAY({.id = UI_BUTTON_ADD_INVENTORY_ITEM,
+            .backgroundColor = M_ORANGE,
+            .layout = {.sizing = (Clay_Sizing){.width = CLAY_SIZING_FIT(),
+                                               .height = CLAY_SIZING_FIT()}}}) {
+        CLAY_TEXT(CLAY_STRING("Add to inventory"), &TEXT_CONFIG_MEDIUM);
+        Clay_OnHover(handle_hover, (intptr_t)controller);
+      }
     };
 
     // --- Inventory area ---
@@ -57,8 +64,6 @@ Clay_RenderCommandArray ui_build_layout(game_controller_t *controller) {
       for (int i = 0; i < inventory_size; i++) {
         inventory_item_t item = inventory_get(controller->game->inventory, i);
 
-        printf("inventory_size: %d, current_index %d, %d\n", inventory_size, i,
-               item.id.id);
         CLAY(
           {.id = item.id,
            .backgroundColor = M_BEIGE,

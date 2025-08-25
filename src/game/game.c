@@ -6,7 +6,7 @@ void game_init(game_t *game) {
   game->board = board_create(GRID_TYPE_HEXAGON, 4);
   game->inventory = inventory_create(3);
 
-  board_randomize(game->board);
+  // board_randomize(game->board);
   inventory_fill(game->inventory, 3);
 }
 

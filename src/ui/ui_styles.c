@@ -33,17 +33,17 @@ const Clay_Color M_RAYWHITE = {245, 245, 245,
 const uint32_t FONT_ID_LATO = 5;
 
 // Text configs
-const Clay_TextElementConfig TEXT_CONFIG_LARGE = {.fontId = FONT_ID_LATO,
-                                                  .fontSize = 24,
-                                                  .letterSpacing =
-                                                    FONT_DEFAULT_SPACING,
-                                                  .textColor = M_BLACK};
+Clay_TextElementConfig TEXT_CONFIG_LARGE = {.fontId = FONT_ID_LATO,
+                                            .fontSize = 24,
+                                            .letterSpacing =
+                                              FONT_DEFAULT_SPACING,
+                                            .textColor = M_BLACK};
 
-const Clay_TextElementConfig TEXT_CONFIG_MEDIUM = {.fontId = FONT_ID_LATO,
-                                                   .fontSize = 24,
-                                                   .letterSpacing =
-                                                     FONT_DEFAULT_SPACING,
-                                                   .textColor = M_GRAY};
+Clay_TextElementConfig TEXT_CONFIG_MEDIUM = {.fontId = FONT_ID_LATO,
+                                             .fontSize = 24,
+                                             .letterSpacing =
+                                               FONT_DEFAULT_SPACING,
+                                             .textColor = M_GRAY};
 
 Font UI_FONTS[MAX_FONTS] = {0};
 

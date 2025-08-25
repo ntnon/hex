@@ -15,7 +15,7 @@ inventory_item_t inventory_create_item(inventory_t *inv) {
     .id = CLAY_IDI(UI_ID_INVENTORY_ITEM_BASE_STRING, next_id)};
 }
 
-int inventory_get_size(const inventory_t *inv) { return inv->items.m; }
+int inventory_get_size(const inventory_t *inv) { return inv->items.n; }
 
 inventory_item_t inventory_get(const inventory_t *inv, int index) {
   if (index < 0 || index >= inventory_get_size(inv)) {
@@ -99,4 +99,11 @@ void free_inventory(inventory_t *inv) {
   }
   kv_destroy(inv->items); // destroy the inventory items
   printf("Inventory freed\n");
+}
+
+void inventory_add_random_item(inventory_t *inv) {
+  if (!inv) {
+    return;
+  }
+  inventory_add_item(inv, inventory_create_item(inv));
 }

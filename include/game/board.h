@@ -36,4 +36,10 @@ valid_tile (board_t *board, tile_t *tile);
 
 //static pool_t* find_new_tile_pool_candidates(board_t *board, tile_t *tile);
 
+bool is_merge_valid(board_t *target_board, board_t *source_board,
+                    grid_cell_t target_center, grid_cell_t source_center);
+
+bool merge_boards(board_t *target_board, board_t *source_board,
+                  grid_cell_t target_center, grid_cell_t source_center);
+
 #endif /* BOARD_H */

@@ -13,6 +13,7 @@
 #define UI_ID_INVENTORY CLAY_ID("inventory")
 #define UI_ID_NONE CLAY_ID("none")
 
+#define UI_BUTTON_ADD_INVENTORY_ITEM CLAY_ID("add_item")
 #define UI_ID_INVENTORY_ITEM_BASE_STRING "inventory_item_base_"
 
 bool is_id_valid(const Clay_ElementId id);
@@ -61,8 +62,8 @@ extern Font UI_FONTS[MAX_FONTS];
 void ui_load_fonts(void);
 
 // Text configs
-extern const Clay_TextElementConfig TEXT_CONFIG_LARGE;
-extern const Clay_TextElementConfig TEXT_CONFIG_MEDIUM;
+extern Clay_TextElementConfig TEXT_CONFIG_LARGE;
+extern Clay_TextElementConfig TEXT_CONFIG_MEDIUM;
 
 #endif // UI_STYLES_H
 

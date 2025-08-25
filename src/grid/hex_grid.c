@@ -87,6 +87,40 @@ static void get_corners(const grid_t *grid, grid_cell_t cell,
   }
 }
 
+static grid_cell_t calculate_offset(grid_cell_t target, grid_cell_t source) {
+  grid_cell_t offset = {0};
+  offset.type = target.type;
+
+  if (target.type == GRID_TYPE_HEXAGON && source.type == GRID_TYPE_HEXAGON) {
+    offset.coord.hex.q = target.coord.hex.q - source.coord.hex.q;
+    offset.coord.hex.r = target.coord.hex.r - source.coord.hex.r;
+    offset.coord.hex.s = target.coord.hex.s - source.coord.hex.s;
+  }
+
+  return offset;
+}
+
+static grid_cell_t apply_offset(grid_cell_t cell, grid_cell_t offset) {
+  grid_cell_t result = cell;
+
+  if (cell.type == GRID_TYPE_HEXAGON && offset.type == GRID_TYPE_HEXAGON) {
+    result.coord.hex.q += offset.coord.hex.q;
+    result.coord.hex.r += offset.coord.hex.r;
+    result.coord.hex.s += offset.coord.hex.s;
+  }
+
+  return result;
+}
+
+static grid_cell_t get_center_cell(const grid_t *grid) {
+  grid_cell_t center = {0};
+  center.type = GRID_TYPE_HEXAGON;
+  center.coord.hex.q = 0;
+  center.coord.hex.r = 0;
+  center.coord.hex.s = 0;
+  return center;
+}
+
 static void generate_cells(grid_t *grid, int radius) {
   // Generates all hexes within the given radius
   size_t count = 0;
@@ -170,7 +204,19 @@ const grid_vtable_t hex_grid_vtable = {
   .num_neighbors = 6,
   .is_valid_cell = is_valid_cell,
   .grid_free = grid_free,
+  .calculate_offset = calculate_offset,
+  .apply_offset = apply_offset,
+  .get_center_cell = get_center_cell,
 };
+
+grid_cell_t grid_get_center_cell(const grid_t *grid) {
+  if (!grid || !grid->vtable || !grid->vtable->get_center_cell) {
+    grid_cell_t invalid = {.type = GRID_TYPE_UNKNOWN};
+    return invalid;
+  }
+  return grid->vtable->get_center_cell(grid);
+}
+
 /*
 const orientation_t layout_pointy = { .f0 = 1.732050808,
                                       .f1 = 0.866025404,

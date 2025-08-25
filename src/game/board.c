@@ -17,8 +17,8 @@ layout_t default_layout = {
   .orientation = layout_pointy_t,
   .size = {70.0, 70.0}, // Hex size (adjust as needed)
   .origin = {0.0, 0.0}, // Center of the screen (adjust as needed)
-  .scale = 1.0f,        // scale factor for hex size (adjust as needed)
-  .radius = 5,          // radius of the hexagon (adjust as needed)
+  .scale = 1.0f, // scale factor for hex size (adjust as needed)          //
+                 // radius of the hexagon (adjust as needed)
 };
 
 board_t *board_create(grid_type_e grid_type, int radius) {
@@ -151,3 +151,92 @@ void board_randomize(board_t *board) {
 }
 
 void cycle_tile_type(board_t *board, tile_t *tile);
+
+// Function to check if a board merge is valid (no tile overlaps)
+bool is_merge_valid(board_t *target_board, board_t *source_board,
+                    grid_cell_t target_center, grid_cell_t source_center) {
+  if (target_board->grid->type != source_board->grid->type) {
+    fprintf(stderr, "Cannot merge boards of different grid types\n");
+    return false;
+  }
+
+  // Calculate the offset needed to align source_center with target_center
+  grid_cell_t offset =
+    target_board->grid->vtable->calculate_offset(target_center, source_center);
+
+  // Check each tile in the source board
+  for (size_t i = 0; i < source_board->grid->num_cells; i++) {
+    grid_cell_t source_cell = source_board->grid->cells[i];
+    tile_t *source_tile =
+      cell_to_tile_ptr(source_board->tile_manager, source_cell);
+
+    if (source_tile) {
+      // Apply offset to get the target position
+      grid_cell_t target_position =
+        target_board->grid->vtable->apply_offset(source_cell, offset);
+
+      // Check if this position is valid in the target grid
+      if (!target_board->grid->vtable->is_valid_cell(target_board->grid,
+                                                     target_position)) {
+        continue; // Skip tiles that would fall outside the target grid
+      }
+
+      // Check if there's already a tile at this position in the target board
+      tile_t *existing_tile =
+        cell_to_tile_ptr(target_board->tile_manager, target_position);
+      if (existing_tile) {
+        return false; // Overlap detected
+      }
+    }
+  }
+
+  return true; // No overlaps found
+}
+
+// Function to merge two boards
+bool merge_boards(board_t *target_board, board_t *source_board,
+                  grid_cell_t target_center, grid_cell_t source_center) {
+  if (!is_merge_valid(target_board, source_board, target_center,
+                      source_center)) {
+    fprintf(stderr, "Board merge is not valid - tiles would overlap\n");
+    return false;
+  }
+
+  // Calculate the offset needed to align source_center with target_center
+  grid_cell_t offset =
+    target_board->grid->vtable->calculate_offset(target_center, source_center);
+
+  // Merge each tile from source to target
+  for (size_t i = 0; i < source_board->grid->num_cells; i++) {
+    grid_cell_t source_cell = source_board->grid->cells[i];
+    tile_t *source_tile =
+      cell_to_tile_ptr(source_board->tile_manager, source_cell);
+
+    if (source_tile) {
+      // Apply offset to get the target position
+      grid_cell_t target_position =
+        target_board->grid->vtable->apply_offset(source_cell, offset);
+
+      // Check if this position is valid in the target grid
+      if (!target_board->grid->vtable->is_valid_cell(target_board->grid,
+                                                     target_position)) {
+        continue; // Skip tiles that would fall outside the target grid
+      }
+
+      // Create a new tile at the target position with the same data
+      tile_t *new_tile = malloc(sizeof(tile_t));
+      if (!new_tile) {
+        fprintf(stderr, "Failed to allocate memory for merged tile\n");
+        return false;
+      }
+
+      new_tile->cell = target_position;
+      new_tile->data = source_tile->data; // Copy tile data
+
+      // Add the tile to the target board
+      add_tile(target_board, new_tile);
+    }
+  }
+
+  return true;
+}

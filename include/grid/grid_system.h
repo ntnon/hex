@@ -74,6 +74,29 @@ typedef struct {
 
     void(*grid_free)(grid_t* grid);
 
+    /**
+     * @brief Calculates offset between two cells.
+     * @param target The target cell position.
+     * @param source The source cell position.
+     * @return The offset needed to transform source to target.
+     */
+    grid_cell_t (*calculate_offset)(grid_cell_t target, grid_cell_t source);
+
+    /**
+     * @brief Applies an offset to a cell.
+     * @param cell The original cell.
+     * @param offset The offset to apply.
+     * @return The resulting cell after applying offset.
+     */
+    grid_cell_t (*apply_offset)(grid_cell_t cell, grid_cell_t offset);
+
+    /**
+     * @brief Gets the center cell of the grid.
+     * @param grid The grid system instance.
+     * @return The center cell of the grid.
+     */
+    grid_cell_t (*get_center_cell)(const grid_t* grid);
+
 } grid_vtable_t;
 
 // The main grid object. This is the primary struct that game logic will interact with.
@@ -98,7 +121,7 @@ struct grid_t {
  * @param size A generic size parameter (e.g., radius).
  * @return A pointer to the newly created grid_t object, or NULL on failure.
  */
-grid_t* grid_create(grid_type_e type, layout_t layout, int size);
+grid_t *grid_create(grid_type_e type, layout_t layout, int size);
 
 /**
  * @brief Frees all memory associated with a grid object.
@@ -108,6 +131,13 @@ void grid_free(grid_t* grid);
 
 
 bool is_valid_cell(const grid_t* grid, grid_cell_t check_cell);
+
+/**
+ * @brief Gets the center cell of the grid.
+ * @param grid The grid system instance.
+ * @return The center cell of the grid.
+ */
+grid_cell_t grid_get_center_cell(const grid_t* grid);
 
 
 /**

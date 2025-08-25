@@ -65,6 +65,7 @@ int main(void) {
 
   game_controller_t controller;
 
+  ui_load_fonts();
   UI_Context ui = ui_init(initial_width, initial_height);
   controller_init(&controller, &game);
 
@@ -85,7 +86,7 @@ int main(void) {
 
     BeginMode2D(controller.game_camera);
 
-    // render_hex_grid(game.board->grid);
+    render_hex_grid(game.board->grid);
     render_board(game.board);
     EndMode2D();
 
@@ -104,7 +105,7 @@ int main(void) {
           combine_string_int("hi:________1__________2__________3__________"
                              "4__________5__________6__________7_______",
                              i),
-          boundingBox.x, boundingBox.y, 10, BLACK);
+          boundingBox.x + 10, boundingBox.y + 10, 10, BLACK);
         EndScissorMode();
       }
     }

@@ -5,12 +5,15 @@
 #include "raylib.h"
 #include "../third_party/kvec.h"
 #include "string.h"
+#include "game/board.h"
 
 typedef struct {
     tile_data_t tile_data;
     int quantity;
     Clay_ElementId id;
+    board_t board;
 } inventory_item_t;
+
 // Define inventory structure
 typedef struct {
     kvec_t(inventory_item_t) items; // Array of inventory items           // Size of the inventory
@@ -35,7 +38,7 @@ void inventory_destroy_item(inventory_t *inv, int index);
 bool
 inventory_hit_test (inventory_t *inv, Vector2 mouse);
 void inventory_handle_input(inventory_t *inv);
-
+void inventory_add_random_item(inventory_t *inv);
 void inventory_use_selected(inventory_t *inv);
 
 #endif // INVENTORY_H

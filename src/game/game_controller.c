@@ -56,6 +56,21 @@ void controller_process_events(game_controller_t *ctrl) {
       break;
     case UI_EVENT_CLICK:
       ctrl->last_clicked_ui_element_id = evt.element_id;
+      printf("Clicked on element: %s\n", evt.element_id.stringId.chars);
+      if (ctrl->last_clicked_ui_element_id.id ==
+          UI_BUTTON_ADD_INVENTORY_ITEM.id) {
+        // inventory_add_random_item(ctrl->game->inventory);
+        // ctrl->game->board->grid->layout.scale += 0.1f;
+
+        board_t *new_board = board_create(ctrl->game->board->grid->type, 2);
+        board_randomize(new_board);
+        printf("tiles in new board: %d\n",
+               new_board->tile_manager->tiles->num_tiles);
+        merge_boards(ctrl->game->board, new_board,
+                     grid_get_center_cell(ctrl->game->board->grid),
+                     grid_get_center_cell(new_board->grid));
+      }
+
       break;
     default:
       break;
