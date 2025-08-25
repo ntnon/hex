@@ -36,13 +36,13 @@ const uint32_t FONT_ID_LATO = 5;
 const Clay_TextElementConfig TEXT_CONFIG_LARGE = {.fontId = FONT_ID_LATO,
                                                   .fontSize = 24,
                                                   .letterSpacing =
-                                                   FONT_DEFAULT_SPACING,
+                                                    FONT_DEFAULT_SPACING,
                                                   .textColor = M_BLACK};
 
 const Clay_TextElementConfig TEXT_CONFIG_MEDIUM = {.fontId = FONT_ID_LATO,
                                                    .fontSize = 24,
                                                    .letterSpacing =
-                                                    FONT_DEFAULT_SPACING,
+                                                     FONT_DEFAULT_SPACING,
                                                    .textColor = M_GRAY};
 
 Font UI_FONTS[MAX_FONTS] = {0};

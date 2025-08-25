@@ -1,3 +1,4 @@
+#include "game/inventory.h"
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -11,6 +12,7 @@
 #include "game/game_controller.h"
 #include "render/renderer.h"
 #include "ui.h"
+#include "utility/string.h"
 
 /*
 
@@ -49,6 +51,9 @@ Modifiers:
 - Condition gate (e.g green production > 20% of total production)
 - Luck based gate (roll )
 
+
+Stone tiles - dead tiles, no production
+Paintbrush - reskin a tile or group of tiles
  */
 
 int main(void) {
@@ -75,35 +80,35 @@ int main(void) {
     Clay_RenderCommandArray renderCommands = ui_build_layout(&controller);
 
     BeginDrawing();
-    ClearBackground(WHITE);
-    Clay_Raylib_Render(renderCommands, UI_FONTS);
+    ClearBackground(BROWN);
     controller_process_events(&controller);
 
     BeginMode2D(controller.game_camera);
 
-    BeginScissorMode(controller.game_bounds.x, controller.game_bounds.y,
-                     controller.game_bounds.width,
-                     controller.game_bounds.height);
-
-    render_hex_grid(game.board->grid);
+    // render_hex_grid(game.board->grid);
     render_board(game.board);
-    // EndScissorMode();
-    // for (int i = 0; i < inventory_get_size(controller.game->inventory); i++)
-    // {
-    //     Clay_ElementId id = { .id = UI_ID_INVENTORY_ITEM_BASE_STRING + i };
-    //     Clay_BoundingBox box = Clay_GetElementData(id).boundingBox;
+    EndMode2D();
 
-    //     // Render your custom thing inside this box
-    //     BeginScissorMode(box.x, box.y, box.width, box.height);
+    Clay_Raylib_Render(renderCommands, UI_FONTS);
 
-    //     // Example: draw item preview
-    //     Item *item = inventory_get_item(controller->game->inventory, i);
-    //     if (item) {
-    //         DrawText(i, box.x + 5, box.y + 5, 10, BLACK);
-    //         // or DrawTexture inside box
-    //     }
+    for (int i = 0; i < inventory_get_size(controller.game->inventory); i++) {
+      inventory_item_t item = inventory_get(controller.game->inventory, i);
+      if (!is_id_valid(item.id))
+        continue;
+      Clay_BoundingBox boundingBox = Clay_GetElementData(item.id).boundingBox;
+      if (boundingBox.width > 0 && boundingBox.height > 0) {
 
-    //     EndScissorMode();
+        BeginScissorMode(boundingBox.x, boundingBox.y, boundingBox.width,
+                         boundingBox.height);
+        DrawText(
+          combine_string_int("hi:________1__________2__________3__________"
+                             "4__________5__________6__________7_______",
+                             i),
+          boundingBox.x, boundingBox.y, 10, BLACK);
+        EndScissorMode();
+      }
+    }
+
     EndDrawing();
   }
   Clay_Raylib_Close();
