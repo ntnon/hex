@@ -112,7 +112,6 @@ int main(void) {
         EndScissorMode();
       }
     }
-    printf("selected item: %d\n", controller.game->inventory->selected_index);
     EndDrawing();
   }
   Clay_Raylib_Close();
