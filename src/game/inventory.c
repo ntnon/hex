@@ -30,7 +30,7 @@ inventory_item_t inventory_create_item(inventory_t *inv) {
   int next_id = inv->next_element_id++;
 
   // Create a small random board for the inventory item
-  board_t *item_board = board_create(GRID_TYPE_HEXAGON, 1);
+  board_t *item_board = board_create(GRID_TYPE_HEXAGON, 2);
   if (item_board) {
     board_randomize(item_board);
   }

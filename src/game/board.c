@@ -247,7 +247,7 @@ bool is_merge_valid(board_t *target_board, board_t *source_board,
       // Check if this position is valid in the target grid
       if (!target_board->grid->vtable->is_valid_cell(target_board->grid,
                                                      target_position)) {
-        continue; // Skip tiles that would fall outside the target grid
+        return false; // Target position out of bounds
       }
 
       // Check if there's already a tile at this position in the target board
@@ -301,17 +301,11 @@ bool merge_boards(board_t *target_board, board_t *source_board,
       new_tile->data = source_tile->data; // Copy tile data
       new_tile->pool_id = 0;              // Will be assigned in add_tile
 
-      printf("DEBUG: Adding tile to target board at (%d,%d)\n",
-             target_position.coord.hex.q, target_position.coord.hex.r);
-
       // Add the tile to the target board
       add_tile(target_board, new_tile);
       tiles_added++;
     }
   }
-
-  printf("DEBUG: Merge complete - added %d tiles, target now has %d tiles\n",
-         tiles_added, target_board->tiles->num_tiles);
 
   return true;
 }
@@ -320,7 +314,6 @@ bool merge_boards(board_t *target_board, board_t *source_board,
 // rotation_steps: number of 60-degree steps (1-5, positive = clockwise)
 bool board_rotate(board_t *board, grid_cell_t center, int rotation_steps) {
   if (!board || !board->tiles) {
-    printf("DEBUG: board_rotate - invalid board\n");
     return false;
   }
 
@@ -338,7 +331,6 @@ bool board_rotate(board_t *board, grid_cell_t center, int rotation_steps) {
   if (!tiles_to_update || !new_positions) {
     free(tiles_to_update);
     free(new_positions);
-    printf("DEBUG: board_rotate - memory allocation failed\n");
     return false;
   }
 
@@ -556,8 +548,6 @@ board_preview_t *board_create_merge_preview(board_t *target_board,
     preview->is_valid_merge = true;
   } else {
     // Invalid merge - collect conflict positions
-    printf("DEBUG: Merge is invalid, collecting conflicts\n");
-
     // Count conflicts first
     size_t conflict_count = 0;
     tile_map_entry_t *entry, *tmp;
@@ -643,19 +633,11 @@ void board_update_preview(board_t *board, board_t *source_board,
   if (!board || !source_board)
     return;
 
-  printf("DEBUG: Source: %d tiles on %zu-cell grid, Target: %d tiles on "
-         "%zu-cell grid\n",
-         source_board->tiles->num_tiles, source_board->grid->num_cells,
-         board->tiles->num_tiles, board->grid->num_cells);
-
   // Clear existing previews
   board_clear_preview_boards(board);
 
   // Get the center of the source board
   grid_cell_t source_center = grid_get_center_cell(source_board->grid);
-  printf("DEBUG: Placing source center (%d,%d) at mouse (%d,%d)\n",
-         source_center.coord.hex.q, source_center.coord.hex.r,
-         mouse_position.coord.hex.q, mouse_position.coord.hex.r);
 
   // Resize preview array if needed
   if (board->num_preview_boards >= board->preview_capacity) {
@@ -686,7 +668,6 @@ void board_update_preview(board_t *board, board_t *source_board,
   // Calculate offset for the preview
   grid_cell_t offset =
     board->grid->vtable->calculate_offset(mouse_position, source_center);
-  printf("DEBUG: Offset = (%d,%d)\n", offset.coord.hex.q, offset.coord.hex.r);
 
   // Always create the merged board for preview, adding only valid tiles
   size_t valid_tiles = 0;
@@ -769,7 +750,4 @@ void board_update_preview(board_t *board, board_t *source_board,
   preview->is_valid_merge = (valid_tiles > 0);
 
   board->num_preview_boards++;
-  printf("DEBUG: Preview result: %s, %zu conflicts, %d tiles in merged board\n",
-         preview->is_valid_merge ? "VALID" : "INVALID", preview->num_conflicts,
-         preview->merged_board ? preview->merged_board->tiles->num_tiles : 0);
 }

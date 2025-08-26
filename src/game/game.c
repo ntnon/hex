@@ -2,11 +2,9 @@
 #include "grid/grid_system.h"
 #include "raylib.h"
 #include "stdio.h"
-#include "third_party/uthash.h"
-#include "tile/tile_map.h"
 
 void game_init(game_t *game) {
-  game->board = board_create(GRID_TYPE_HEXAGON, 10);
+  game->board = board_create(GRID_TYPE_HEXAGON, 20);
   game->inventory = inventory_create(3);
   // board_randomize(game->board);
 
@@ -33,22 +31,16 @@ void update_board_preview(game_t *game) {
   board_t *selected_board = inventory_get_selected_board(game->inventory);
   if (!selected_board) {
     // No inventory item selected, clear any existing previews
-    printf("DEBUG: No selected board, clearing previews\n");
     board_clear_preview_boards(game->board);
     return;
   }
 
-  printf("DEBUG: Selected board found with %d tiles\n",
-         selected_board->tiles->num_tiles);
-
   // Use the board's current hovered position as the target
   if (game->board->hovered_grid_cell) {
-    printf("DEBUG: Hovered cell found, updating preview\n");
     board_update_preview(game->board, selected_board,
                          *(game->board->hovered_grid_cell));
   } else {
     // No hover position, clear any existing previews
-    printf("DEBUG: No hovered cell, clearing previews\n");
     board_clear_preview_boards(game->board);
   }
 }
