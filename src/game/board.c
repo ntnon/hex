@@ -227,7 +227,6 @@ void print_board_debug_info(board_t *board) {
 bool is_merge_valid(board_t *target_board, board_t *source_board,
                     grid_cell_t target_center, grid_cell_t source_center) {
   if (target_board->grid->type != source_board->grid->type) {
-    fprintf(stderr, "Cannot merge boards of different grid types\n");
     return false;
   }
 
@@ -258,7 +257,6 @@ bool is_merge_valid(board_t *target_board, board_t *source_board,
       }
     }
   }
-
   return true; // No overlaps found
 }
 
@@ -267,14 +265,8 @@ bool merge_boards(board_t *target_board, board_t *source_board,
                   grid_cell_t target_center, grid_cell_t source_center) {
   if (!is_merge_valid(target_board, source_board, target_center,
                       source_center)) {
-    fprintf(stderr, "Board merge is not valid - tiles would overlap\n");
     return false;
   }
-
-  printf("DEBUG: Starting merge_boards - source has %d tiles\n",
-         source_board->tiles->num_tiles);
-  printf("DEBUG: Target board before merge has %d tiles\n",
-         target_board->tiles->num_tiles);
 
   // Calculate the offset needed to align source_center with target_center
   grid_cell_t offset =
@@ -287,20 +279,14 @@ bool merge_boards(board_t *target_board, board_t *source_board,
     tile_t *source_tile = get_tile_at_cell(source_board, source_cell);
 
     if (source_tile) {
-      printf("DEBUG: Processing source tile at (%d,%d)\n",
-             source_cell.coord.hex.q, source_cell.coord.hex.r);
 
       // Apply offset to get the target position
       grid_cell_t target_position =
         target_board->grid->vtable->apply_offset(source_cell, offset);
 
-      printf("DEBUG: Target position would be (%d,%d)\n",
-             target_position.coord.hex.q, target_position.coord.hex.r);
-
       // Check if this position is valid in the target grid
       if (!target_board->grid->vtable->is_valid_cell(target_board->grid,
                                                      target_position)) {
-        printf("DEBUG: Target position is invalid, skipping\n");
         continue; // Skip tiles that would fall outside the target grid
       }
 
