@@ -89,6 +89,8 @@ int main(void) {
 
     render_hex_grid(game.board->grid);
     render_board(game.board);
+    render_board_previews(game.board);
+
     EndMode2D();
 
     Clay_Raylib_Render(renderCommands, UI_FONTS);
@@ -110,7 +112,7 @@ int main(void) {
         EndScissorMode();
       }
     }
-
+    printf("selected item: %d\n", controller.game->inventory->selected_index);
     EndDrawing();
   }
   Clay_Raylib_Close();

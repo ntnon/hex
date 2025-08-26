@@ -1,6 +1,9 @@
 #include "controller/game_controller.h"
 #include "controller/input_state.h"
+#include "game/board.h"
 #include "game/camera.h"
+#include "game/inventory.h"
+#include "grid/grid_system.h"
 #include "stdio.h"
 #include "ui.h"
 #include "utility/geometry.h"
@@ -20,9 +23,17 @@ void controller_update(game_controller_t *controller, input_state_t *input) {
   controller->input = *input;
   controller->game_bounds = bounds;
   update_game(controller->game, input);
+
+  // Handle rotation of currently selected/held inventory item
+  if (input->key_r_pressed) {
+    if (inventory_rotate_selected(controller->game->inventory, 1)) {
+      printf("Rotated inventory item clockwise\n");
+    }
+  }
+
   // Update game camera with current input
   if (point_in_bounds(input->mouse, controller->game_bounds) &&
-      controller->last_clicked_ui_element_id.id == UI_ID_GAME.id) {
+      controller->input.hovered_element_id.id == UI_ID_GAME.id) {
     update_camera(&controller->game->board->camera, input);
   }
 }
@@ -57,19 +68,63 @@ void controller_process_events(game_controller_t *ctrl) {
       printf("Clicked on element: %s\n", evt.element_id.stringId.chars);
       if (ctrl->last_clicked_ui_element_id.id ==
           UI_BUTTON_ADD_INVENTORY_ITEM.id) {
-        // inventory_add_random_item(ctrl->game->inventory);
-        // ctrl->game->board->grid->layout.scale += 0.1f;
+        // Add a random item to the inventory instead of merging to main board
+        inventory_add_random_item(ctrl->game->inventory);
+        printf("Added random item to inventory\n");
+      } else if (ctrl->last_clicked_ui_element_id.id == UI_ID_GAME.id) {
+        // Check if this was a drag (camera move) or a click (place tile)
+        if (ctrl->input.mouse_left_was_dragging) {
+          printf("Game area dragged - camera moved, no tile placement\n");
+        } else {
+          printf("Game area clicked!\n");
+          // Handle game area click - merge selected inventory item if available
+          board_t *selected_board =
+            inventory_get_selected_board(ctrl->game->inventory);
 
-        board_t *new_board = board_create(ctrl->game->board->grid->type, 0);
-        board_randomize(new_board);
-        printf("tiles in new board: %d\n", new_board->tiles->num_tiles);
-        merge_boards(ctrl->game->board, new_board,
-                     grid_get_center_cell(ctrl->game->board->grid),
-                     grid_get_center_cell(new_board->grid));
-        free_board(new_board);
-        print_board_debug_info(ctrl->game->board);
+          if (!selected_board) {
+            printf("No inventory item selected for merging\n");
+          } else if (!ctrl->game->board->hovered_grid_cell) {
+            printf("No valid hover position on game board\n");
+          } else {
+            // Get the hovered position on the main board
+            grid_cell_t target_position =
+              *(ctrl->game->board->hovered_grid_cell);
+            printf("Attempting to merge at position (%d, %d)\n",
+                   target_position.coord.hex.q, target_position.coord.hex.r);
+
+            // Use the actual center of the selected board
+            grid_cell_t source_center =
+              grid_get_center_cell(selected_board->grid);
+
+            // Attempt to merge the selected inventory item into the main board
+            if (merge_boards(ctrl->game->board, selected_board, target_position,
+                             source_center)) {
+              printf("Successfully merged inventory item into main board\n");
+              // Keep the inventory item for multi-use (don't remove it)
+            } else {
+              printf("Failed to merge inventory item - invalid placement\n");
+            }
+          }
+        }
       }
 
+      break;
+    case UI_EVENT_NONE:
+      // No special handling needed - rotation handled in controller_update
+      break;
+    case UI_EVENT_INVENTORY_ITEM_CLICK:
+      printf("Inventory item clicked: %s\n", evt.element_id.stringId.chars);
+
+      // Find which inventory item was clicked by matching the element ID
+      int inventory_size = inventory_get_size(ctrl->game->inventory);
+      for (int i = 0; i < inventory_size; i++) {
+        inventory_item_t item = inventory_get_item(ctrl->game->inventory, i);
+        if (item.id.id == evt.element_id.id) {
+          inventory_set_index(ctrl->game->inventory, i);
+          printf("Selected inventory item at index %d\n", i);
+          break;
+        }
+      }
       break;
     default:
       break;

@@ -23,9 +23,12 @@ typedef struct {
     bool key_escape;
     bool key_shift;
     bool key_ctrl;
+    bool key_r_pressed;
 
     // Optional drag helpers
     bool mouse_dragging;
+    bool mouse_left_dragging;  // Track left-click drag for camera vs click distinction
+    bool mouse_left_was_dragging; // Persists drag state for one frame after release
     bool cancel_drag;
     Clay_BoundingBox drag_bounds;
     Clay_ElementId hovered_element_id;

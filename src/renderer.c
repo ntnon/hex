@@ -1,3 +1,4 @@
+#include "third_party/uthash.h"
 #include "tile/tile.h"
 #include "tile/tile_map.h"
 #include <float.h>
@@ -140,6 +141,7 @@ void render_board(const board_t *board) {
     printf("ERROR: board->tiles is null\n");
     return;
   }
+
   tile_map_foreach_tile(board->tiles, draw_tile_wrapper, (void *)board->grid);
   /*
    *
@@ -267,4 +269,55 @@ void tile_render(const tile_t *tile, const grid_t *grid) {
   // Draw the coordinate text centered on the cell.
   // Adjust the x and y values (here subtracting 10) as needed.
   DrawText(coord_text, (int)center.x - 10, (int)center.y - 10, 8, BLACK);
+}
+
+void render_board_previews(const board_t *board) {
+  if (!board || !board->preview_boards || board->num_preview_boards == 0) {
+    return;
+  }
+
+  printf("DEBUG: Rendering %zu previews\n", board->num_preview_boards);
+
+  for (size_t i = 0; i < board->num_preview_boards; i++) {
+    board_preview_t *preview = &board->preview_boards[i];
+
+    // Always render valid tiles if merged_board exists
+    if (preview->merged_board) {
+      printf("DEBUG: Rendering %d valid tiles\n",
+             preview->merged_board->tiles->num_tiles);
+      tile_map_entry_t *entry, *tmp;
+      HASH_ITER(hh, preview->merged_board->tiles->root, entry, tmp) {
+        tile_t *merged_tile = entry->tile;
+
+        // Check if this tile exists in the original board
+        tile_t *original_tile =
+          get_tile_at_cell((board_t *)board, merged_tile->cell);
+
+        if (!original_tile) {
+          printf("DEBUG: Rendering valid tile at (%d, %d)\n",
+                 merged_tile->cell.coord.hex.q, merged_tile->cell.coord.hex.r);
+          // This is a valid tile - render with actual color and green border
+          Clay_Color tile_color = color_from_tile(merged_tile->data);
+          Clay_Color preview_color =
+            (Clay_Color){tile_color.r, tile_color.g, tile_color.b, 180};
+          render_hex_cell(
+            preview->merged_board->grid, merged_tile->cell, preview_color,
+            (Clay_Color){0, 255, 0, 255}); // Green border for valid
+        }
+      }
+    }
+
+    // Always render conflicts if they exist
+    if (preview->num_conflicts > 0) {
+      printf("DEBUG: Rendering %zu conflicts\n", preview->num_conflicts);
+      for (size_t j = 0; j < preview->num_conflicts; j++) {
+        printf("DEBUG: Rendering conflict at (%d, %d)\n",
+               preview->conflict_positions[j].coord.hex.q,
+               preview->conflict_positions[j].coord.hex.r);
+        render_hex_cell(board->grid, preview->conflict_positions[j],
+                        (Clay_Color){255, 0, 0, 128},  // Semi-transparent red
+                        (Clay_Color){255, 0, 0, 255}); // Red border
+      }
+    }
+  }
 }

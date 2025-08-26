@@ -5,11 +5,32 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// Create the inventory
+inventory_t *inventory_create(int size) {
+  if (size <= 0) {
+    printf("Invalid inventory size.\n");
+    return NULL; // Handle invalid size
+  }
+
+  inventory_t *inventory = malloc(sizeof(inventory_t));
+  if (inventory == NULL) {
+    printf("Failed to allocate memory for inventory.\n");
+    return NULL; // Handle memory allocation failure
+  }
+
+  kv_init(inventory->items);
+
+  inventory->selected_index = -1;
+  inventory->next_element_id = 0;
+
+  return inventory;
+}
+
 inventory_item_t inventory_create_item(inventory_t *inv) {
   int next_id = inv->next_element_id++;
 
   // Create a small random board for the inventory item
-  board_t *item_board = board_create(GRID_TYPE_HEXAGON, 2);
+  board_t *item_board = board_create(GRID_TYPE_HEXAGON, 1);
   if (item_board) {
     board_randomize(item_board);
   }
@@ -64,27 +85,6 @@ void inventory_fill(inventory_t *inv, int size) {
   printf("inventory filled, %d items\n", size);
 }
 
-// Create the inventory
-inventory_t *inventory_create(int size) {
-  if (size <= 0) {
-    printf("Invalid inventory size.\n");
-    return NULL; // Handle invalid size
-  }
-
-  inventory_t *inventory = malloc(sizeof(inventory_t));
-  if (inventory == NULL) {
-    printf("Failed to allocate memory for inventory.\n");
-    return NULL; // Handle memory allocation failure
-  }
-
-  kv_init(inventory->items);
-
-  inventory->selected_index = -1;
-  inventory->next_element_id = 0;
-
-  return inventory;
-}
-
 void inventory_destroy_item(inventory_t *inv, int index) {
   if (!inv || index < 0 || index >= inventory_get_size(inv))
     return;
@@ -133,6 +133,22 @@ void inventory_add_random_item(inventory_t *inv) {
   inventory_add_item(inv, inventory_create_item(inv));
 }
 
+inventory_item_t *inventory_get_selected(inventory_t *inv) {
+  if (!inv || inv->selected_index < 0 ||
+      inv->selected_index >= inventory_get_size(inv)) {
+    return NULL;
+  }
+  return &kv_A(inv->items, inv->selected_index);
+}
+
+board_t *inventory_get_selected_board(inventory_t *inv) {
+  inventory_item_t *selected_item = inventory_get_selected(inv);
+  if (!selected_item) {
+    return NULL;
+  }
+  return selected_item->board;
+}
+
 char *inventory_get_element_id(const inventory_t *inv, int index) {
   if (!inv || index < 0 || index >= inventory_get_size(inv)) {
     return NULL;
@@ -142,4 +158,19 @@ char *inventory_get_element_id(const inventory_t *inv, int index) {
   static char id_string[64];
   snprintf(id_string, sizeof(id_string), "%d", item.id.id);
   return id_string;
+}
+
+bool inventory_rotate_selected(inventory_t *inv, int rotation_steps) {
+  if (!inv || inv->selected_index < 0 ||
+      inv->selected_index >= inventory_get_size(inv)) {
+    return false;
+  }
+
+  inventory_item_t *selected_item = inventory_get_selected(inv);
+  if (!selected_item || !selected_item->board) {
+    return false;
+  }
+
+  grid_cell_t center = grid_get_center_cell(selected_item->board->grid);
+  return board_rotate(selected_item->board, center, rotation_steps);
 }

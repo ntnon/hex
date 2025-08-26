@@ -84,6 +84,8 @@ void ui_shutdown(UI_Context *ctx);
 #define MAX_UI_EVENTS 64
 
 void handle_hover(Clay_ElementId elementId, Clay_PointerData pointer, intptr_t userData);
+void handle_inventory_click(Clay_ElementId elementId, Clay_PointerData pointerData, intptr_t userData);
+void handle_inventory_item_click(Clay_ElementId elementId, Clay_PointerData pointerData, intptr_t userData);
 ui_event_t ui_poll_event(void);
 void ui_push_event(ui_event_t evt);
 void ui_clear_events(void);

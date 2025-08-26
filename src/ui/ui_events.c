@@ -21,6 +21,44 @@ ui_event_t ui_poll_event(void) {
 
 void ui_clear_events(void) { event_count = 0; }
 
+void handle_inventory_click(Clay_ElementId elementId,
+                            Clay_PointerData pointerData, intptr_t userData) {
+  game_controller_t *controller = (game_controller_t *)userData;
+  Clay_ElementData element_data = Clay_GetElementData(elementId);
+  ui_push_event((ui_event_t){.type = UI_EVENT_INVENTORY_CLICK,
+                             .element_id = elementId,
+                             .element_data = element_data});
+}
+
+void handle_inventory_item_click(Clay_ElementId elementId,
+                                 Clay_PointerData pointerData,
+                                 intptr_t userData) {
+  game_controller_t *controller = (game_controller_t *)userData;
+  Clay_ElementData element_data = Clay_GetElementData(elementId);
+
+  // Handle hover events
+  if (elementId.id != controller->hovered_element_id.id &&
+      controller->hovered_element_id.id != 0) {
+    ui_push_event((ui_event_t){.type = UI_EVENT_HOVER_END,
+                               .element_id = controller->hovered_element_id,
+                               .element_data = element_data});
+  }
+
+  ui_push_event((ui_event_t){.type = UI_EVENT_HOVER_START,
+                             .element_id = elementId,
+                             .element_data = element_data});
+
+  // Update controller immediately
+  controller->hovered_element_id = elementId;
+
+  // Handle click events
+  if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
+    ui_push_event((ui_event_t){.type = UI_EVENT_INVENTORY_ITEM_CLICK,
+                               .element_id = elementId,
+                               .element_data = element_data});
+  }
+}
+
 void handle_hover(Clay_ElementId elementId, Clay_PointerData pointerData,
                   intptr_t userData) {
 
@@ -40,11 +78,14 @@ void handle_hover(Clay_ElementId elementId, Clay_PointerData pointerData,
   // Update controller immediately
   controller->hovered_element_id = elementId;
 
-  // Optional: handle click or drag events // ONLY FOR BUTTONS I THINK
-  if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
-
-    ui_push_event((ui_event_t){.type = UI_EVENT_CLICK,
-                               .element_id = elementId,
-                               .element_data = element_data});
+  // Handle click events on release, but only if no dragging occurred
+  if (pointerData.state == CLAY_POINTER_DATA_RELEASED_THIS_FRAME) {
+    // Only generate click event if we didn't drag during the press-release
+    // cycle
+    if (!controller->input.mouse_left_was_dragging) {
+      ui_push_event((ui_event_t){.type = UI_EVENT_CLICK,
+                                 .element_id = elementId,
+                                 .element_data = element_data});
+    }
   }
 }

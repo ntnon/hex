@@ -25,8 +25,8 @@ void update_camera(Camera2D *camera, const input_state_t *input) {
     // Apply zoom change
     float old_zoom = camera->zoom;
     camera->zoom += input->mouse_wheel_delta * 0.05f;
-    if (camera->zoom < 0.6f)
-      camera->zoom = 0.6f;
+    if (camera->zoom < 0.2f)
+      camera->zoom = 0.2f;
 
     // Convert mouse to world after zoom
     Vector2 world_after = GetScreenToWorld2D(mouse_screen, *camera);
@@ -37,9 +37,9 @@ void update_camera(Camera2D *camera, const input_state_t *input) {
   }
 
   // --- Pan with drag ---
-  bool pan_drag = input->mouse_left_down;
+  bool pan_drag = input->mouse_left_dragging;
   bool alt_pan =
-    input->mouse_right_down || (input->key_ctrl && input->mouse_left_down);
+    input->mouse_right_down || (input->key_ctrl && input->mouse_left_dragging);
 
   if (pan_drag || alt_pan) {
     camera->target.x -= input->mouse_delta.x / camera->zoom;

@@ -37,6 +37,7 @@ Clay_RenderCommandArray ui_build_layout(game_controller_t *controller) {
       BeginMode2D(controller->game->board->camera);
 
       render_board(controller->game->board);
+      render_board_previews(controller->game->board);
       EndMode2D();
       CLAY({.id = UI_BUTTON_ADD_INVENTORY_ITEM,
             .backgroundColor = M_ORANGE,
@@ -65,15 +66,21 @@ Clay_RenderCommandArray ui_build_layout(game_controller_t *controller) {
         inventory_item_t item =
           inventory_get_item(controller->game->inventory, i);
 
+        // Check if this item is selected
+        bool is_selected = (controller->game->inventory->selected_index == i);
+        Clay_Color bg_color = is_selected ? M_ORANGE : M_BEIGE;
+
         CLAY(
           {.id = item.id,
-           .backgroundColor = M_BEIGE,
+           .backgroundColor = bg_color,
 
            .clip = true,
            .layout = {.layoutDirection = CLAY_TOP_TO_BOTTOM,
 
                       .sizing = (Clay_Sizing){.height = CLAY_SIZING_GROW(),
-                                              .width = CLAY_SIZING_GROW()}}}){};
+                                              .width = CLAY_SIZING_GROW()}}}) {
+          Clay_OnHover(handle_inventory_item_click, (intptr_t)controller);
+        };
       }
     }
   };

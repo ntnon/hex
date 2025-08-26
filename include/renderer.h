@@ -18,5 +18,6 @@ void render_hex_grid(const grid_t *grid);
 void render_tile(const tile_t *tile, const grid_t *grid);
 void render_hex_cell(const grid_t *grid, grid_cell_t cell, Clay_Color fill_color,
                      Clay_Color edge_color);
+void render_board_previews(const board_t *board);
 
 #endif // RENDERER_H

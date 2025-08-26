@@ -23,16 +23,19 @@ void input_state_init(input_state_t *state) {
   state->key_escape = false;
   state->key_shift = false;
   state->key_ctrl = false;
+  state->key_r_pressed = false;
 
   state->mouse_dragging = false;
-  state->mouse_dragging = false;
+  state->mouse_left_dragging = false;
+  state->mouse_left_was_dragging = false;
   state->drag_bounds = (Clay_BoundingBox){0, 0, 0, 0};
   state->hovered_element_id = (Clay_ElementId){0};
 }
 
 void get_input_state(input_state_t *out) {
   static Vector2 last_mouse = {0, 0};
-  const float drag_threshold = 0.1f;
+  const float drag_threshold =
+    2.0f; // Lowered from 5.0f to 2.0f pixels for more sensitive detection
 
   // --- Mouse / Trackpad position ---
   Vector2 current_pos;
@@ -76,13 +79,42 @@ void get_input_state(input_state_t *out) {
       out->mouse_right_down && (fabsf(out->mouse_delta.x) > drag_threshold ||
                                 fabsf(out->mouse_delta.y) > drag_threshold);
   }
+
+  // --- Left-click drag detection (for camera vs click distinction) ---
+  static bool left_button_was_pressed = false;
+
+  if (out->mouse_left_pressed) {
+
+    left_button_was_pressed = true;
+    out->mouse_left_dragging = false;
+    out->mouse_left_was_dragging = false;
+  }
+
+  if (left_button_was_pressed && out->mouse_left_down && mouse_in_drag_bounds) {
+    float delta_magnitude = sqrtf(out->mouse_delta.x * out->mouse_delta.x +
+                                  out->mouse_delta.y * out->mouse_delta.y);
+    if (delta_magnitude > drag_threshold) {
+      out->mouse_left_dragging = true;
+    }
+  }
+
+  if (out->mouse_left_released) {
+
+    left_button_was_pressed = false;
+    out->mouse_left_was_dragging = out->mouse_left_dragging;
+    out->mouse_left_dragging = false;
+  }
   // --- Modifier keys ---
   out->key_shift = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
   out->key_ctrl = IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL);
   out->key_escape = IsKeyPressed(KEY_ESCAPE);
+  out->key_r_pressed = IsKeyPressed(KEY_R);
 
   // --- Mouse wheel ---
   out->mouse_wheel_delta = GetMouseWheelMove();
+
+  // Note: mouse_left_was_dragging is reset only on new press, not on release
+  // This allows UI events to properly check drag state after mouse release
 
   // --- Debug prints ---
   // if (out->mouse_left_pressed)
