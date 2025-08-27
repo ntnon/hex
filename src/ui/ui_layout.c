@@ -3,7 +3,11 @@
 // #include "third_party/clay_renderer_raylib.h"
 #include "renderer.h"
 #include "stdio.h"
+#include "tile/tile.h"
 #include "ui.h"
+
+#define INVENTORY_PADDING 10
+#define INVENTORY_GAP INVENTORY_PADDING
 
 bool is_id_valid(const Clay_ElementId id) { return id.id != UI_ID_NONE.id; }
 
@@ -30,9 +34,8 @@ Clay_RenderCommandArray ui_build_layout(game_controller_t *controller) {
     CLAY({.id = UI_ID_GAME,
           .cornerRadius = 0,
           .backgroundColor = M_BLANK,
-          .layout = {.sizing =
-                       (Clay_Sizing){.height = CLAY_SIZING_GROW(),
-                                     .width = CLAY_SIZING_PERCENT(0.8)}}}) {
+          .layout = {.sizing = (Clay_Sizing){.height = CLAY_SIZING_GROW(),
+                                             .width = CLAY_SIZING_GROW()}}}) {
       Clay_OnHover(handle_hover, (intptr_t)controller);
       BeginMode2D(controller->game->board->camera);
 
@@ -52,12 +55,13 @@ Clay_RenderCommandArray ui_build_layout(game_controller_t *controller) {
     CLAY({.id = UI_ID_INVENTORY,
           .cornerRadius = 0,
           .backgroundColor = M_BLANK,
-          .layout = {.childGap = 10,
-                     .padding = CLAY_PADDING_ALL(10),
+
+          .layout = {.childGap = INVENTORY_GAP,
+                     .padding = CLAY_PADDING_ALL(INVENTORY_PADDING),
                      .layoutDirection = CLAY_TOP_TO_BOTTOM,
-                     .sizing =
-                       (Clay_Sizing){.height = CLAY_SIZING_GROW(),
-                                     .width = CLAY_SIZING_PERCENT(0.2)}}}) {
+
+                     .sizing = (Clay_Sizing){.height = CLAY_SIZING_GROW(),
+                                             .width = CLAY_SIZING_FIT()}}}) {
       Clay_OnHover(handle_hover, (intptr_t)controller);
 
       int inventory_size = inventory_get_size(controller->game->inventory);
@@ -69,16 +73,21 @@ Clay_RenderCommandArray ui_build_layout(game_controller_t *controller) {
         // Check if this item is selected
         bool is_selected = (controller->game->inventory->selected_index == i);
         Clay_Color bg_color = is_selected ? M_ORANGE : M_BEIGE;
+        int total_height = GetScreenHeight();
 
-        CLAY(
-          {.id = item.id,
-           .backgroundColor = bg_color,
+        float available_height = total_height - 2 * INVENTORY_PADDING -
+                                 INVENTORY_GAP * (inventory_size - 1);
 
-           .clip = true,
-           .layout = {.layoutDirection = CLAY_TOP_TO_BOTTOM,
+        float item_height = available_height / inventory_size;
+        CLAY({.id = item.id,
+              .backgroundColor = bg_color,
+              .aspectRatio = 1.0,
+              .clip = true,
+              .layout = {.layoutDirection = CLAY_TOP_TO_BOTTOM,
 
-                      .sizing = (Clay_Sizing){.height = CLAY_SIZING_GROW(),
-                                              .width = CLAY_SIZING_GROW()}}}) {
+                         .sizing = (Clay_Sizing){
+                           .height = CLAY_SIZING_FIXED(item_height),
+                           .width = CLAY_SIZING_GROW()}}}) {
           Clay_OnHover(handle_inventory_item_click, (intptr_t)controller);
         };
       }

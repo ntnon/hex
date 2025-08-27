@@ -18,7 +18,7 @@ const orientation_t layout_pointy_t = {.f0 = 1.732050808,
 
 layout_t default_layout = {
   .orientation = layout_pointy_t,
-  .size = {70.0, 70.0}, // Hex size (adjust as needed)
+  .size = {5.0, 5.0},   // Hex size (adjust as needed)
   .origin = {0.0, 0.0}, // Center of the screen (adjust as needed)
   .scale = 1.0f, // scale factor for hex size (adjust as needed)          //
                  // radius of the hexagon (adjust as needed)

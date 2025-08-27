@@ -75,6 +75,9 @@ int main(void) {
 
   camera_set_offset(&controller.game->board->camera, game_bounds.width,
                     game_bounds.height);
+
+  // Cache will be initialized dynamically on first rebuild
+
   while (!WindowShouldClose()) {
     get_input_state(&controller.input);
     controller_update(&controller, &controller.input);
@@ -100,16 +103,12 @@ int main(void) {
       if (!is_id_valid(item.id))
         continue;
       Clay_BoundingBox boundingBox = Clay_GetElementData(item.id).boundingBox;
-      if (boundingBox.width > 0 && boundingBox.height > 0) {
-
-        BeginScissorMode(boundingBox.x, boundingBox.y, boundingBox.width,
-                         boundingBox.height);
-        DrawText(
-          combine_string_int("hi:________1__________2__________3__________"
-                             "4__________5__________6__________7_______",
-                             i),
-          boundingBox.x + 10, boundingBox.y + 10, 10, BLACK);
-        EndScissorMode();
+      if (boundingBox.width > 0 && boundingBox.height > 0 && item.board) {
+        Rectangle bounds = {.x = boundingBox.x,
+                            .y = boundingBox.y,
+                            .width = boundingBox.width,
+                            .height = boundingBox.height};
+        render_board_in_bounds(item.board, bounds);
       }
     }
     EndDrawing();
