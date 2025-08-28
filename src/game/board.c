@@ -2,6 +2,7 @@
 #include "game/camera.h"
 #include "third_party/uthash.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define MAX_POOL_CANDIDATES 10
@@ -75,6 +76,15 @@ tile_t *get_tile_at_cell(board_t *board, grid_cell_t cell) {
   return entry ? entry->tile : NULL;
 }
 
+bool board_grow(board_t *board, int growth_amount) {
+  if (!board || !board->grid) {
+    return false;
+  }
+
+  return grid_grow(board->grid, growth_amount);
+}
+
+// Function to get neighboring pools that accept a specific tile type
 void get_neighbor_pools(board_t *board, tile_t *tile, pool_t **out_pools,
                         size_t max_neighbors) {
   grid_cell_t neighbor_cells[6];
@@ -187,11 +197,13 @@ void board_randomize(board_t *board) {
   // Clear existing tiles and pools
   clear_board(board);
 
-  grid_cell_t *cells = board->grid->cells;
-  shuffle_array(cells, board->grid->num_cells, sizeof(grid_cell_t),
-                swap_grid_cell);
+  // Generate coordinates using grid system
+  grid_cell_t *cells;
+  size_t num_cells;
+  grid_get_all_cells(board->grid, &cells, &num_cells);
+  shuffle_array(cells, num_cells, sizeof(grid_cell_t), swap_grid_cell);
 
-  for (size_t i = 0; i < board->grid->num_cells; i++) {
+  for (size_t i = 0; i < num_cells; i++) {
     if (rand() % 4 >= 0) {
       // In randomize_board()
       tile_t *tile = tile_create_random_ptr(cells[i]);
@@ -204,6 +216,8 @@ void board_randomize(board_t *board) {
       }
     }
   }
+
+  free(cells);
 }
 
 void cycle_tile_type(board_t *board, tile_t *tile);
@@ -216,7 +230,14 @@ void print_board_debug_info(board_t *board) {
 
   printf("=== Board Debug Info ===\n");
   printf("Grid type: %d\n", board->grid->type);
-  printf("Grid cells: %zu\n", board->grid->num_cells);
+  // Get actual cell count from grid system
+  grid_cell_t *temp_cells;
+  size_t num_cells;
+  grid_get_all_cells(board->grid, &temp_cells, &num_cells);
+  free(temp_cells);
+  printf("Grid cells: %zu (radius: %d, initial: %d, grown: %d)\n", num_cells,
+         board->grid->radius, board->grid->initial_radius,
+         board->grid->total_growth);
   printf("Tiles in board: %d\n", board->tiles->num_tiles);
   printf("Pools in board: %zu\n", board->pools->num_pools);
   printf("Next pool ID: %u\n", board->next_pool_id);
@@ -234,9 +255,14 @@ bool is_merge_valid(board_t *target_board, board_t *source_board,
   grid_cell_t offset =
     target_board->grid->vtable->calculate_offset(target_center, source_center);
 
+  // Generate source coordinates using grid system
+  grid_cell_t *source_cells;
+  size_t num_source_cells;
+  grid_get_all_cells(source_board->grid, &source_cells, &num_source_cells);
+
   // Check each tile in the source board
-  for (size_t i = 0; i < source_board->grid->num_cells; i++) {
-    grid_cell_t source_cell = source_board->grid->cells[i];
+  for (size_t i = 0; i < num_source_cells; i++) {
+    grid_cell_t source_cell = source_cells[i];
     tile_t *source_tile = get_tile_at_cell(source_board, source_cell);
 
     if (source_tile) {
@@ -253,10 +279,12 @@ bool is_merge_valid(board_t *target_board, board_t *source_board,
       // Check if there's already a tile at this position in the target board
       tile_t *existing_tile = get_tile_at_cell(target_board, target_position);
       if (existing_tile) {
+        free(source_cells);
         return false; // Overlap detected
       }
     }
   }
+  free(source_cells);
   return true; // No overlaps found
 }
 
@@ -272,10 +300,15 @@ bool merge_boards(board_t *target_board, board_t *source_board,
   grid_cell_t offset =
     target_board->grid->vtable->calculate_offset(target_center, source_center);
 
+  // Generate source coordinates using grid system
+  grid_cell_t *source_cells;
+  size_t num_source_cells;
+  grid_get_all_cells(source_board->grid, &source_cells, &num_source_cells);
+
   // Merge each tile from source to target
   int tiles_added = 0;
-  for (size_t i = 0; i < source_board->grid->num_cells; i++) {
-    grid_cell_t source_cell = source_board->grid->cells[i];
+  for (size_t i = 0; i < num_source_cells; i++) {
+    grid_cell_t source_cell = source_cells[i];
     tile_t *source_tile = get_tile_at_cell(source_board, source_cell);
 
     if (source_tile) {
@@ -307,6 +340,7 @@ bool merge_boards(board_t *target_board, board_t *source_board,
     }
   }
 
+  free(source_cells);
   return true;
 }
 
@@ -425,23 +459,9 @@ board_t *board_clone(board_t *original) {
   clone->grid->type = original->grid->type;
   clone->grid->layout = original->grid->layout;
   clone->grid->vtable = original->grid->vtable;
-  clone->grid->num_cells = original->grid->num_cells;
-
-  // Copy grid cells
-  if (original->grid->num_cells > 0) {
-    clone->grid->cells =
-      malloc(original->grid->num_cells * sizeof(grid_cell_t));
-    if (!clone->grid->cells) {
-      free(clone->grid);
-      free(clone);
-      return NULL;
-    }
-    for (size_t i = 0; i < original->grid->num_cells; i++) {
-      clone->grid->cells[i] = original->grid->cells[i];
-    }
-  } else {
-    clone->grid->cells = NULL;
-  }
+  clone->grid->radius = original->grid->radius;
+  clone->grid->initial_radius = original->grid->initial_radius;
+  clone->grid->total_growth = original->grid->total_growth;
 
   // Create new tile and pool maps
   clone->tiles = tile_map_create();

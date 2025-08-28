@@ -72,13 +72,22 @@ void render_tile(const tile_t *tile, const grid_t *grid) {
 }
 
 void render_hex_grid(const grid_t *grid) {
-  if (!grid || !grid->cells) {
+  if (!grid) {
     return;
   }
 
-  // Simple approach: render each cell individually
-  for (size_t i = 0; i < grid->num_cells; i++) {
-    render_hex_cell(grid, grid->cells[i], M_LIGHTGRAY, M_GRAY);
+  // Generate hex coordinates on-demand within the grid radius
+  if (grid->type == GRID_TYPE_HEXAGON) {
+    for (int q = -grid->radius; q <= grid->radius; q++) {
+      int r1 = fmax(-grid->radius, -q - grid->radius);
+      int r2 = fmin(grid->radius, -q + grid->radius);
+      for (int r = r1; r <= r2; r++) {
+        int s = -q - r;
+        grid_cell_t cell = {.type = GRID_TYPE_HEXAGON,
+                            .coord.hex = {.q = q, .r = r, .s = s}};
+        render_hex_cell(grid, cell, M_LIGHTGRAY, M_GRAY);
+      }
+    }
   }
 }
 
@@ -155,7 +164,16 @@ void render_board_in_bounds(const board_t *board, Rectangle bounds) {
   }
 
   const grid_t *grid = board->grid;
-  if (!grid || grid->num_cells == 0) {
+  if (!grid) {
+    return;
+  }
+
+  // Get all grid cells
+  grid_cell_t *cells;
+  size_t num_cells;
+  grid_get_all_cells(grid, &cells, &num_cells);
+
+  if (!cells || num_cells == 0) {
     return;
   }
 
@@ -163,8 +181,8 @@ void render_board_in_bounds(const board_t *board, Rectangle bounds) {
   float min_x = FLT_MAX, min_y = FLT_MAX;
   float max_x = -FLT_MAX, max_y = -FLT_MAX;
 
-  for (size_t i = 0; i < grid->num_cells; i++) {
-    grid_cell_t cell = grid->cells[i];
+  for (size_t i = 0; i < num_cells; i++) {
+    grid_cell_t cell = cells[i];
     point_t corners[6];
     grid->vtable->get_corners(grid, cell, corners);
     for (int j = 0; j < 6; j++) {
@@ -181,6 +199,8 @@ void render_board_in_bounds(const board_t *board, Rectangle bounds) {
 
   float board_width = max_x - min_x;
   float board_height = max_y - min_y;
+
+  free(cells);
 
   if (board_width <= 0 || board_height <= 0) {
     return;

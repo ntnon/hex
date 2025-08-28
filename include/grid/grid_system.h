@@ -60,11 +60,15 @@ typedef struct {
      void (*get_corners)(const grid_t *grid, grid_cell_t cell, point_t corners[]);
 
     /**
-     * @brief Generates all the cells for a grid of a given size.
-     * @param grid The grid system instance to populate.
-     * @param size A generic size parameter (e.g., radius for hex, width/height for square).
+     * @brief Gets all valid cells in the grid.
+     * @param grid The grid system instance.
+     * @param out_cells Pointer to store the allocated array of cells.
+     * @param out_count Pointer to store the number of cells.
+     * @note Caller is responsible for freeing the allocated array.
      */
-    void (*generate_cells)(grid_t* grid, int size);
+    void (*get_all_cells)(const grid_t* grid, grid_cell_t** out_cells, size_t* out_count);
+
+
 
     grid_t *(*grid_create)(grid_type_e type, layout_t layout, int size);
 
@@ -115,8 +119,9 @@ struct grid_t {
     grid_type_e type;
     layout_t layout;
     const grid_vtable_t* vtable;
-    grid_cell_t* cells;
-    size_t num_cells;
+    int radius;  /* Mathematical bounds - for hex: max distance from origin */
+    int initial_radius;  /* Original radius when grid was created */
+    int total_growth;    /* Total amount grid has grown since creation */
 };
 
 
@@ -158,6 +163,39 @@ grid_cell_t grid_get_center_cell(const grid_t* grid);
 grid_cell_t* grid_get_cell_at_pixel(const grid_t* grid, point_t p);
 
 void print_cell(const grid_t *grid, grid_cell_t cell);
+
+/**
+ * @brief Gets all valid cells in the grid.
+ * @param grid The grid system instance.
+ * @param out_cells Pointer to store the allocated array of cells.
+ * @param out_count Pointer to store the number of cells.
+ * @note Caller is responsible for freeing the allocated array.
+ */
+void grid_get_all_cells(const grid_t* grid, grid_cell_t** out_cells, size_t* out_count);
+
+/**
+ * @brief Grows the grid by the specified amount.
+ * @param grid The grid system instance.
+ * @param growth_amount Amount to increase the grid radius by.
+ * @return true if growth was successful, false otherwise.
+ */
+bool grid_grow(grid_t* grid, int growth_amount);
+
+/**
+ * @brief Gets the total amount the grid has grown since creation.
+ * @param grid The grid system instance.
+ * @return Total growth amount, or -1 if grid is NULL.
+ */
+int grid_get_total_growth(const grid_t* grid);
+
+/**
+ * @brief Gets the initial radius when the grid was created.
+ * @param grid The grid system instance.
+ * @return Initial radius, or -1 if grid is NULL.
+ */
+int grid_get_initial_radius(const grid_t* grid);
+
+
 
 
 

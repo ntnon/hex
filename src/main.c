@@ -64,6 +64,18 @@ int main(void) {
   game_init(&game);
 
   print_board_debug_info(game.board);
+
+  // Demonstrate grid growth functionality
+  printf("\n--- Testing Grid Growth ---\n");
+  printf("Growing board by 5...\n");
+  if (board_grow(game.board, 5)) {
+    printf("Growth successful!\n");
+    print_board_debug_info(game.board);
+  } else {
+    printf("Growth failed!\n");
+  }
+  printf("--- End Growth Test ---\n\n");
+
   game_controller_t controller;
 
   ui_load_fonts();

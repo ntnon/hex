@@ -48,6 +48,14 @@ void cycle_tile_type(board_t *board, tile_t *tile);
 
 bool valid_tile(board_t *board, tile_t *tile);
 
+/**
+ * @brief Grows the board's grid by the specified amount.
+ * @param board The board to grow.
+ * @param growth_amount Amount to increase the grid radius by.
+ * @return true if growth was successful, false otherwise.
+ */
+bool board_grow(board_t *board, int growth_amount);
+
 //static pool_t* find_new_tile_pool_candidates(board_t *board, tile_t *tile);
 
 bool is_merge_valid(board_t *target_board, board_t *source_board,

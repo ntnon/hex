@@ -122,51 +122,54 @@ static grid_cell_t get_center_cell(const grid_t *grid) {
 }
 
 static grid_cell_t *get_cell_at_pixel(const grid_t *grid, point_t p) {
-  if (!grid || !grid->cells) {
+  if (!grid) {
     return NULL;
   }
 
   // Convert pixel to grid coordinates
-  grid_cell_t cell = from_pixel(grid, p);
+  static grid_cell_t cell; // Static storage for the cell
+  cell = from_pixel(grid, p);
 
   // Check if the cell is valid within the grid
   if (!is_valid_cell(grid, cell)) {
     return NULL;
   }
 
-  // Find and return pointer to the actual cell in the grid's cells array
-  for (size_t i = 0; i < grid->num_cells; ++i) {
-    grid_cell_t *grid_cell = &grid->cells[i];
-    if (grid_cell->coord.hex.q == cell.coord.hex.q &&
-        grid_cell->coord.hex.r == cell.coord.hex.r &&
-        grid_cell->coord.hex.s == cell.coord.hex.s) {
-      return grid_cell;
-    }
-  }
-
-  return NULL;
+  return &cell;
 }
 
-static void generate_cells(grid_t *grid, int radius) {
-  // Generates all hexes within the given radius
-  size_t count = 0;
-  int capacity = (3 * radius * (radius + 1)) + 1;
-  grid->cells = malloc(capacity * sizeof(grid_cell_t));
-  if (!grid->cells)
+static void get_all_cells(const grid_t *grid, grid_cell_t **out_cells,
+                          size_t *out_count) {
+  if (!grid || !out_cells || !out_count) {
+    if (out_cells)
+      *out_cells = NULL;
+    if (out_count)
+      *out_count = 0;
     return;
+  }
+
+  int radius = grid->radius;
+  size_t capacity = (3 * radius * (radius + 1)) + 1;
+  *out_cells = malloc(capacity * sizeof(grid_cell_t));
+  if (!*out_cells) {
+    *out_count = 0;
+    return;
+  }
+
+  size_t count = 0;
   for (int q = -radius; q <= radius; q++) {
     int r1 = fmax(-radius, -q - radius);
     int r2 = fmin(radius, -q + radius);
     for (int r = r1; r <= r2; r++) {
       int s = -q - r;
-      grid->cells[count].type = GRID_TYPE_HEXAGON;
-      grid->cells[count].coord.hex.q = q;
-      grid->cells[count].coord.hex.r = r;
-      grid->cells[count].coord.hex.s = s;
+      (*out_cells)[count].type = GRID_TYPE_HEXAGON;
+      (*out_cells)[count].coord.hex.q = q;
+      (*out_cells)[count].coord.hex.r = r;
+      (*out_cells)[count].coord.hex.s = s;
       count++;
     }
   }
-  grid->num_cells = count;
+  *out_count = count;
 }
 
 grid_t *grid_create(grid_type_e type, layout_t layout, int size) {
@@ -175,14 +178,13 @@ grid_t *grid_create(grid_type_e type, layout_t layout, int size) {
     return NULL;
   grid->type = type;
   grid->layout = layout;
-  grid->cells = NULL;
-  grid->num_cells = 0;
+  grid->radius = size;
+  grid->initial_radius = size;
+  grid->total_growth = 0;
 
   switch (type) {
   case GRID_TYPE_HEXAGON:
     grid->vtable = &hex_grid_vtable;
-    grid->vtable->generate_cells(grid, size);
-
     break;
   // Add cases for other grid types as you implement them
   default:
@@ -196,15 +198,24 @@ bool is_valid_cell(const grid_t *grid, grid_cell_t check_cell) {
   if (!grid)
     return false;
 
-  if (check_cell.type != grid->cells->type)
+  if (check_cell.type != grid->type)
     return false;
 
-  for (size_t i = 0; i < grid->num_cells; ++i) {
-    grid_cell_t cell = grid->cells[i];
-    if (cell.coord.hex.s == check_cell.coord.hex.s &&
-        cell.coord.hex.q == check_cell.coord.hex.q)
-      return true;
+  if (check_cell.type == GRID_TYPE_HEXAGON) {
+    // For hex grid, cell is valid if distance from origin <= radius
+    int q = check_cell.coord.hex.q;
+    int r = check_cell.coord.hex.r;
+    int s = check_cell.coord.hex.s;
+
+    // Validate cube coordinate constraint
+    if (q + r + s != 0)
+      return false;
+
+    // Check if within radius
+    int distance = (abs(q) + abs(r) + abs(s)) / 2;
+    return distance <= grid->radius;
   }
+
   return false;
 }
 
@@ -212,8 +223,7 @@ void grid_free(grid_t *grid) {
   if (!grid)
     return;
 
-  free(grid->cells); // Free the cells array
-  free(grid);        // Free the grid struct itself
+  free(grid); // Free the grid struct itself
 }
 
 grid_cell_t grid_get_center_cell(const grid_t *grid) {
@@ -243,6 +253,42 @@ void print_cell(const grid_t *grid, grid_cell_t cell) {
   }
 }
 
+void grid_get_all_cells(const grid_t *grid, grid_cell_t **out_cells,
+                        size_t *out_count) {
+  if (!grid || !grid->vtable || !grid->vtable->get_all_cells) {
+    if (out_cells)
+      *out_cells = NULL;
+    if (out_count)
+      *out_count = 0;
+    return;
+  }
+  grid->vtable->get_all_cells(grid, out_cells, out_count);
+}
+
+bool grid_grow(grid_t *grid, int growth_amount) {
+  if (!grid || growth_amount <= 0) {
+    return false;
+  }
+
+  grid->radius += growth_amount;
+  grid->total_growth += growth_amount;
+  return true;
+}
+
+int grid_get_total_growth(const grid_t *grid) {
+  if (!grid) {
+    return -1;
+  }
+  return grid->total_growth;
+}
+
+int grid_get_initial_radius(const grid_t *grid) {
+  if (!grid) {
+    return -1;
+  }
+  return grid->initial_radius;
+}
+
 // --- Public vtable instance ---
 
 const grid_vtable_t hex_grid_vtable = {.to_pixel = to_pixel,
@@ -251,7 +297,6 @@ const grid_vtable_t hex_grid_vtable = {.to_pixel = to_pixel,
                                        .get_neighbor_cells = get_neighbor_cells,
                                        .distance = distance,
                                        .get_corners = get_corners,
-                                       .generate_cells = generate_cells,
                                        .grid_create = grid_create,
                                        .num_neighbors = 6,
                                        .is_valid_cell = is_valid_cell,
@@ -260,4 +305,5 @@ const grid_vtable_t hex_grid_vtable = {.to_pixel = to_pixel,
                                        .apply_offset = apply_offset,
                                        .get_center_cell = get_center_cell,
                                        .get_cell_at_pixel = get_cell_at_pixel,
-                                       .print_cell = print_cell};
+                                       .print_cell = print_cell,
+                                       .get_all_cells = get_all_cells};
