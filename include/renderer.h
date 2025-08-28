@@ -21,4 +21,6 @@ void render_hex_cell(const grid_t *grid, grid_cell_t cell, Clay_Color fill_color
 void render_board_previews(const board_t *board);
 void render_board_in_bounds(const board_t *board, Rectangle bounds);
 
+
+
 #endif // RENDERER_H

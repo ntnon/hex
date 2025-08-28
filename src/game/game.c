@@ -4,7 +4,7 @@
 #include "stdio.h"
 
 void game_init(game_t *game) {
-  game->board = board_create(GRID_TYPE_HEXAGON, 25);
+  game->board = board_create(GRID_TYPE_HEXAGON, 60);
   game->inventory = inventory_create(3);
   board_randomize(game->board);
 

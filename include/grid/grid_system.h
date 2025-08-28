@@ -105,6 +105,8 @@ typedef struct {
      */
     grid_cell_t* (*get_cell_at_pixel)(const grid_t* grid, point_t p);
     void (*print_cell)(const grid_t *grid, grid_cell_t cell);
+
+
 } grid_vtable_t;
 
 // The main grid object. This is the primary struct that game logic will interact with.
@@ -156,6 +158,8 @@ grid_cell_t grid_get_center_cell(const grid_t* grid);
 grid_cell_t* grid_get_cell_at_pixel(const grid_t* grid, point_t p);
 
 void print_cell(const grid_t *grid, grid_cell_t cell);
+
+
 
 /**
  * @brief The public instance of the v-table for hexagonal grids.

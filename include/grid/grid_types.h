@@ -1,6 +1,6 @@
 #ifndef GRID_TYPES_H
 #define GRID_TYPES_H
-
+#include "stddef.h"
 #include <stdbool.h>
 
 /**
@@ -92,6 +92,8 @@ typedef struct {
     point_t origin;         /* Pixel offset for the grid's origin (0,0) */
     double scale;           /* Scale multiplier for the entire grid (1.0 = normal, 2.0 = double size) */
 } layout_t;
+
+
 
 
 #endif // GRID_TYPES_H

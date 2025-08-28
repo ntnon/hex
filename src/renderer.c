@@ -4,6 +4,7 @@
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "raylib.h"
 
@@ -71,7 +72,12 @@ void render_tile(const tile_t *tile, const grid_t *grid) {
 }
 
 void render_hex_grid(const grid_t *grid) {
-  for (size_t i = 0; i < grid->num_cells; ++i) {
+  if (!grid || !grid->cells) {
+    return;
+  }
+
+  // Simple approach: render each cell individually
+  for (size_t i = 0; i < grid->num_cells; i++) {
     render_hex_cell(grid, grid->cells[i], M_LIGHTGRAY, M_GRAY);
   }
 }

@@ -440,6 +440,33 @@
       "-fsanitize=undefined",
       "-c",
       "-o",
+      "obj/x64/Debug/hexhex/grid_chunks.o",
+      "../../src/grid/grid_chunks.c"
+    ],
+    "directory": "/Users/nydon/code/hexhex/build/build_files",
+    "file": "/Users/nydon/code/hexhex/src/grid/grid_chunks.c",
+    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/grid_chunks.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-DDEBUG",
+      "-DPLATFORM_DESKTOP",
+      "-DGRAPHICS_API_OPENGL_33",
+      "-I../../src",
+      "-I../../include",
+      "-I../external/raylib-master/src",
+      "-I../external/raylib-master/src/external",
+      "-I../external/raylib-master/src/external/glfw/include",
+      "-m64",
+      "-Wshadow",
+      "-g",
+      "-std=c17",
+      "-Wno-deprecated-declarations",
+      "-fsanitize=address",
+      "-fsanitize=undefined",
+      "-c",
+      "-o",
       "obj/x64/Debug/hexhex/hex_grid.o",
       "../../src/grid/hex_grid.c"
     ],
