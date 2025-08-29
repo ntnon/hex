@@ -9,7 +9,9 @@
 #include "third_party/clay_renderer_raylib.h"
 
 #include "controller/game_controller.h"
+#include "game/board.h"
 #include "game/camera.h"
+
 #include "renderer.h"
 #include "ui.h"
 #include "utility/string.h"
@@ -56,7 +58,7 @@ Stone tiles - dead tiles, no production
 Paintbrush - reskin a tile or group of tiles
  */
 
-int main(void) {
+int main(int argc, char *argv[]) {
   const int initial_width = 1300;
   const int initial_height = 700;
 
@@ -65,20 +67,8 @@ int main(void) {
 
   print_board_debug_info(game.board);
 
-  // Demonstrate grid growth functionality
-  printf("\n--- Testing Grid Growth ---\n");
-  printf("Growing board by 5...\n");
-  if (board_grow(game.board, 5)) {
-    printf("Growth successful!\n");
-    print_board_debug_info(game.board);
-  } else {
-    printf("Growth failed!\n");
-  }
-  printf("--- End Growth Test ---\n\n");
-
   game_controller_t controller;
 
-  ui_load_fonts();
   UI_Context ui = ui_init(initial_width, initial_height);
   controller_init(&controller, &game);
 
@@ -102,11 +92,17 @@ int main(void) {
 
     BeginMode2D(controller.game->board->camera);
 
+    printf("DEBUG: About to call render functions\n");
     render_hex_grid(game.board->grid);
-    render_board(game.board);
-    render_board_previews(game.board);
+    // printf("DEBUG: About to call render_board_optimized\n");
+    // render_board_optimized(game.board);
+    // printf("DEBUG: render_board_optimized completed\n");
+    // render_board_previews(game.board);
 
+    render_board_optimized(game.board);
     EndMode2D();
+
+    // Test 3D hexagon rendering outside 2D mode
 
     Clay_Raylib_Render(renderCommands, UI_FONTS);
 

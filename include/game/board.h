@@ -22,10 +22,14 @@ typedef struct {
 } board_t;
 
 typedef struct board_preview_t {
-    board_t *merged_board;        /* The result of the merge */
+    grid_cell_t *preview_positions;   /* Where tiles would be placed */
+    tile_data_t *preview_tiles;       /* What tiles would be placed */
+    size_t num_preview_tiles;
+    
     grid_cell_t *conflict_positions;  /* Positions that would conflict */
     size_t num_conflicts;
-    bool is_valid_merge;
+    
+    bool is_valid_merge;              /* Can this merge happen? */
 } board_preview_t;
 
 board_t *board_create(grid_type_e grid_type, int radius);

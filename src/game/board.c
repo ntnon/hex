@@ -36,6 +36,10 @@ board_t *board_create(grid_type_e grid_type, int radius) {
   board->pools = pool_map_create();
   board->next_pool_id = 1;
   board->grid = grid_create(grid_type, default_layout, radius);
+
+  // Initialize optimized chunk system for efficient rendering
+  grid_init_chunks(board->grid, 12); // Optimized chunk size for hex grids
+
   camera_init(&board->camera);
   board->hovered_grid_cell = NULL;
 
@@ -174,6 +178,10 @@ void add_tile(board_t *board, tile_t *tile) {
   tile_map_add(board->tiles, tile);
   pool_add_tile_to_pool(target_pool, tile);
   pool_update(target_pool, board->grid);
+
+  // Mark chunk dirty for rendering updates
+  chunk_id_t chunk_id = grid_get_chunk_id(board->grid, tile->cell);
+  grid_mark_chunk_dirty(board->grid, chunk_id);
 }
 
 void remove_tile(board_t *board, tile_t *tile) {
@@ -191,33 +199,49 @@ void remove_tile(board_t *board, tile_t *tile) {
 
   // Remove tile from board's tile map
   tile_map_remove(board->tiles, tile->cell);
+
+  // Mark chunk dirty for rendering updates
+  chunk_id_t chunk_id = grid_get_chunk_id(board->grid, tile->cell);
+  grid_mark_chunk_dirty(board->grid, chunk_id);
 }
 
 void board_randomize(board_t *board) {
   // Clear existing tiles and pools
   clear_board(board);
 
-  // Generate coordinates using grid system
-  grid_cell_t *cells;
-  size_t num_cells;
-  grid_get_all_cells(board->grid, &cells, &num_cells);
-  shuffle_array(cells, num_cells, sizeof(grid_cell_t), swap_grid_cell);
+  // Create a reasonable number of tiles instead of filling entire grid
+  // Use a small fraction of available grid space
+  int radius = board->grid->radius;
+  size_t target_tiles = radius * 10; // Scale with grid size but keep reasonable
 
-  for (size_t i = 0; i < num_cells; i++) {
-    if (rand() % 4 >= 0) {
-      // In randomize_board()
-      tile_t *tile = tile_create_random_ptr(cells[i]);
-      if (tile->data.type != TILE_EMPTY) { // Only add non-empty tiles
-        tile->pool_id = 0;                 // Will be assigned in add_tile
+  size_t created_tiles = 0;
+  int attempts = 0;
+  int max_attempts = target_tiles * 50; // Prevent infinite loop
+
+  while (created_tiles < target_tiles && attempts < max_attempts) {
+    attempts++;
+
+    // Generate random coordinate within grid bounds
+    int q = (rand() % (2 * radius + 1)) - radius;
+    int r_min = (-radius > (-q - radius)) ? -radius : (-q - radius);
+    int r_max = (radius < (-q + radius)) ? radius : (-q + radius);
+    int r = (rand() % (r_max - r_min + 1)) + r_min;
+    int s = -q - r;
+
+    grid_cell_t cell = {.type = GRID_TYPE_HEXAGON, .coord.hex = {q, r, s}};
+
+    // Check if cell is valid and unoccupied
+    if (is_valid_cell(board->grid, cell) && !get_tile_at_cell(board, cell)) {
+      tile_t *tile = tile_create_random_ptr(cell);
+      if (tile->data.type != TILE_EMPTY) {
+        tile->pool_id = 0; // Will be assigned in add_tile
         add_tile(board, tile);
+        created_tiles++;
       } else {
-        // Free the empty tile since we're not using it
         free(tile);
       }
     }
   }
-
-  free(cells);
 }
 
 void cycle_tile_type(board_t *board, tile_t *tile);
@@ -238,6 +262,12 @@ void print_board_debug_info(board_t *board) {
   printf("Grid cells: %zu (radius: %d, initial: %d, grown: %d)\n", num_cells,
          board->grid->radius, board->grid->initial_radius,
          board->grid->total_growth);
+
+  // Display chunk system status
+  printf("Chunk system: enabled with %zu active chunks (size %d)\n",
+         board->grid->chunk_system.num_chunks,
+         board->grid->chunk_system.chunk_size);
+
   printf("Tiles in board: %d\n", board->tiles->num_tiles);
   printf("Pools in board: %zu\n", board->pools->num_pools);
   printf("Next pool ID: %u\n", board->next_pool_id);
@@ -463,6 +493,11 @@ board_t *board_clone(board_t *original) {
   clone->grid->initial_radius = original->grid->initial_radius;
   clone->grid->total_growth = original->grid->total_growth;
 
+  // Initialize chunks for cloned boards with optimized system
+  if (original->grid->chunk_system.chunk_size > 0) {
+    grid_init_chunks(clone->grid, original->grid->chunk_system.chunk_size);
+  }
+
   // Create new tile and pool maps
   clone->tiles = tile_map_create();
   clone->pools = pool_map_create();
@@ -496,7 +531,7 @@ board_t *board_clone(board_t *original) {
   return clone;
 }
 
-// Simplified preview system implementation
+// Lightweight preview system implementation
 void board_init_preview_system(board_t *board, size_t initial_capacity) {
   if (!board)
     return;
@@ -514,10 +549,15 @@ void board_free_preview_system(board_t *board) {
   for (size_t i = 0; i < board->num_preview_boards; i++) {
     board_preview_t *preview = &board->preview_boards[i];
 
-    // Free the contents but not the struct itself (it's part of the array)
-    if (preview->merged_board) {
-      free_board(preview->merged_board);
-      preview->merged_board = NULL;
+    // Free the lightweight preview data
+    if (preview->preview_positions) {
+      free(preview->preview_positions);
+      preview->preview_positions = NULL;
+    }
+
+    if (preview->preview_tiles) {
+      free(preview->preview_tiles);
+      preview->preview_tiles = NULL;
     }
 
     if (preview->conflict_positions) {
@@ -543,14 +583,10 @@ board_preview_t *board_create_merge_preview(board_t *target_board,
   if (!preview)
     return NULL;
 
-  // Clone the target board
-  preview->merged_board = board_clone(target_board);
-  if (!preview->merged_board) {
-    free(preview);
-    return NULL;
-  }
-
-  // Initialize conflict tracking
+  // Initialize lightweight preview data
+  preview->preview_positions = NULL;
+  preview->preview_tiles = NULL;
+  preview->num_preview_tiles = 0;
   preview->conflict_positions = NULL;
   preview->num_conflicts = 0;
   preview->is_valid_merge = false;
@@ -559,53 +595,73 @@ board_preview_t *board_create_merge_preview(board_t *target_board,
   grid_cell_t offset = target_board->grid->vtable->calculate_offset(
     target_position, source_center);
 
-  // Check if merge is valid and collect conflicts
-  if (is_merge_valid(target_board, source_board, target_position,
-                     source_center)) {
-    // Valid merge - apply it to the preview board
-    merge_boards(preview->merged_board, source_board, target_position,
-                 source_center);
-    preview->is_valid_merge = true;
-  } else {
-    // Invalid merge - collect conflict positions
-    // Count conflicts first
-    size_t conflict_count = 0;
-    tile_map_entry_t *entry, *tmp;
-    HASH_ITER(hh, source_board->tiles->root, entry, tmp) {
-      tile_t *source_tile = entry->tile;
-      grid_cell_t target_pos =
-        target_board->grid->vtable->apply_offset(source_tile->cell, offset);
+  // Count valid tiles and conflicts
+  tile_map_entry_t *entry, *tmp;
+  size_t valid_count = 0;
+  size_t conflict_count = 0;
 
-      // Check if position would conflict
-      if (!target_board->grid->vtable->is_valid_cell(target_board->grid,
-                                                     target_pos) ||
-          get_tile_at_cell(target_board, target_pos) != NULL) {
-        conflict_count++;
-      }
-    }
+  HASH_ITER(hh, source_board->tiles->root, entry, tmp) {
+    tile_t *source_tile = entry->tile;
+    grid_cell_t target_pos =
+      target_board->grid->vtable->apply_offset(source_tile->cell, offset);
 
-    // Allocate and fill conflict positions
-    if (conflict_count > 0) {
-      preview->conflict_positions =
-        malloc(conflict_count * sizeof(grid_cell_t));
-      if (preview->conflict_positions) {
-        preview->num_conflicts = conflict_count;
-        size_t conflict_index = 0;
+    bool is_valid_cell =
+      target_board->grid->vtable->is_valid_cell(target_board->grid, target_pos);
+    tile_t *existing_tile = get_tile_at_cell(target_board, target_pos);
 
-        HASH_ITER(hh, source_board->tiles->root, entry, tmp) {
-          tile_t *source_tile = entry->tile;
-          grid_cell_t target_pos =
-            target_board->grid->vtable->apply_offset(source_tile->cell, offset);
-
-          if (!target_board->grid->vtable->is_valid_cell(target_board->grid,
-                                                         target_pos) ||
-              get_tile_at_cell(target_board, target_pos) != NULL) {
-            preview->conflict_positions[conflict_index++] = target_pos;
-          }
-        }
-      }
+    if (is_valid_cell && existing_tile == NULL) {
+      valid_count++;
+    } else {
+      conflict_count++;
     }
   }
+
+  // Allocate arrays
+  if (valid_count > 0) {
+    preview->preview_positions = malloc(valid_count * sizeof(grid_cell_t));
+    preview->preview_tiles = malloc(valid_count * sizeof(tile_data_t));
+  }
+  if (conflict_count > 0) {
+    preview->conflict_positions = malloc(conflict_count * sizeof(grid_cell_t));
+  }
+
+  if ((valid_count > 0 &&
+       (!preview->preview_positions || !preview->preview_tiles)) ||
+      (conflict_count > 0 && !preview->conflict_positions)) {
+    // Allocation failed
+    free(preview->preview_positions);
+    free(preview->preview_tiles);
+    free(preview->conflict_positions);
+    free(preview);
+    return NULL;
+  }
+
+  // Fill arrays
+  size_t valid_index = 0;
+  size_t conflict_index = 0;
+
+  HASH_ITER(hh, source_board->tiles->root, entry, tmp) {
+    tile_t *source_tile = entry->tile;
+    grid_cell_t target_pos =
+      target_board->grid->vtable->apply_offset(source_tile->cell, offset);
+
+    bool is_valid_cell =
+      target_board->grid->vtable->is_valid_cell(target_board->grid, target_pos);
+    tile_t *existing_tile = get_tile_at_cell(target_board, target_pos);
+
+    if (is_valid_cell && existing_tile == NULL) {
+      preview->preview_positions[valid_index] = target_pos;
+      preview->preview_tiles[valid_index] = source_tile->data;
+      valid_index++;
+    } else {
+      preview->conflict_positions[conflict_index] = target_pos;
+      conflict_index++;
+    }
+  }
+
+  preview->num_preview_tiles = valid_count;
+  preview->num_conflicts = conflict_count;
+  preview->is_valid_merge = (conflict_count == 0);
 
   return preview;
 }
@@ -614,8 +670,12 @@ void board_free_preview(board_preview_t *preview) {
   if (!preview)
     return;
 
-  if (preview->merged_board) {
-    free_board(preview->merged_board);
+  if (preview->preview_positions) {
+    free(preview->preview_positions);
+  }
+
+  if (preview->preview_tiles) {
+    free(preview->preview_tiles);
   }
 
   if (preview->conflict_positions) {
@@ -633,16 +693,25 @@ void board_clear_preview_boards(board_t *board) {
   for (size_t i = 0; i < board->num_preview_boards; i++) {
     board_preview_t *preview = &board->preview_boards[i];
 
-    // Free the contents but not the struct itself (it's part of the array)
-    if (preview->merged_board) {
-      free_board(preview->merged_board);
-      preview->merged_board = NULL;
+    // Free the lightweight preview data
+    if (preview->preview_positions) {
+      free(preview->preview_positions);
+      preview->preview_positions = NULL;
+    }
+
+    if (preview->preview_tiles) {
+      free(preview->preview_tiles);
+      preview->preview_tiles = NULL;
     }
 
     if (preview->conflict_positions) {
       free(preview->conflict_positions);
       preview->conflict_positions = NULL;
     }
+
+    preview->num_preview_tiles = 0;
+    preview->num_conflicts = 0;
+    preview->is_valid_merge = false;
   }
 
   board->num_preview_boards = 0;
@@ -674,13 +743,10 @@ void board_update_preview(board_t *board, board_t *source_board,
   // Get pointer to the preview slot in the array
   board_preview_t *preview = &board->preview_boards[board->num_preview_boards];
 
-  // Clone the target board
-  preview->merged_board = board_clone(board);
-  if (!preview->merged_board) {
-    return;
-  }
-
-  // Initialize conflict tracking
+  // Initialize preview data
+  preview->preview_positions = NULL;
+  preview->preview_tiles = NULL;
+  preview->num_preview_tiles = 0;
   preview->conflict_positions = NULL;
   preview->num_conflicts = 0;
   preview->is_valid_merge = false;
@@ -689,12 +755,11 @@ void board_update_preview(board_t *board, board_t *source_board,
   grid_cell_t offset =
     board->grid->vtable->calculate_offset(mouse_position, source_center);
 
-  // Always create the merged board for preview, adding only valid tiles
-  size_t valid_tiles = 0;
+  // Count valid tiles and conflicts (lightweight - no board cloning!)
+  size_t valid_count = 0;
   size_t conflict_count = 0;
   tile_map_entry_t *entry, *tmp;
 
-  // First pass: count valid tiles and conflicts
   HASH_ITER(hh, source_board->tiles->root, entry, tmp) {
     tile_t *source_tile = entry->tile;
     grid_cell_t target_pos =
@@ -705,16 +770,25 @@ void board_update_preview(board_t *board, board_t *source_board,
     tile_t *existing_tile = get_tile_at_cell(board, target_pos);
 
     if (is_valid_cell && existing_tile == NULL) {
-      valid_tiles++;
+      valid_count++;
     } else {
       conflict_count++;
     }
   }
 
-  printf("DEBUG: Found %zu valid tiles, %zu conflicts\n", valid_tiles,
-         conflict_count);
+  // Allocate arrays for preview data
+  if (valid_count > 0) {
+    preview->preview_positions = malloc(valid_count * sizeof(grid_cell_t));
+    preview->preview_tiles = malloc(valid_count * sizeof(tile_data_t));
+  }
+  if (conflict_count > 0) {
+    preview->conflict_positions = malloc(conflict_count * sizeof(grid_cell_t));
+  }
 
-  // Second pass: add valid tiles to merged board and collect conflicts
+  // Fill the arrays
+  size_t valid_index = 0;
+  size_t conflict_index = 0;
+
   HASH_ITER(hh, source_board->tiles->root, entry, tmp) {
     tile_t *source_tile = entry->tile;
     grid_cell_t target_pos =
@@ -725,49 +799,22 @@ void board_update_preview(board_t *board, board_t *source_board,
     tile_t *existing_tile = get_tile_at_cell(board, target_pos);
 
     if (is_valid_cell && existing_tile == NULL) {
-      // Valid tile - add to merged board
-      tile_t *new_tile = malloc(sizeof(tile_t));
-      if (new_tile) {
-        *new_tile = *source_tile;    // Copy tile data
-        new_tile->cell = target_pos; // Update position
-        tile_map_add(preview->merged_board->tiles, new_tile);
+      if (preview->preview_positions && preview->preview_tiles) {
+        preview->preview_positions[valid_index] = target_pos;
+        preview->preview_tiles[valid_index] = source_tile->data;
+        valid_index++;
+      }
+    } else {
+      if (preview->conflict_positions) {
+
+        preview->conflict_positions[conflict_index] = target_pos;
+        conflict_index++;
       }
     }
   }
 
-  // Allocate and fill conflict positions
-  if (conflict_count > 0) {
-    preview->conflict_positions = malloc(conflict_count * sizeof(grid_cell_t));
-    if (preview->conflict_positions) {
-      preview->num_conflicts = conflict_count;
-      size_t conflict_index = 0;
-
-      HASH_ITER(hh, source_board->tiles->root, entry, tmp) {
-        tile_t *source_tile = entry->tile;
-        grid_cell_t target_pos =
-          board->grid->vtable->apply_offset(source_tile->cell, offset);
-
-        bool is_valid_cell =
-          board->grid->vtable->is_valid_cell(board->grid, target_pos);
-        tile_t *existing_tile = get_tile_at_cell(board, target_pos);
-
-        if (!is_valid_cell || existing_tile != NULL) {
-          preview->conflict_positions[conflict_index++] = target_pos;
-          if (conflict_index <= 3) { // Only show first 3 conflicts
-            printf("DEBUG: CONFLICT #%zu: (%d,%d) -> (%d,%d) %s%s\n",
-                   conflict_index, source_tile->cell.coord.hex.q,
-                   source_tile->cell.coord.hex.r, target_pos.coord.hex.q,
-                   target_pos.coord.hex.r,
-                   !is_valid_cell ? "OUT_OF_BOUNDS " : "",
-                   existing_tile ? "OCCUPIED" : "");
-          }
-        }
-      }
-    }
-  }
-
-  // Set validity based on whether we have any valid tiles to show
-  preview->is_valid_merge = (valid_tiles > 0);
-
+  preview->num_preview_tiles = valid_count;
+  preview->num_conflicts = conflict_count;
+  preview->is_valid_merge = (conflict_count == 0);
   board->num_preview_boards++;
 }

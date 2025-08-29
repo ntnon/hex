@@ -4,11 +4,11 @@
 #include "stdio.h"
 
 void game_init(game_t *game) {
-  game->board = board_create(GRID_TYPE_HEXAGON, 60);
-  game->inventory = inventory_create(3);
+  game->board = board_create(GRID_TYPE_HEXAGON, 30);
+  game->inventory = inventory_create(4);
   board_randomize(game->board);
 
-  inventory_fill(game->inventory, 3);
+  inventory_fill(game->inventory, 4);
 }
 
 void free_game(game_t *game) {
@@ -56,7 +56,5 @@ void update_game(game_t *game, const input_state_t *input) {
   // Update board preview based on selected inventory item
   update_board_preview(game);
 
-  if (game->board->hovered_grid_cell) {
-    print_cell(game->board->grid, *(game->board->hovered_grid_cell));
-  }
+  // Removed excessive coordinate printing that was happening every frame
 }

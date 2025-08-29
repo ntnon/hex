@@ -39,7 +39,9 @@ Clay_RenderCommandArray ui_build_layout(game_controller_t *controller) {
       Clay_OnHover(handle_hover, (intptr_t)controller);
       BeginMode2D(controller->game->board->camera);
 
-      render_board(controller->game->board);
+      printf("DEBUG: UI calling render_board_optimized\n");
+      render_board_optimized(controller->game->board);
+      printf("DEBUG: UI render_board_optimized completed\n");
       render_board_previews(controller->game->board);
       EndMode2D();
       CLAY({.id = UI_BUTTON_ADD_INVENTORY_ITEM,
