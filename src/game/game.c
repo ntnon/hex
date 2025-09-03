@@ -4,10 +4,11 @@
 #include "stdio.h"
 
 void game_init(game_t *game) {
-  game->board = board_create(GRID_TYPE_HEXAGON, 30);
+  game->board = board_create(GRID_TYPE_HEXAGON, 20);
   game->inventory = inventory_create(4);
+  game->reward_count = 3;
   board_randomize(game->board);
-
+  // board_fill(game->board);
   inventory_fill(game->inventory, 4);
 }
 
@@ -57,4 +58,8 @@ void update_game(game_t *game, const input_state_t *input) {
   update_board_preview(game);
 
   // Removed excessive coordinate printing that was happening every frame
+}
+
+void game_state_cycle(game_t *game) {
+  game->state = (game->state + 1) % GAME_STATE_COUNT;
 }

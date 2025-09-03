@@ -33,6 +33,16 @@ Apply effect to entity:
 - Boost tile in piece
 - Boost all tiles in piece
 
+Conditions
+1. Tile adjacency
+2. Pool adjacency
+3. Tile color
+4. Pool color
+5. Pool size
+6. Pool center
+7. Pool max distance (tiles farthest removed in pool)
+8. Pool compactness (how many shared edges in pool)
+
 
 Effects and alterations:
 1. Increase / Decrease production
@@ -73,10 +83,6 @@ int main(int argc, char *argv[]) {
   controller_init(&controller, &game);
 
   ui_build_layout(&controller);
-  Clay_BoundingBox game_bounds = Clay_GetElementData(UI_ID_GAME).boundingBox;
-
-  camera_set_offset(&controller.game->board->camera, game_bounds.width,
-                    game_bounds.height);
 
   // Cache will be initialized dynamically on first rebuild
 
@@ -90,35 +96,35 @@ int main(int argc, char *argv[]) {
     ClearBackground(BROWN);
     controller_process_events(&controller);
 
-    BeginMode2D(controller.game->board->camera);
+    if (controller.game->state == GAME_STATE_PLAYING) {
+      Clay_BoundingBox game_bounds =
+        Clay_GetElementData(UI_ID_GAME).boundingBox;
 
-    printf("DEBUG: About to call render functions\n");
-    render_hex_grid(game.board->grid);
-    // printf("DEBUG: About to call render_board_optimized\n");
-    // render_board_optimized(game.board);
-    // printf("DEBUG: render_board_optimized completed\n");
-    // render_board_previews(game.board);
-
-    render_board_optimized(game.board);
-    EndMode2D();
-
-    // Test 3D hexagon rendering outside 2D mode
+      camera_set_offset(&controller.game->board->camera, game_bounds.width,
+                        game_bounds.height);
+      BeginMode2D(controller.game->board->camera);
+      render_board_optimized(controller.game->board);
+      render_board_previews(controller.game->board);
+      EndMode2D();
+      
+      for (int i = 0; i < inventory_get_size(controller.game->inventory); i++) {
+        inventory_item_t item = inventory_get_item(controller.game->inventory, i);
+        if (!is_id_valid(item.id))
+          continue;
+        Clay_BoundingBox boundingBox = Clay_GetElementData(item.id).boundingBox;
+        if (boundingBox.width > 0 && boundingBox.height > 0 && item.board) {
+          Rectangle bounds = {.x = boundingBox.x,
+                              .y = boundingBox.y,
+                              .width = boundingBox.width,
+                              .height = boundingBox.height};
+          render_board_in_bounds(item.board, bounds);
+        }
+      }
+    }
 
     Clay_Raylib_Render(renderCommands, UI_FONTS);
 
-    for (int i = 0; i < inventory_get_size(controller.game->inventory); i++) {
-      inventory_item_t item = inventory_get_item(controller.game->inventory, i);
-      if (!is_id_valid(item.id))
-        continue;
-      Clay_BoundingBox boundingBox = Clay_GetElementData(item.id).boundingBox;
-      if (boundingBox.width > 0 && boundingBox.height > 0 && item.board) {
-        Rectangle bounds = {.x = boundingBox.x,
-                            .y = boundingBox.y,
-                            .width = boundingBox.width,
-                            .height = boundingBox.height};
-        render_board_in_bounds(item.board, bounds);
-      }
-    }
+   
     EndDrawing();
   }
   Clay_Raylib_Close();

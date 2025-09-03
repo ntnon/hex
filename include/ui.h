@@ -11,16 +11,12 @@
  * UI Layout System
  * ============================================================================ */
 
-#define UI_ID_MAIN CLAY_ID("main")
-#define UI_ID_GAME CLAY_ID("game")
-#define UI_ID_INVENTORY CLAY_ID("inventory")
-#define UI_ID_NONE CLAY_ID("none")
 
-#define UI_BUTTON_ADD_INVENTORY_ITEM CLAY_ID("add_item")
-#define UI_ID_INVENTORY_ITEM_BASE_STRING "inventory_item_base_"
 
 bool is_id_valid(const Clay_ElementId id);
 Clay_RenderCommandArray ui_build_layout(game_controller_t *controller);
+
+
 
 /* ============================================================================
  * UI Styles and Colors
@@ -89,5 +85,5 @@ void handle_inventory_item_click(Clay_ElementId elementId, Clay_PointerData poin
 ui_event_t ui_poll_event(void);
 void ui_push_event(ui_event_t evt);
 void ui_clear_events(void);
-
+void game_screen(game_controller_t *controller);
 #endif // UI_H

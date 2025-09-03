@@ -31,8 +31,8 @@ inventory_item_t inventory_create_item(inventory_t *inv) {
 
   // Create a small board for the inventory item (skip randomization to reduce
   // memory pressure)
-  board_t *item_board = board_create(GRID_TYPE_HEXAGON, 1);
-  board_randomize(item_board);
+  board_t *item_board = board_create(GRID_TYPE_HEXAGON, 3);
+  board_fill(item_board);
 
   return (inventory_item_t){
     .quantity = 1,

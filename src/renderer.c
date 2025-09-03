@@ -1,4 +1,3 @@
-
 #include "tile/tile.h"
 #include "tile/tile_map.h"
 #include <float.h>
@@ -39,9 +38,9 @@ static RenderingSystem g_renderSystem = {0};
 
 // Helper function to get proper transform from grid cell using exact corner
 // geometry
-// Get transform matrix using grid layout data directly
-static Matrix get_hex_transform_from_grid(const grid_t *grid,
-                                          grid_cell_t cell) {
+  // Get transform matrix using grid layout data directly
+  static Matrix
+  get_hex_transform_from_grid(const grid_t *grid, grid_cell_t cell) {
   if (!grid) {
     return MatrixIdentity();
   }
@@ -199,16 +198,17 @@ static void flush_all_batches(void) {
       // printf("DEBUG: Flushing batch %d with %d instances\n", i,
       // batch->count);
 
-      // Set material color based on tile type
+      // Set material color based on batch index (0=MAGENTA, 1=CYAN, 2=YELLOW,
+      // 3=DEFAULT)
       Color baseColor = WHITE;
       switch (i) {
-      case TILE_MAGENTA:
+      case 0: // TILE_MAGENTA batch
         baseColor = (Color){255, 0, 255, 255};
         break;
-      case TILE_CYAN:
+      case 1: // TILE_CYAN batch
         baseColor = (Color){0, 255, 255, 255};
         break;
-      case TILE_YELLOW:
+      case 2: // TILE_YELLOW batch
         baseColor = (Color){255, 255, 0, 255};
         break;
       default:
@@ -354,7 +354,7 @@ void render_hex_grid(const grid_t *grid) {
         int s = -q - r;
         grid_cell_t cell = {.type = GRID_TYPE_HEXAGON,
                             .coord.hex = {.q = q, .r = r, .s = s}};
-        render_hex_cell(grid, cell, M_LIGHTGRAY, M_GRAY);
+        render_hex_cell(grid, cell, M_BLANK, M_GRAY);
       }
     }
   }
@@ -422,16 +422,20 @@ void render_hex_cell(const grid_t *grid, grid_cell_t cell,
   grid->vtable->get_corners(grid, cell, corners);
 
   Vector2 verts[6];
+  // Reverse vertex order for proper clockwise winding in DrawTriangleFan
   for (int j = 0; j < corners_count; ++j) {
-    verts[j].x = (float)corners[j].x;
-    verts[j].y = (float)corners[j].y;
+    int reversed_j = (corners_count - 1) - j;
+    verts[j].x = (float)corners[reversed_j].x;
+    verts[j].y = (float)corners[reversed_j].y;
   }
 
   Color ray_fill_color = to_raylib_color(fill_color);
   Color ray_edge_color = to_raylib_color(edge_color);
 
   // Use DrawTriangleFan with exact corner positions from grid
-  DrawTriangleFan(verts, corners_count, ray_fill_color);
+  if (fill_color.a > 0) {
+    DrawTriangleFan(verts, corners_count, ray_fill_color);
+  }
 
   // Draw outline if edge color is not blank
   if (edge_color.a > 0) {

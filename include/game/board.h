@@ -40,6 +40,7 @@ void clear_board(board_t *board);
 void free_board(board_t *board);
 
 void board_randomize(board_t *board);
+void board_fill(board_t *board);
 
 void add_tile(board_t *board, tile_t* tile);
 

@@ -24,6 +24,7 @@ void input_state_init(input_state_t *state) {
   state->key_shift = false;
   state->key_ctrl = false;
   state->key_r_pressed = false;
+  state->key_m_pressed = false;
 
   state->mouse_dragging = false;
   state->mouse_left_dragging = false;
@@ -109,6 +110,7 @@ void get_input_state(input_state_t *out) {
   out->key_ctrl = IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL);
   out->key_escape = IsKeyPressed(KEY_ESCAPE);
   out->key_r_pressed = IsKeyPressed(KEY_R);
+  out->key_m_pressed = IsKeyPressed(KEY_M);
 
   // --- Mouse wheel ---
   out->mouse_wheel_delta = GetMouseWheelMove();

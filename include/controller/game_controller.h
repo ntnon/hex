@@ -8,6 +8,7 @@
 /* Forward declaration to avoid circular dependency */
 typedef struct input_area_info input_area_info_t;
 
+
 typedef struct {
     game_t *game;
     input_state_t input;

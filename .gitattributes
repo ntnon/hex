@@ -1,0 +1,35 @@
+# .gitattributes - Git attributes for hexhex project
+# Marks third-party code and generated files for proper attribution
+
+# Third-party libraries (not authored by project maintainer)
+include/third_party/** linguist-vendored
+src/third_party/** linguist-vendored
+
+# Build system and external tools
+build/premake5* linguist-vendored
+build/external/** linguist-vendored
+build/*.lua linguist-vendored
+
+# IDE configuration files
+.vscode/** linguist-generated
+.zed/** linguist-generated
+
+# Generated files
+bin/** linguist-generated
+.cache/** linguist-generated
+compile_commands.json linguist-generated
+
+# Documentation that may be template-based
+README.md linguist-documentation
+PREVIEW_OPTIMIZATION_GUIDE.md linguist-documentation
+
+# Resource files (if they're from external sources)
+resources/** linguist-vendored
+
+# Build artifacts and temporary files
+*.o linguist-generated
+*.exe linguist-generated
+*.dll linguist-generated
+*.so linguist-generated
+*.dylib linguist-generated
+*.a linguist-generated

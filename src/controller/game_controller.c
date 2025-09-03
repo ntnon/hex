@@ -30,7 +30,10 @@ void controller_update(game_controller_t *controller, input_state_t *input) {
       printf("Rotated inventory item clockwise\n");
     }
   }
-
+  if (input->key_m_pressed) {
+    printf("HI");
+    game_state_cycle(controller->game);
+  }
   // Update game camera with current input
   if (point_in_bounds(input->mouse, controller->game_bounds) &&
       controller->input.hovered_element_id.id == UI_ID_GAME.id) {

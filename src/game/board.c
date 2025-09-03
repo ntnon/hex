@@ -244,6 +244,39 @@ void board_randomize(board_t *board) {
   }
 }
 
+void board_fill(board_t *board) {
+  // Clear existing tiles and pools
+  clear_board(board);
+
+  int radius = board->grid->radius;
+  size_t created_tiles = 0;
+
+  // Fill all valid cells in the grid
+  for (int q = -radius; q <= radius; q++) {
+    int r_min = (-radius > (-q - radius)) ? -radius : (-q - radius);
+    int r_max = (radius < (-q + radius)) ? radius : (-q + radius);
+
+    for (int r = r_min; r <= r_max; r++) {
+      int s = -q - r;
+      grid_cell_t cell = {.type = GRID_TYPE_HEXAGON, .coord.hex = {q, r, s}};
+
+      // Check if cell is valid
+      if (is_valid_cell(board->grid, cell)) {
+        tile_t *tile = tile_create_random_ptr(cell);
+        if (tile->data.type != TILE_EMPTY) {
+          tile->pool_id = 0; // Will be assigned in add_tile
+          add_tile(board, tile);
+          created_tiles++;
+        } else {
+          free(tile);
+        }
+      }
+    }
+  }
+
+  printf("Created %zu tiles (filled entire board)\n", created_tiles);
+}
+
 void cycle_tile_type(board_t *board, tile_t *tile);
 
 void print_board_debug_info(board_t *board) {

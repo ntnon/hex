@@ -24,6 +24,7 @@ typedef struct {
     bool key_shift;
     bool key_ctrl;
     bool key_r_pressed;
+    bool key_m_pressed;
 
     // Optional drag helpers
     bool mouse_dragging;
