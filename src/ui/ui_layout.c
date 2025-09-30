@@ -134,7 +134,8 @@ Clay_RenderCommandArray ui_build_layout(game_controller_t *controller) {
       ui_build_reward_area(controller);
       break;
     case GAME_STATE_COLLECT:
-      //ui_build_collect_area(controller);
+      ui_build_game_area(controller);
+      ui_build_inventory_area(controller);
       break;
     default:
       break;

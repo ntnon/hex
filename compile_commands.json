@@ -332,12 +332,66 @@
       "-fsanitize=undefined",
       "-c",
       "-o",
+      "obj/x64/Debug/hexhex/event_router.o",
+      "../../src/controller/event_router.c"
+    ],
+    "directory": "/Users/nydon/code/hexhex/build/build_files",
+    "file": "/Users/nydon/code/hexhex/src/controller/event_router.c",
+    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/event_router.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-DDEBUG",
+      "-DPLATFORM_DESKTOP",
+      "-DGRAPHICS_API_OPENGL_33",
+      "-I../../src",
+      "-I../../include",
+      "-I../external/raylib-master/src",
+      "-I../external/raylib-master/src/external",
+      "-I../external/raylib-master/src/external/glfw/include",
+      "-m64",
+      "-Wshadow",
+      "-g",
+      "-std=c17",
+      "-Wno-deprecated-declarations",
+      "-fsanitize=address",
+      "-fsanitize=undefined",
+      "-c",
+      "-o",
       "obj/x64/Debug/hexhex/game.o",
       "../../src/game/game.c"
     ],
     "directory": "/Users/nydon/code/hexhex/build/build_files",
     "file": "/Users/nydon/code/hexhex/src/game/game.c",
     "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/game.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-DDEBUG",
+      "-DPLATFORM_DESKTOP",
+      "-DGRAPHICS_API_OPENGL_33",
+      "-I../../src",
+      "-I../../include",
+      "-I../external/raylib-master/src",
+      "-I../external/raylib-master/src/external",
+      "-I../external/raylib-master/src/external/glfw/include",
+      "-m64",
+      "-Wshadow",
+      "-g",
+      "-std=c17",
+      "-Wno-deprecated-declarations",
+      "-fsanitize=address",
+      "-fsanitize=undefined",
+      "-c",
+      "-o",
+      "obj/x64/Debug/hexhex/game_actions.o",
+      "../../src/game/game_actions.c"
+    ],
+    "directory": "/Users/nydon/code/hexhex/build/build_files",
+    "file": "/Users/nydon/code/hexhex/src/game/game_actions.c",
+    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/game_actions.o"
   },
   {
     "arguments": [
@@ -446,6 +500,33 @@
     "directory": "/Users/nydon/code/hexhex/build/build_files",
     "file": "/Users/nydon/code/hexhex/src/grid/hex_geometry.c",
     "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/hex_geometry.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-DDEBUG",
+      "-DPLATFORM_DESKTOP",
+      "-DGRAPHICS_API_OPENGL_33",
+      "-I../../src",
+      "-I../../include",
+      "-I../external/raylib-master/src",
+      "-I../external/raylib-master/src/external",
+      "-I../external/raylib-master/src/external/glfw/include",
+      "-m64",
+      "-Wshadow",
+      "-g",
+      "-std=c17",
+      "-Wno-deprecated-declarations",
+      "-fsanitize=address",
+      "-fsanitize=undefined",
+      "-c",
+      "-o",
+      "obj/x64/Debug/hexhex/input_handler.o",
+      "../../src/controller/input_handler.c"
+    ],
+    "directory": "/Users/nydon/code/hexhex/build/build_files",
+    "file": "/Users/nydon/code/hexhex/src/controller/input_handler.c",
+    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/input_handler.o"
   },
   {
     "arguments": [

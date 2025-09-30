@@ -1,4 +1,4 @@
-// #include "game/game_controller.h"
+#include "controller/game_controller.h"
 #include "stdio.h"
 #include "ui.h"
 #include <stdio.h>
@@ -37,10 +37,11 @@ void handle_inventory_item_click(Clay_ElementId elementId,
   Clay_ElementData element_data = Clay_GetElementData(elementId);
 
   // Handle hover events
-  if (elementId.id != controller->hovered_element_id.id &&
-      controller->hovered_element_id.id != 0) {
+  Clay_ElementId current_hovered =
+    controller_get_hovered_element_id(controller);
+  if (elementId.id != current_hovered.id && current_hovered.id != 0) {
     ui_push_event((ui_event_t){.type = UI_EVENT_HOVER_END,
-                               .element_id = controller->hovered_element_id,
+                               .element_id = current_hovered,
                                .element_data = element_data});
   }
 
@@ -49,7 +50,7 @@ void handle_inventory_item_click(Clay_ElementId elementId,
                              .element_data = element_data});
 
   // Update controller immediately
-  controller->hovered_element_id = elementId;
+  controller_set_hovered_element_id(controller, elementId);
 
   // Handle click events
   if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
@@ -64,10 +65,11 @@ void handle_hover(Clay_ElementId elementId, Clay_PointerData pointerData,
 
   game_controller_t *controller = (game_controller_t *)userData;
   Clay_ElementData element_data = Clay_GetElementData(elementId);
-  if (elementId.id != controller->hovered_element_id.id &&
-      controller->hovered_element_id.id != 0) {
+  Clay_ElementId current_hovered =
+    controller_get_hovered_element_id(controller);
+  if (elementId.id != current_hovered.id && current_hovered.id != 0) {
     ui_push_event((ui_event_t){.type = UI_EVENT_HOVER_END,
-                               .element_id = controller->hovered_element_id,
+                               .element_id = current_hovered,
                                .element_data = element_data});
   }
 
@@ -76,7 +78,7 @@ void handle_hover(Clay_ElementId elementId, Clay_PointerData pointerData,
                              .element_data = element_data});
 
   // Update controller immediately
-  controller->hovered_element_id = elementId;
+  controller_set_hovered_element_id(controller, elementId);
 
   // Handle click events on release, but only if no dragging occurred
   if (pointerData.state == CLAY_POINTER_DATA_RELEASED_THIS_FRAME) {
