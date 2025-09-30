@@ -1,7 +1,7 @@
 #ifndef GRID_CELL_COLLECTION_H
 #define GRID_CELL_COLLECTION_H
 
-#include "grid_system.h"
+#include "grid_geometry.h"
 #include "../third_party/uthash.h"
 
 typedef struct {

@@ -1,6 +1,6 @@
 #include "../../include/tile/pool.h"
 #include "../../include/grid/grid_cell_utils.h"
-#include "../../include/grid/grid_system.h"
+#include "../../include/grid/grid_geometry.h"
 #include "../../include/third_party/uthash.h"
 #include <stdio.h>
 

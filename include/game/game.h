@@ -8,8 +8,10 @@
 typedef enum {
     //GAME_STATE_MENU,
     GAME_STATE_PLAYING,
+    GAME_STATE_COLLECT,
     GAME_STATE_REWARD,
-    //GAME_STATE_GAME_OVER,
+
+    GAME_STATE_GAME_OVER,
     GAME_STATE_COUNT
 } game_state_e;
 

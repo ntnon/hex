@@ -2,7 +2,7 @@
 #include "stdio.h"
 
 void camera_init(Camera2D *camera) {
-  camera->zoom = 0.6f;
+  camera->zoom = 8.0f;
   camera->rotation = 0.0f;
   camera->target = (Vector2){0.0f, 0.0f}; // center on world origin
   camera->offset = (Vector2){0, 0};       // center of screen
@@ -25,9 +25,10 @@ void update_camera(Camera2D *camera, const input_state_t *input) {
     // Apply zoom change
     float old_zoom = camera->zoom;
     camera->zoom += input->mouse_wheel_delta * 0.05f;
-    if (camera->zoom < 0.2f)
-      camera->zoom = 0.2f;
-
+    if (camera->zoom < 1.0f)
+      camera->zoom = 1.0f;
+    if (camera->zoom > 10.0f)
+      camera->zoom = 10.0f;
     // Convert mouse to world after zoom
     Vector2 world_after = GetScreenToWorld2D(mouse_screen, *camera);
 

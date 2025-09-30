@@ -2,8 +2,9 @@
 #include "controller/input_state.h"
 #include "game/board.h"
 #include "game/camera.h"
+#include "game/game.h"
 #include "game/inventory.h"
-#include "grid/grid_system.h"
+#include "grid/grid_geometry.h"
 #include "stdio.h"
 #include "ui.h"
 #include "utility/geometry.h"
@@ -45,6 +46,10 @@ void controller_hover(game_controller_t *controller, Clay_ElementId elementId) {
   controller->hovered_element_id = elementId;
 }
 
+static void handle_add_inventory_button_click(game_controller_t *ctrl);
+static void handle_game_area_click(game_controller_t *ctrl);
+static void handle_tile_placement(game_controller_t *ctrl);
+
 void controller_set_hover(game_controller_t *ctrl, ui_event_t evt) {
   ctrl->input.hovered_element_id = evt.element_id;
   ctrl->input.drag_bounds = evt.element_data.boundingBox;
@@ -69,46 +74,12 @@ void controller_process_events(game_controller_t *ctrl) {
     case UI_EVENT_CLICK:
       ctrl->last_clicked_ui_element_id = evt.element_id;
       printf("Clicked on element: %s\n", evt.element_id.stringId.chars);
+
       if (ctrl->last_clicked_ui_element_id.id ==
           UI_BUTTON_ADD_INVENTORY_ITEM.id) {
-        // Add a random item to the inventory instead of merging to main board
-        inventory_add_random_item(ctrl->game->inventory);
-        printf("Added random item to inventory\n");
+        handle_add_inventory_button_click(ctrl);
       } else if (ctrl->last_clicked_ui_element_id.id == UI_ID_GAME.id) {
-        // Check if this was a drag (camera move) or a click (place tile)
-        if (ctrl->input.mouse_left_was_dragging) {
-          printf("Game area dragged - camera moved, no tile placement\n");
-        } else {
-          printf("Game area clicked!\n");
-          // Handle game area click - merge selected inventory item if available
-          board_t *selected_board =
-            inventory_get_selected_board(ctrl->game->inventory);
-
-          if (!selected_board) {
-            printf("No inventory item selected for merging\n");
-          } else if (!ctrl->game->board->hovered_grid_cell) {
-            printf("No valid hover position on game board\n");
-          } else {
-            // Get the hovered position on the main board
-            grid_cell_t target_position =
-              *(ctrl->game->board->hovered_grid_cell);
-            printf("Attempting to merge at position (%d, %d)\n",
-                   target_position.coord.hex.q, target_position.coord.hex.r);
-
-            // Use the actual center of the selected board
-            grid_cell_t source_center =
-              grid_get_center_cell(selected_board->grid);
-
-            // Attempt to merge the selected inventory item into the main board
-            if (merge_boards(ctrl->game->board, selected_board, target_position,
-                             source_center)) {
-              printf("Successfully merged inventory item into main board\n");
-              // Keep the inventory item for multi-use (don't remove it)
-            } else {
-              printf("Failed to merge inventory item - invalid placement\n");
-            }
-          }
-        }
+        handle_game_area_click(ctrl);
       }
 
       break;
@@ -132,5 +103,54 @@ void controller_process_events(game_controller_t *ctrl) {
     default:
       break;
     }
+  }
+}
+
+static void handle_add_inventory_button_click(game_controller_t *ctrl) {
+  inventory_add_random_item(ctrl->game->inventory);
+  printf("Added random item to inventory\n");
+}
+
+static void handle_game_area_click(game_controller_t *ctrl) {
+  if (ctrl->input.mouse_left_was_dragging) {
+    printf("Game area dragged - camera moved, no tile placement\n");
+  } else {
+    printf("Game area clicked!\n");
+    handle_tile_placement(ctrl);
+  }
+}
+
+static void enter_collect_state(game_controller_t *ctrl) {
+  printf("Entering collect state\n");
+  ctrl->game->state = GAME_STATE_COLLECT;
+  ctrl->game->inventory->selected_index = -1;
+}
+
+static void handle_tile_placement(game_controller_t *ctrl) {
+  board_t *selected_board = inventory_get_selected_board(ctrl->game->inventory);
+
+  if (!selected_board) {
+    printf("No inventory item selected for merging\n");
+    return;
+  }
+
+  if (!ctrl->game->board->hovered_grid_cell) {
+    printf("No valid hover position on game board\n");
+    return;
+  }
+
+  grid_cell_t target_position = *(ctrl->game->board->hovered_grid_cell);
+  printf("Attempting to merge at position (%d, %d)\n",
+         target_position.coord.hex.q, target_position.coord.hex.r);
+
+  grid_cell_t source_center =
+    grid_get_center_cell(selected_board->geometry_type);
+
+  if (merge_boards(ctrl->game->board, selected_board, target_position,
+                   source_center)) {
+    printf("Successfully merged inventory item into main board\n");
+    enter_collect_state(ctrl);
+  } else {
+    printf("Failed to merge inventory item - invalid placement\n");
   }
 }

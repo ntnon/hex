@@ -18,6 +18,7 @@ typedef enum {
     TILE_MAGENTA,
     TILE_CYAN,
     TILE_YELLOW,
+    TILE_GREEN,
     TILE_TYPE_COUNT
 } tile_type_t;
 
@@ -48,6 +49,8 @@ tile_data_t tile_data_create(tile_type_t type, int value);
 tile_data_t tile_data_create_random(void);
 
 tile_t* tile_create_random_ptr(grid_cell_t cell);
+
+tile_t* tile_create_center_ptr(grid_cell_t cell);
 
 void tile_set_coords(tile_t *tile, grid_cell_t coord);
 void tile_add_coords(tile_t *tile, grid_cell_t coord);

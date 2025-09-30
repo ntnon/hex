@@ -25,20 +25,60 @@ layout_t default_layout = {
                  // radius of the hexagon (adjust as needed)
 };
 
-board_t *board_create(grid_type_e grid_type, int radius) {
+static void create_center_cluster(board_t *board) {
+  grid_cell_t center = grid_get_center_cell(board->geometry_type);
+
+  // Create three clustered tiles of different colors at center
+  tile_data_t magenta_data = tile_data_create(TILE_MAGENTA, 1);
+  tile_data_t cyan_data = tile_data_create(TILE_CYAN, 1);
+  tile_data_t yellow_data = tile_data_create(TILE_YELLOW, 1);
+
+  tile_t *center_tile = tile_create_ptr(center, magenta_data);
+  center_tile->pool_id = 0;
+  add_tile(board, center_tile);
+
+  // Get the first two neighbors for the other colors
+  grid_cell_t neighbors[6];
+  board->geometry->get_neighbor_cells(center, neighbors);
+
+  tile_t *neighbor1_tile = tile_create_ptr(neighbors[0], cyan_data);
+  neighbor1_tile->pool_id = 0;
+  add_tile(board, neighbor1_tile);
+
+  tile_t *neighbor2_tile = tile_create_ptr(neighbors[1], yellow_data);
+  neighbor2_tile->pool_id = 0;
+  add_tile(board, neighbor2_tile);
+}
+
+board_t *board_create(grid_type_e grid_type, int radius,
+                      board_type_e board_type) {
   board_t *board = malloc(sizeof(board_t));
   if (!board) {
     fprintf(stderr, "Failed to allocate memory for board\n");
     return NULL;
   }
 
+  // Configure geometry
+  board->geometry_type = grid_type;
+  board->radius = radius;
+  board->board_type = board_type;
+  board->layout = default_layout;
+
+  // Set geometry function pointers based on type
+  switch (grid_type) {
+  case GRID_TYPE_HEXAGON:
+    board->geometry = &hex_grid_vtable;
+    break;
+  // Add other geometry types as they're implemented
+  default:
+    fprintf(stderr, "Unsupported grid type: %d\n", grid_type);
+    free(board);
+    return NULL;
+  }
+
   board->tiles = tile_map_create();
   board->pools = pool_map_create();
   board->next_pool_id = 1;
-  board->grid = grid_create(grid_type, default_layout, radius);
-
-  // Initialize optimized chunk system for efficient rendering
-  grid_init_chunks(board->grid, 12); // Optimized chunk size for hex grids
 
   camera_init(&board->camera);
   board->hovered_grid_cell = NULL;
@@ -46,6 +86,10 @@ board_t *board_create(grid_type_e grid_type, int radius) {
   // Initialize preview system
   board_init_preview_system(board,
                             10); // Start with capacity for 10 preview tiles
+
+  if (board_type == BOARD_TYPE_MAIN) {
+    create_center_cluster(board);
+  }
 
   return board;
 }
@@ -61,13 +105,12 @@ void clear_board(board_t *board) {
 void free_board(board_t *board) {
   tile_map_free(board->tiles);
   pool_map_free(board->pools);
-  grid_free(board->grid);
   board_free_preview_system(board);
   free(board);
 }
 
 bool valid_tile(board_t *board, tile_t *tile) {
-  if (!board->grid->vtable->is_valid_cell(board->grid, tile->cell)) {
+  if (!grid_is_valid_cell_with_radius(tile->cell, board->radius)) {
     fprintf(stderr, "Tile cell not in grid\n");
     return false;
   }
@@ -81,11 +124,12 @@ tile_t *get_tile_at_cell(board_t *board, grid_cell_t cell) {
 }
 
 bool board_grow(board_t *board, int growth_amount) {
-  if (!board || !board->grid) {
+  if (!board || growth_amount <= 0) {
     return false;
   }
 
-  return grid_grow(board->grid, growth_amount);
+  board->radius += growth_amount;
+  return true;
 }
 
 // Function to get neighboring pools that accept a specific tile type
@@ -93,7 +137,7 @@ void get_neighbor_pools(board_t *board, tile_t *tile, pool_t **out_pools,
                         size_t max_neighbors) {
   grid_cell_t neighbor_cells[6];
 
-  board->grid->vtable->get_neighbor_cells(tile->cell, neighbor_cells);
+  board->geometry->get_neighbor_cells(tile->cell, neighbor_cells);
 
   for (size_t i = 0; i < max_neighbors; ++i) {
     tile_t *neighbor_tile = get_tile_at_cell(board, neighbor_cells[i]);
@@ -177,11 +221,13 @@ void add_tile(board_t *board, tile_t *tile) {
   // Add tile to board's tile map and pool
   tile_map_add(board->tiles, tile);
   pool_add_tile_to_pool(target_pool, tile);
-  pool_update(target_pool, board->grid);
+  // TODO: Fix pool_update to work without grid instance
+  // pool_update(target_pool, board->geometry_type, board->layout,
+  // board->radius);
 
-  // Mark chunk dirty for rendering updates
-  chunk_id_t chunk_id = grid_get_chunk_id(board->grid, tile->cell);
-  grid_mark_chunk_dirty(board->grid, chunk_id);
+  // Mark chunk dirty for rendering updates - DISABLED
+  // chunk_id_t chunk_id = grid_get_chunk_id(board->grid, tile->cell);
+  // grid_mark_chunk_dirty(board->grid, chunk_id);
 }
 
 void remove_tile(board_t *board, tile_t *tile) {
@@ -194,87 +240,142 @@ void remove_tile(board_t *board, tile_t *tile) {
   if (pool_entry) {
     // Remove tile from pool
     pool_remove_tile(pool_entry->pool, tile);
-    pool_update(pool_entry->pool, board->grid);
+    // TODO: Fix pool_update to work without grid instance
+    // pool_update(pool_entry->pool, board->geometry_type, board->layout,
+    //             board->radius);
   }
 
   // Remove tile from board's tile map
   tile_map_remove(board->tiles, tile->cell);
 
-  // Mark chunk dirty for rendering updates
-  chunk_id_t chunk_id = grid_get_chunk_id(board->grid, tile->cell);
-  grid_mark_chunk_dirty(board->grid, chunk_id);
+  // Mark chunk dirty for rendering updates - DISABLED
+  // chunk_id_t chunk_id = grid_get_chunk_id(board->grid, tile->cell);
+  // grid_mark_chunk_dirty(board->grid, chunk_id);
 }
 
-void board_randomize(board_t *board) {
+void board_randomize(board_t *board, int radius, board_type_e board_type) {
+  // Clamp radius to board's maximum radius
+  if (radius > board->radius) {
+    radius = board->radius;
+  }
+
   // Clear existing tiles and pools
   clear_board(board);
+
+  // Place three clustered tiles for main boards
+  if (board_type == BOARD_TYPE_MAIN) {
+    create_center_cluster(board);
+  }
+
+  // Get all valid coordinates for this geometry type within the specified
+  // radius
+  grid_cell_t *all_coords;
+  size_t coord_count;
+  if (!grid_get_all_coordinates_in_radius(board->geometry_type, radius,
+                                          &all_coords, &coord_count)) {
+    return;
+  }
+
+  // Remove center coordinate from the list if we placed a center tile
+  if (board_type == BOARD_TYPE_MAIN) {
+    grid_cell_t center = grid_get_center_cell(board->geometry_type);
+    size_t filtered_count = 0;
+    for (size_t i = 0; i < coord_count; i++) {
+      bool is_center = (all_coords[i].coord.hex.q == center.coord.hex.q &&
+                        all_coords[i].coord.hex.r == center.coord.hex.r &&
+                        all_coords[i].coord.hex.s == center.coord.hex.s);
+      if (!is_center) {
+        all_coords[filtered_count++] = all_coords[i];
+      }
+    }
+    coord_count = filtered_count;
+  }
 
   // Create a reasonable number of tiles instead of filling entire grid
-  // Use a small fraction of available grid space
-  int radius = board->grid->radius;
   size_t target_tiles = radius * 10; // Scale with grid size but keep reasonable
+  if (target_tiles > coord_count) {
+    target_tiles = coord_count / 1.5; // Don't exceed half the available cells
+  }
 
+  // Shuffle the coordinates for random placement
+  for (size_t i = coord_count - 1; i > 0; i--) {
+    size_t j = rand() % (i + 1);
+    grid_cell_t temp = all_coords[i];
+    all_coords[i] = all_coords[j];
+    all_coords[j] = temp;
+  }
+
+  // Place tiles at random coordinates
   size_t created_tiles = 0;
-  int attempts = 0;
-  int max_attempts = target_tiles * 50; // Prevent infinite loop
-
-  while (created_tiles < target_tiles && attempts < max_attempts) {
-    attempts++;
-
-    // Generate random coordinate within grid bounds
-    int q = (rand() % (2 * radius + 1)) - radius;
-    int r_min = (-radius > (-q - radius)) ? -radius : (-q - radius);
-    int r_max = (radius < (-q + radius)) ? radius : (-q + radius);
-    int r = (rand() % (r_max - r_min + 1)) + r_min;
-    int s = -q - r;
-
-    grid_cell_t cell = {.type = GRID_TYPE_HEXAGON, .coord.hex = {q, r, s}};
-
-    // Check if cell is valid and unoccupied
-    if (is_valid_cell(board->grid, cell) && !get_tile_at_cell(board, cell)) {
-      tile_t *tile = tile_create_random_ptr(cell);
-      if (tile->data.type != TILE_EMPTY) {
-        tile->pool_id = 0; // Will be assigned in add_tile
-        add_tile(board, tile);
-        created_tiles++;
-      } else {
-        free(tile);
-      }
+  for (size_t i = 0; i < coord_count && created_tiles < target_tiles; i++) {
+    grid_cell_t cell = all_coords[i];
+    tile_t *tile = tile_create_random_ptr(cell);
+    if (tile->data.type != TILE_EMPTY) {
+      tile->pool_id = 0; // Will be assigned in add_tile
+      add_tile(board, tile);
+      created_tiles++;
+    } else {
+      free(tile); // Free empty tiles
     }
   }
+
+  free(all_coords);
 }
 
-void board_fill(board_t *board) {
+void board_fill(board_t *board, int radius, board_type_e board_type) {
+  // Clamp radius to board's maximum radius
+  if (radius > board->radius) {
+    radius = board->radius;
+  }
+
   // Clear existing tiles and pools
   clear_board(board);
 
-  int radius = board->grid->radius;
-  size_t created_tiles = 0;
+  // Place three clustered tiles for main boards
+  if (board_type == BOARD_TYPE_MAIN) {
+    create_center_cluster(board);
+  }
 
-  // Fill all valid cells in the grid
-  for (int q = -radius; q <= radius; q++) {
-    int r_min = (-radius > (-q - radius)) ? -radius : (-q - radius);
-    int r_max = (radius < (-q + radius)) ? radius : (-q + radius);
+  // Get all valid coordinates for this geometry type within the specified
+  // radius
+  grid_cell_t *all_coords;
+  size_t coord_count;
+  if (!grid_get_all_coordinates_in_radius(board->geometry_type, radius,
+                                          &all_coords, &coord_count)) {
+    return;
+  }
 
-    for (int r = r_min; r <= r_max; r++) {
-      int s = -q - r;
-      grid_cell_t cell = {.type = GRID_TYPE_HEXAGON, .coord.hex = {q, r, s}};
+  size_t created_tiles = (board_type == BOARD_TYPE_MAIN)
+                           ? 1
+                           : 0; // Start with 1 for center tile if main board
 
-      // Check if cell is valid
-      if (is_valid_cell(board->grid, cell)) {
-        tile_t *tile = tile_create_random_ptr(cell);
-        if (tile->data.type != TILE_EMPTY) {
-          tile->pool_id = 0; // Will be assigned in add_tile
-          add_tile(board, tile);
-          created_tiles++;
-        } else {
-          free(tile);
-        }
+  // Fill all valid cells in the grid (except center which we already placed)
+  for (size_t i = 0; i < coord_count; i++) {
+    grid_cell_t cell = all_coords[i];
+
+    // Skip center coordinate if we placed a center tile
+    if (board_type == BOARD_TYPE_MAIN) {
+      grid_cell_t center = grid_get_center_cell(board->geometry_type);
+      bool is_center = (cell.coord.hex.q == center.coord.hex.q &&
+                        cell.coord.hex.r == center.coord.hex.r &&
+                        cell.coord.hex.s == center.coord.hex.s);
+      if (is_center) {
+        continue;
       }
+    }
+
+    tile_t *tile = tile_create_random_ptr(cell);
+    if (tile->data.type != TILE_EMPTY) {
+      tile->pool_id = 0; // Will be assigned in add_tile
+      add_tile(board, tile);
+      created_tiles++;
+    } else {
+      free(tile); // Free empty tiles
     }
   }
 
-  printf("Created %zu tiles (filled entire board)\n", created_tiles);
+  free(all_coords);
+  printf("Board filled with %zu tiles\n", created_tiles);
 }
 
 void cycle_tile_type(board_t *board, tile_t *tile);
@@ -286,20 +387,16 @@ void print_board_debug_info(board_t *board) {
   }
 
   printf("=== Board Debug Info ===\n");
-  printf("Grid type: %d\n", board->grid->type);
-  // Get actual cell count from grid system
-  grid_cell_t *temp_cells;
-  size_t num_cells;
-  grid_get_all_cells(board->grid, &temp_cells, &num_cells);
-  free(temp_cells);
-  printf("Grid cells: %zu (radius: %d, initial: %d, grown: %d)\n", num_cells,
-         board->grid->radius, board->grid->initial_radius,
-         board->grid->total_growth);
+  printf("Grid type: %d\n", board->geometry_type);
+  // Calculate cell count based on radius (hex grid formula)
+  size_t num_cells = 3 * board->radius * (board->radius + 1) + 1;
+  printf("Grid cells: %zu (radius: %d)\n", num_cells, board->radius);
 
   // Display chunk system status
-  printf("Chunk system: enabled with %zu active chunks (size %d)\n",
-         board->grid->chunk_system.num_chunks,
-         board->grid->chunk_system.chunk_size);
+  printf("Chunk system: disabled\n");
+  // printf("Chunk system: enabled with %zu active chunks (size %d)\n",
+  //        board->grid->chunk_system.num_chunks,
+  //        board->grid->chunk_system.chunk_size);
 
   printf("Tiles in board: %d\n", board->tiles->num_tiles);
   printf("Pools in board: %zu\n", board->pools->num_pools);
@@ -310,44 +407,32 @@ void print_board_debug_info(board_t *board) {
 // Function to check if a board merge is valid (no tile overlaps)
 bool is_merge_valid(board_t *target_board, board_t *source_board,
                     grid_cell_t target_center, grid_cell_t source_center) {
-  if (target_board->grid->type != source_board->grid->type) {
+  if (target_board->geometry_type != source_board->geometry_type) {
     return false;
   }
 
   // Calculate the offset needed to align source_center with target_center
-  grid_cell_t offset =
-    target_board->grid->vtable->calculate_offset(target_center, source_center);
+  grid_cell_t offset = grid_calculate_offset(target_center, source_center);
 
-  // Generate source coordinates using grid system
-  grid_cell_t *source_cells;
-  size_t num_source_cells;
-  grid_get_all_cells(source_board->grid, &source_cells, &num_source_cells);
+  // Check each tile in the source board directly
 
-  // Check each tile in the source board
-  for (size_t i = 0; i < num_source_cells; i++) {
-    grid_cell_t source_cell = source_cells[i];
-    tile_t *source_tile = get_tile_at_cell(source_board, source_cell);
+  tile_map_entry_t *entry, *tmp;
+  HASH_ITER(hh, source_board->tiles->root, entry, tmp) {
+    grid_cell_t source_cell = entry->tile->cell;
+    grid_cell_t target_position = grid_apply_offset(source_cell, offset);
 
-    if (source_tile) {
-      // Apply offset to get the target position
-      grid_cell_t target_position =
-        target_board->grid->vtable->apply_offset(source_cell, offset);
+    // Check if this position is valid in the target grid
+    if (!grid_is_valid_cell_with_radius(target_position,
+                                        target_board->radius)) {
+      return false; // Target position out of bounds
+    }
 
-      // Check if this position is valid in the target grid
-      if (!target_board->grid->vtable->is_valid_cell(target_board->grid,
-                                                     target_position)) {
-        return false; // Target position out of bounds
-      }
-
-      // Check if there's already a tile at this position in the target board
-      tile_t *existing_tile = get_tile_at_cell(target_board, target_position);
-      if (existing_tile) {
-        free(source_cells);
-        return false; // Overlap detected
-      }
+    // Check if this position is occupied in the target board
+    tile_t *target_tile = get_tile_at_cell(target_board, target_position);
+    if (target_tile) {
+      return false; // Position already occupied
     }
   }
-  free(source_cells);
   return true; // No overlaps found
 }
 
@@ -360,50 +445,39 @@ bool merge_boards(board_t *target_board, board_t *source_board,
   }
 
   // Calculate the offset needed to align source_center with target_center
-  grid_cell_t offset =
-    target_board->grid->vtable->calculate_offset(target_center, source_center);
-
-  // Generate source coordinates using grid system
-  grid_cell_t *source_cells;
-  size_t num_source_cells;
-  grid_get_all_cells(source_board->grid, &source_cells, &num_source_cells);
+  grid_cell_t offset = grid_calculate_offset(target_center, source_center);
 
   // Merge each tile from source to target
   int tiles_added = 0;
-  for (size_t i = 0; i < num_source_cells; i++) {
-    grid_cell_t source_cell = source_cells[i];
-    tile_t *source_tile = get_tile_at_cell(source_board, source_cell);
+  tile_map_entry_t *entry, *tmp;
+  HASH_ITER(hh, source_board->tiles->root, entry, tmp) {
+    tile_t *source_tile = entry->tile;
 
-    if (source_tile) {
+    // Apply offset to get the target position
+    grid_cell_t target_position = grid_apply_offset(source_tile->cell, offset);
 
-      // Apply offset to get the target position
-      grid_cell_t target_position =
-        target_board->grid->vtable->apply_offset(source_cell, offset);
-
-      // Check if this position is valid in the target grid
-      if (!target_board->grid->vtable->is_valid_cell(target_board->grid,
-                                                     target_position)) {
-        continue; // Skip tiles that would fall outside the target grid
-      }
-
-      // Create a new tile at the target position with the same data
-      tile_t *new_tile = malloc(sizeof(tile_t));
-      if (!new_tile) {
-        fprintf(stderr, "Failed to allocate memory for merged tile\n");
-        return false;
-      }
-
-      new_tile->cell = target_position;
-      new_tile->data = source_tile->data; // Copy tile data
-      new_tile->pool_id = 0;              // Will be assigned in add_tile
-
-      // Add the tile to the target board
-      add_tile(target_board, new_tile);
-      tiles_added++;
+    // Check if this position is valid in the target grid
+    if (!grid_is_valid_cell_with_radius(target_position,
+                                        target_board->radius)) {
+      continue; // Skip tiles that would fall outside the target grid
     }
+
+    // Create a new tile at the target position with the same data
+    tile_t *new_tile = malloc(sizeof(tile_t));
+    if (!new_tile) {
+      fprintf(stderr, "Failed to allocate memory for merged tile\n");
+      return false;
+    }
+
+    new_tile->cell = target_position;
+    new_tile->data = source_tile->data; // Copy tile data
+    new_tile->pool_id = 0;              // Will be assigned in add_tile
+
+    // Add the tile to the target board
+    add_tile(target_board, new_tile);
+    tiles_added++;
   }
 
-  free(source_cells);
   return true;
 }
 
@@ -420,85 +494,29 @@ bool board_rotate(board_t *board, grid_cell_t center, int rotation_steps) {
     return true; // No rotation needed
   }
 
-  // Create array to store new tile positions
-  tile_t **tiles_to_update = malloc(board->tiles->num_tiles * sizeof(tile_t *));
-  grid_cell_t *new_positions =
-    malloc(board->tiles->num_tiles * sizeof(grid_cell_t));
-
-  if (!tiles_to_update || !new_positions) {
-    free(tiles_to_update);
-    free(new_positions);
+  // Create a temporary clone to validate rotation before modifying original
+  tile_map_t *temp_map = tile_map_clone(board->tiles);
+  if (!temp_map) {
     return false;
   }
 
-  // Collect tiles and calculate new positions
-  int tile_count = 0;
-  tile_map_entry_t *entry, *tmp;
-  HASH_ITER(hh, board->tiles->root, entry, tmp) {
-    tile_t *tile = entry->tile;
-
-    // Convert to coordinates relative to center
-    int rel_q = tile->cell.coord.hex.q - center.coord.hex.q;
-    int rel_r = tile->cell.coord.hex.r - center.coord.hex.r;
-    int rel_s = tile->cell.coord.hex.s - center.coord.hex.s;
-
-    // Apply rotation transformation (repeated rotation_steps times)
-    for (int step = 0; step < rotation_steps; step++) {
-      // 60-degree clockwise rotation: (q,r,s) -> (-r,-s,-q)
-      int temp_q = -rel_r;
-      int temp_r = -rel_s;
-      int temp_s = -rel_q;
-
-      rel_q = temp_q;
-      rel_r = temp_r;
-      rel_s = temp_s;
-    }
-
-    // Convert back to absolute coordinates
-    grid_cell_t new_pos = {.type = GRID_TYPE_HEXAGON,
-                           .coord.hex = {.q = rel_q + center.coord.hex.q,
-                                         .r = rel_r + center.coord.hex.r,
-                                         .s = rel_s + center.coord.hex.s}};
-
-    // Check if new position is valid in the grid
-    if (!board->grid->vtable->is_valid_cell(board->grid, new_pos)) {
-
-      free(tiles_to_update);
-      free(new_positions);
-      return false;
-    }
-
-    // Check for conflicts with other tiles at new positions
-    for (int i = 0; i < tile_count; i++) {
-      if (new_positions[i].coord.hex.q == new_pos.coord.hex.q &&
-          new_positions[i].coord.hex.r == new_pos.coord.hex.r) {
-
-        free(tiles_to_update);
-        free(new_positions);
-        return false;
-      }
-    }
-
-    tiles_to_update[tile_count] = tile;
-    new_positions[tile_count] = new_pos;
-    tile_count++;
+  // Perform rotation on the clone
+  if (!tile_map_rotate(temp_map, center, rotation_steps)) {
+    tile_map_free(temp_map);
+    return false;
   }
 
-  // Remove all tiles from their current positions
-  for (int i = 0; i < tile_count; i++) {
-    tile_map_remove(board->tiles, tiles_to_update[i]->cell);
+  // Validate all rotated positions are within grid bounds
+  if (!board_validate_tile_map_bounds(board, temp_map)) {
+    tile_map_free(temp_map);
+    return false;
   }
 
-  // Update tile positions and re-add them
-  for (int i = 0; i < tile_count; i++) {
-    tiles_to_update[i]->cell = new_positions[i];
-    tile_map_add(board->tiles, tiles_to_update[i]);
-  }
+  // Validation passed - apply rotation to original tile map
+  bool success = tile_map_rotate(board->tiles, center, rotation_steps);
+  tile_map_free(temp_map);
 
-  free(tiles_to_update);
-  free(new_positions);
-
-  return true;
+  return success;
 }
 
 // Board cloning function
@@ -510,26 +528,12 @@ board_t *board_clone(board_t *original) {
   if (!clone)
     return NULL;
 
-  // Create new grid with same parameters - need to calculate radius from
-  // original For now, copy the grid structure manually
-  clone->grid = malloc(sizeof(grid_t));
-  if (!clone->grid) {
-    free(clone);
-    return NULL;
-  }
-
-  // Copy grid structure
-  clone->grid->type = original->grid->type;
-  clone->grid->layout = original->grid->layout;
-  clone->grid->vtable = original->grid->vtable;
-  clone->grid->radius = original->grid->radius;
-  clone->grid->initial_radius = original->grid->initial_radius;
-  clone->grid->total_growth = original->grid->total_growth;
-
-  // Initialize chunks for cloned boards with optimized system
-  if (original->grid->chunk_system.chunk_size > 0) {
-    grid_init_chunks(clone->grid, original->grid->chunk_system.chunk_size);
-  }
+  // Copy geometry configuration
+  clone->geometry_type = original->geometry_type;
+  clone->geometry = original->geometry;
+  clone->layout = original->layout;
+  clone->radius = original->radius;
+  clone->board_type = original->board_type;
 
   // Create new tile and pool maps
   clone->tiles = tile_map_create();
@@ -625,8 +629,7 @@ board_preview_t *board_create_merge_preview(board_t *target_board,
   preview->is_valid_merge = false;
 
   // Calculate the offset needed for positioning
-  grid_cell_t offset = target_board->grid->vtable->calculate_offset(
-    target_position, source_center);
+  grid_cell_t offset = grid_calculate_offset(target_position, source_center);
 
   // Count valid tiles and conflicts
   tile_map_entry_t *entry, *tmp;
@@ -635,11 +638,10 @@ board_preview_t *board_create_merge_preview(board_t *target_board,
 
   HASH_ITER(hh, source_board->tiles->root, entry, tmp) {
     tile_t *source_tile = entry->tile;
-    grid_cell_t target_pos =
-      target_board->grid->vtable->apply_offset(source_tile->cell, offset);
+    grid_cell_t target_pos = grid_apply_offset(source_tile->cell, offset);
 
     bool is_valid_cell =
-      target_board->grid->vtable->is_valid_cell(target_board->grid, target_pos);
+      grid_is_valid_cell_with_radius(target_pos, target_board->radius);
     tile_t *existing_tile = get_tile_at_cell(target_board, target_pos);
 
     if (is_valid_cell && existing_tile == NULL) {
@@ -675,11 +677,10 @@ board_preview_t *board_create_merge_preview(board_t *target_board,
 
   HASH_ITER(hh, source_board->tiles->root, entry, tmp) {
     tile_t *source_tile = entry->tile;
-    grid_cell_t target_pos =
-      target_board->grid->vtable->apply_offset(source_tile->cell, offset);
+    grid_cell_t target_pos = grid_apply_offset(source_tile->cell, offset);
 
     bool is_valid_cell =
-      target_board->grid->vtable->is_valid_cell(target_board->grid, target_pos);
+      grid_is_valid_cell_with_radius(target_pos, target_board->radius);
     tile_t *existing_tile = get_tile_at_cell(target_board, target_pos);
 
     if (is_valid_cell && existing_tile == NULL) {
@@ -750,6 +751,25 @@ void board_clear_preview_boards(board_t *board) {
   board->num_preview_boards = 0;
 }
 
+bool board_validate_tile_map_bounds(const board_t *board,
+                                    const tile_map_t *tile_map) {
+  if (!board || !tile_map)
+    return false;
+
+  if (tile_map->num_tiles == 0)
+    return true; // Empty map is valid
+
+  // Validate each tile is within board's spatial bounds
+  tile_map_entry_t *entry, *tmp;
+  HASH_ITER(hh, tile_map->root, entry, tmp) {
+    if (!grid_is_valid_cell_with_radius(entry->tile->cell, board->radius)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 void board_update_preview(board_t *board, board_t *source_board,
                           grid_cell_t mouse_position) {
   if (!board || !source_board)
@@ -759,7 +779,7 @@ void board_update_preview(board_t *board, board_t *source_board,
   board_clear_preview_boards(board);
 
   // Get the center of the source board
-  grid_cell_t source_center = grid_get_center_cell(source_board->grid);
+  grid_cell_t source_center = grid_get_center_cell(source_board->geometry_type);
 
   // Resize preview array if needed
   if (board->num_preview_boards >= board->preview_capacity) {
@@ -785,8 +805,7 @@ void board_update_preview(board_t *board, board_t *source_board,
   preview->is_valid_merge = false;
 
   // Calculate offset for the preview
-  grid_cell_t offset =
-    board->grid->vtable->calculate_offset(mouse_position, source_center);
+  grid_cell_t offset = grid_calculate_offset(mouse_position, source_center);
 
   // Count valid tiles and conflicts (lightweight - no board cloning!)
   size_t valid_count = 0;
@@ -795,11 +814,10 @@ void board_update_preview(board_t *board, board_t *source_board,
 
   HASH_ITER(hh, source_board->tiles->root, entry, tmp) {
     tile_t *source_tile = entry->tile;
-    grid_cell_t target_pos =
-      board->grid->vtable->apply_offset(source_tile->cell, offset);
+    grid_cell_t target_pos = grid_apply_offset(source_tile->cell, offset);
 
     bool is_valid_cell =
-      board->grid->vtable->is_valid_cell(board->grid, target_pos);
+      grid_is_valid_cell_with_radius(target_pos, board->radius);
     tile_t *existing_tile = get_tile_at_cell(board, target_pos);
 
     if (is_valid_cell && existing_tile == NULL) {
@@ -824,11 +842,10 @@ void board_update_preview(board_t *board, board_t *source_board,
 
   HASH_ITER(hh, source_board->tiles->root, entry, tmp) {
     tile_t *source_tile = entry->tile;
-    grid_cell_t target_pos =
-      board->grid->vtable->apply_offset(source_tile->cell, offset);
+    grid_cell_t target_pos = grid_apply_offset(source_tile->cell, offset);
 
     bool is_valid_cell =
-      board->grid->vtable->is_valid_cell(board->grid, target_pos);
+      grid_is_valid_cell_with_radius(target_pos, board->radius);
     tile_t *existing_tile = get_tile_at_cell(board, target_pos);
 
     if (is_valid_cell && existing_tile == NULL) {

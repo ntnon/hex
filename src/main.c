@@ -1,4 +1,3 @@
-#include "game/inventory.h"
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -66,7 +65,12 @@ Modifiers:
 
 Stone tiles - dead tiles, no production
 Paintbrush - reskin a tile or group of tiles
- */
+
+
+Ability to consume a type of upgrade, so that it no longer appears in the upgrade menu. Pay for this. This is like "reducing" your deck.
+ 
+Pay with inventory slots
+*/
 
 int main(int argc, char *argv[]) {
   const int initial_width = 1300;
@@ -97,34 +101,27 @@ int main(int argc, char *argv[]) {
     controller_process_events(&controller);
 
     if (controller.game->state == GAME_STATE_PLAYING) {
+      // Render the main game board
       Clay_BoundingBox game_bounds =
         Clay_GetElementData(UI_ID_GAME).boundingBox;
 
       camera_set_offset(&controller.game->board->camera, game_bounds.width,
                         game_bounds.height);
       BeginMode2D(controller.game->board->camera);
-      render_board_optimized(controller.game->board);
+      // render_hex_grid(controller.game->board->grid);
+      render_board(controller.game->board);
       render_board_previews(controller.game->board);
       EndMode2D();
-      
-      for (int i = 0; i < inventory_get_size(controller.game->inventory); i++) {
-        inventory_item_t item = inventory_get_item(controller.game->inventory, i);
-        if (!is_id_valid(item.id))
-          continue;
-        Clay_BoundingBox boundingBox = Clay_GetElementData(item.id).boundingBox;
-        if (boundingBox.width > 0 && boundingBox.height > 0 && item.board) {
-          Rectangle bounds = {.x = boundingBox.x,
-                              .y = boundingBox.y,
-                              .width = boundingBox.width,
-                              .height = boundingBox.height};
-          render_board_in_bounds(item.board, bounds);
-        }
-      }
+
+      // Render CLAY
+      Clay_Raylib_Render(renderCommands, UI_FONTS);
+
+      // Render inventory on top of Clay
+      render_inventory(controller.game->inventory);
+    } else {
+      Clay_Raylib_Render(renderCommands, UI_FONTS);
     }
 
-    Clay_Raylib_Render(renderCommands, UI_FONTS);
-
-   
     EndDrawing();
   }
   Clay_Raylib_Close();

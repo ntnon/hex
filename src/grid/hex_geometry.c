@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 // --- Static (private) implementations ---
 
@@ -138,6 +139,69 @@ static void get_cells_in_range(const grid_t *grid, grid_cell_t center,
       *out_cells = resized;
     }
   }
+}
+
+static bool rotate_coordinates(const grid_cell_t *coordinates, size_t count,
+                               grid_cell_t center, int rotation_steps,
+                               grid_cell_t **out_rotated) {
+  if (!coordinates || count == 0 || !out_rotated) {
+    if (out_rotated)
+      *out_rotated = NULL;
+    return false;
+  }
+
+  // Normalize rotation steps to 0-5 range
+  rotation_steps = ((rotation_steps % 6) + 6) % 6;
+  if (rotation_steps == 0) {
+    // No rotation needed, just copy the coordinates
+    *out_rotated = malloc(count * sizeof(grid_cell_t));
+    if (!*out_rotated)
+      return false;
+    memcpy(*out_rotated, coordinates, count * sizeof(grid_cell_t));
+    return true;
+  }
+
+  // Allocate output array
+  *out_rotated = malloc(count * sizeof(grid_cell_t));
+  if (!*out_rotated) {
+    return false;
+  }
+
+  // Rotate each coordinate
+  for (size_t i = 0; i < count; i++) {
+    if (coordinates[i].type != GRID_TYPE_HEXAGON ||
+        center.type != GRID_TYPE_HEXAGON) {
+      free(*out_rotated);
+      *out_rotated = NULL;
+      return false;
+    }
+
+    // Convert to coordinates relative to center
+    int rel_q = coordinates[i].coord.hex.q - center.coord.hex.q;
+    int rel_r = coordinates[i].coord.hex.r - center.coord.hex.r;
+    int rel_s = coordinates[i].coord.hex.s - center.coord.hex.s;
+
+    // Apply rotation transformation (repeated rotation_steps times)
+    for (int step = 0; step < rotation_steps; step++) {
+      // 60-degree clockwise rotation: (q,r,s) -> (-r,-s,-q)
+      int temp_q = -rel_r;
+      int temp_r = -rel_s;
+      int temp_s = -rel_q;
+
+      rel_q = temp_q;
+      rel_r = temp_r;
+      rel_s = temp_s;
+    }
+
+    // Convert back to absolute coordinates
+    (*out_rotated)[i] =
+      (grid_cell_t){.type = GRID_TYPE_HEXAGON,
+                    .coord.hex = {.q = rel_q + center.coord.hex.q,
+                                  .r = rel_r + center.coord.hex.r,
+                                  .s = rel_s + center.coord.hex.s}};
+  }
+
+  return true;
 }
 
 static int distance(grid_cell_t a, grid_cell_t b) {
@@ -340,14 +404,6 @@ void grid_free(grid_t *grid) {
   free(grid); // Free the grid struct itself
 }
 
-grid_cell_t grid_get_center_cell(const grid_t *grid) {
-  if (!grid || !grid->vtable || !grid->vtable->get_center_cell) {
-    grid_cell_t invalid = {.type = GRID_TYPE_UNKNOWN};
-    return invalid;
-  }
-  return grid->vtable->get_center_cell(grid);
-}
-
 grid_cell_t *grid_get_cell_at_pixel(const grid_t *grid, point_t p) {
   if (!grid || !grid->vtable || !grid->vtable->get_cell_at_pixel) {
     return NULL;
@@ -391,6 +447,192 @@ void grid_get_cells_in_range(const grid_t *grid, grid_cell_t center, int range,
   grid->vtable->get_cells_in_range(grid, center, range, out_cells, out_count);
 }
 
+grid_cell_t grid_apply_offset(grid_cell_t cell, grid_cell_t offset) {
+  // Use the hex grid implementation directly for now
+  // TODO: Make this geometry-agnostic when we add other grid types
+  return apply_offset(cell, offset);
+}
+
+bool grid_rotate_coordinates(const grid_cell_t *coordinates, size_t count,
+                             grid_cell_t center, int rotation_steps,
+                             grid_cell_t **out_rotated) {
+  if (!coordinates || count == 0 || !out_rotated) {
+    if (out_rotated)
+      *out_rotated = NULL;
+    return false;
+  }
+
+  // Use the hex grid vtable implementation directly
+  return rotate_coordinates(coordinates, count, center, rotation_steps,
+                            out_rotated);
+}
+
+bool grid_is_valid_cell_with_radius(grid_cell_t cell, int radius) {
+  if (radius < 0)
+    return false;
+
+  if (cell.type == GRID_TYPE_HEXAGON) {
+    // Validate cube coordinate constraint
+    if (cell.coord.hex.q + cell.coord.hex.r + cell.coord.hex.s != 0)
+      return false;
+
+    // Check if within radius using hex distance
+    int distance =
+      (abs(cell.coord.hex.q) + abs(cell.coord.hex.r) + abs(cell.coord.hex.s)) /
+      2;
+    return distance <= radius;
+  }
+
+  // Add other geometry types here as needed
+  return false;
+}
+
+int grid_distance(grid_cell_t a, grid_cell_t b) {
+  if (a.type != b.type)
+    return -1;
+
+  if (a.type == GRID_TYPE_HEXAGON) {
+    int dq = abs(a.coord.hex.q - b.coord.hex.q);
+    int dr = abs(a.coord.hex.r - b.coord.hex.r);
+    int ds = abs(a.coord.hex.s - b.coord.hex.s);
+    return (dq + dr + ds) / 2;
+  }
+
+  // Add other geometry types here as needed
+  return -1;
+}
+
+grid_cell_t grid_get_center_cell(grid_type_e geometry_type) {
+  if (geometry_type == GRID_TYPE_HEXAGON) {
+    return (grid_cell_t){.type = GRID_TYPE_HEXAGON, .coord.hex = {0, 0, 0}};
+  }
+
+  // Add other geometry types as needed
+  return (grid_cell_t){.type = GRID_TYPE_UNKNOWN};
+}
+
+grid_cell_t grid_calculate_offset(grid_cell_t target, grid_cell_t source) {
+  if (target.type != source.type) {
+    return (grid_cell_t){.type = GRID_TYPE_UNKNOWN};
+  }
+
+  if (target.type == GRID_TYPE_HEXAGON) {
+    grid_cell_t offset = {.type = GRID_TYPE_HEXAGON};
+    offset.coord.hex.q = target.coord.hex.q - source.coord.hex.q;
+    offset.coord.hex.r = target.coord.hex.r - source.coord.hex.r;
+    offset.coord.hex.s = target.coord.hex.s - source.coord.hex.s;
+    return offset;
+  }
+
+  // Add other geometry types as needed
+  return (grid_cell_t){.type = GRID_TYPE_UNKNOWN};
+}
+
+bool grid_get_all_coordinates_in_radius(grid_type_e geometry_type, int radius,
+                                        grid_cell_t **out_cells,
+                                        size_t *out_count) {
+  if (!out_cells || !out_count || radius < 0) {
+    if (out_cells)
+      *out_cells = NULL;
+    if (out_count)
+      *out_count = 0;
+    return false;
+  }
+
+  if (geometry_type == GRID_TYPE_HEXAGON) {
+    // Calculate hex grid coordinates within radius
+    size_t capacity = (3 * radius * (radius + 1)) + 1;
+    *out_cells = malloc(capacity * sizeof(grid_cell_t));
+    if (!*out_cells) {
+      *out_count = 0;
+      return false;
+    }
+
+    size_t count = 0;
+    for (int q = -radius; q <= radius; q++) {
+      int r1 = fmax(-radius, -q - radius);
+      int r2 = fmin(radius, -q + radius);
+      for (int r = r1; r <= r2; r++) {
+        int s = -q - r;
+        (*out_cells)[count] =
+          (grid_cell_t){.type = GRID_TYPE_HEXAGON, .coord.hex = {q, r, s}};
+        count++;
+      }
+    }
+    *out_count = count;
+    return true;
+  }
+
+  // Add other geometry types as needed
+  *out_cells = NULL;
+  *out_count = 0;
+  return false;
+}
+
+bool grid_pixel_to_cell(grid_type_e geometry_type, const layout_t *layout,
+                        int radius, point_t p, grid_cell_t *out_cell) {
+  if (!layout || !out_cell)
+    return false;
+
+  if (geometry_type == GRID_TYPE_HEXAGON) {
+    // Use hex pixel to coordinate conversion
+    const orientation_t *M = &layout->orientation;
+
+    // Remove origin offset and apply inverse scaling before dividing by size
+    point_t pt = {((p.x - layout->origin.x) / layout->scale) / layout->size.x,
+                  ((p.y - layout->origin.y) / layout->scale) / layout->size.y};
+
+    double q = M->b0 * pt.x + M->b1 * pt.y;
+    double r = M->b2 * pt.x + M->b3 * pt.y;
+    double s = -q - r;
+
+    // Round to nearest hex
+    int qi = (int)round(q), ri = (int)round(r), si = (int)round(s);
+    double q_diff = fabs(qi - q), r_diff = fabs(ri - r), s_diff = fabs(si - s);
+    if (q_diff > r_diff && q_diff > s_diff)
+      qi = -ri - si;
+    else if (r_diff > s_diff)
+      ri = -qi - si;
+    else
+      si = -qi - ri;
+
+    *out_cell =
+      (grid_cell_t){.type = GRID_TYPE_HEXAGON, .coord.hex = {qi, ri, si}};
+
+    // Check if within bounds
+    return grid_is_valid_cell_with_radius(*out_cell, radius);
+  }
+
+  // Add other geometry types as needed
+  return false;
+}
+
+void grid_get_cell_corners(grid_type_e geometry_type, const layout_t *layout,
+                           grid_cell_t cell, point_t corners[]) {
+  if (!layout || !corners)
+    return;
+
+  if (geometry_type == GRID_TYPE_HEXAGON && cell.type == GRID_TYPE_HEXAGON) {
+    // Calculate center position
+    const orientation_t *M = &layout->orientation;
+    const hex_coord_t *h = &cell.coord.hex;
+    double x = (M->f0 * h->q + M->f1 * h->r) * layout->size.x;
+    double y = (M->f2 * h->q + M->f3 * h->r) * layout->size.y;
+    point_t center = {(x * layout->scale) + layout->origin.x,
+                      (y * layout->scale) + layout->origin.y};
+
+    // Calculate corner positions
+    double angle_offset = layout->orientation.start_angle;
+    for (int i = 0; i < 6; i++) {
+      double angle = 2.0 * M_PI * (angle_offset + i) / 6.0;
+      corners[i].x = center.x + layout->size.x * layout->scale * cos(angle);
+      corners[i].y = center.y + layout->size.y * layout->scale * sin(angle);
+    }
+  }
+
+  // Add other geometry types as needed
+}
+
 bool grid_grow(grid_t *grid, int growth_amount) {
   if (!grid || growth_amount <= 0) {
     return false;
@@ -423,6 +665,7 @@ const grid_vtable_t hex_grid_vtable = {.to_pixel = to_pixel,
                                        .get_neighbor_cell = get_neighbor_cell,
                                        .get_neighbor_cells = get_neighbor_cells,
                                        .get_cells_in_range = get_cells_in_range,
+                                       .rotate_coordinates = rotate_coordinates,
                                        .distance = distance,
                                        .get_corners = get_corners,
                                        .get_all_cells = get_all_cells,

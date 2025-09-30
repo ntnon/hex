@@ -8,9 +8,9 @@
 /* Forward declaration to avoid circular dependency */
 typedef struct input_area_info input_area_info_t;
 
-
 typedef struct {
     game_t *game;
+    int generation;
     input_state_t input;
 
     Clay_ElementId last_clicked_ui_element_id;
@@ -30,5 +30,7 @@ void controller_process_events(game_controller_t *controller);
 void controller_hover(game_controller_t *controller, Clay_ElementId elementId);
 void controller_set_hover(game_controller_t *controller, ui_event_t evt);
 void controller_clear_hover(game_controller_t *controller, ui_event_t evt);
+
+
 
 #endif // GAME_CONTROLLER_H

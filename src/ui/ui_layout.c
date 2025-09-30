@@ -1,7 +1,5 @@
 #include "game/inventory.h"
 #include "raylib.h"
-// #include "third_party/clay_renderer_raylib.h"
-#include "renderer.h"
 #include "stdio.h"
 #include "tile/tile.h"
 #include "ui.h"
@@ -24,13 +22,6 @@ static void ui_build_game_area(game_controller_t *controller) {
         .layout = {.sizing = (Clay_Sizing){.height = CLAY_SIZING_GROW(),
                                            .width = CLAY_SIZING_GROW()}}}) {
     Clay_OnHover(handle_hover, (intptr_t)controller);
-    BeginMode2D(controller->game->board->camera);
-
-    render_board_optimized(controller->game->board);
-
-    render_board_previews(controller->game->board);
-    EndMode2D();
-
     ui_build_add_inventory_button(controller);
   }
 }
@@ -70,8 +61,8 @@ static void ui_build_inventory_area(game_controller_t *controller){
         .layout = {.childGap = INVENTORY_GAP,
                    .padding = CLAY_PADDING_ALL(INVENTORY_PADDING),
                    .layoutDirection = CLAY_TOP_TO_BOTTOM,
-                   .sizing = (Clay_Sizing){.height = CLAY_SIZING_GROW(),
-                                           .width = CLAY_SIZING_FIT()}}}){
+                   .sizing = (Clay_Sizing){.width = CLAY_SIZING_GROW(4, 200),
+                                           .height = CLAY_SIZING_GROW()}}}){
     Clay_OnHover(handle_hover, (intptr_t)controller);
 
 int inventory_size = inventory_get_size(controller->game->inventory);
@@ -115,31 +106,7 @@ static void ui_build_reward(game_controller_t *controller) {
       // Reward content would go here
     }
   }
-}
-
-void game_screen(game_controller_t *controller) {
-  BeginMode2D(controller->game->board->camera);
-
-  render_hex_grid(controller->game->board->grid);
-  render_board_optimized(controller->game->board);
-  render_board_previews(controller->game->board);
-  EndMode2D();
-
-  // Test 3D hexagon rendering outside 2D mode
-  for (int i = 0; i < inventory_get_size(controller->game->inventory); i++) {
-    inventory_item_t item = inventory_get_item(controller->game->inventory, i);
-    if (!is_id_valid(item.id))
-      continue;
-    Clay_BoundingBox boundingBox = Clay_GetElementData(item.id).boundingBox;
-    if (boundingBox.width > 0 && boundingBox.height > 0 && item.board) {
-      Rectangle bounds = {.x = boundingBox.x,
-                          .y = boundingBox.y,
-                          .width = boundingBox.width,
-                          .height = boundingBox.height};
-      render_board_in_bounds(item.board, bounds);
-    }
-  }
-}
+};
 
 Clay_RenderCommandArray ui_build_layout(game_controller_t *controller) {
   Clay_SetPointerState(
@@ -157,12 +124,20 @@ Clay_RenderCommandArray ui_build_layout(game_controller_t *controller) {
           .sizing = (Clay_Sizing){.width = CLAY_SIZING_GROW(),
                                   .height = CLAY_SIZING_GROW()},
         }}) {
-    if (controller->game->state == GAME_STATE_PLAYING) {
+
+    switch (controller->game->state) {
+    case GAME_STATE_PLAYING:
       ui_build_game_area(controller);
       ui_build_inventory_area(controller);
-    }
-    if (controller->game->state == GAME_STATE_REWARD) {
+      break;
+    case GAME_STATE_REWARD:
       ui_build_reward_area(controller);
+      break;
+    case GAME_STATE_COLLECT:
+      //ui_build_collect_area(controller);
+      break;
+    default:
+      break;
     }
   }
 

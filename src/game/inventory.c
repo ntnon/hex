@@ -31,8 +31,9 @@ inventory_item_t inventory_create_item(inventory_t *inv) {
 
   // Create a small board for the inventory item (skip randomization to reduce
   // memory pressure)
-  board_t *item_board = board_create(GRID_TYPE_HEXAGON, 3);
-  board_fill(item_board);
+  board_t *item_board =
+    board_create(GRID_TYPE_HEXAGON, 1, BOARD_TYPE_INVENTORY);
+  board_fill(item_board, 0, BOARD_TYPE_INVENTORY);
 
   return (inventory_item_t){
     .quantity = 1,
@@ -170,6 +171,7 @@ bool inventory_rotate_selected(inventory_t *inv, int rotation_steps) {
     return false;
   }
 
-  grid_cell_t center = grid_get_center_cell(selected_item->board->grid);
+  grid_cell_t center =
+    grid_get_center_cell(selected_item->board->geometry_type);
   return board_rotate(selected_item->board, center, rotation_steps);
 }
