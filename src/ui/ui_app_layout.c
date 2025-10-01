@@ -1,16 +1,10 @@
 #include "controller/app_controller.h"
 #include "ui.h"
+#include "ui_types.h"
 #include <stdio.h>
 #include <string.h>
 
-// UI element IDs for app-level interface
-#define UI_ID_MAIN_MENU CLAY_ID("main_menu")
-#define UI_ID_MENU_ITEM_NEW_GAME CLAY_ID("menu_new_game")
-#define UI_ID_MENU_ITEM_SETTINGS CLAY_ID("menu_settings")
-#define UI_ID_MENU_ITEM_QUIT CLAY_ID("menu_quit")
-
-#define UI_ID_SETTINGS_MENU CLAY_ID("settings_menu")
-#define UI_ID_PAUSE_MENU CLAY_ID("pause_menu")
+// UI element IDs are now defined in ui_types.h
 
 // Layout constants
 #define MENU_BUTTON_WIDTH 200
@@ -53,6 +47,7 @@ void ui_build_main_menu(app_controller_t *app_controller) {
          .backgroundColor =
            app_controller->selected_menu_item == 0 ? M_ORANGE : M_GRAY,
          .cornerRadius = CLAY_CORNER_RADIUS(5)}) {
+        Clay_OnHover(handle_menu_button_hover, (intptr_t)app_controller);
         CLAY_TEXT(CLAY_STRING("New Game"), &TEXT_CONFIG_MEDIUM);
       }
 
@@ -66,6 +61,7 @@ void ui_build_main_menu(app_controller_t *app_controller) {
          .backgroundColor =
            app_controller->selected_menu_item == 1 ? M_ORANGE : M_GRAY,
          .cornerRadius = CLAY_CORNER_RADIUS(5)}) {
+        Clay_OnHover(handle_menu_button_hover, (intptr_t)app_controller);
         CLAY_TEXT(CLAY_STRING("Settings"), &TEXT_CONFIG_MEDIUM);
       }
 
@@ -79,6 +75,7 @@ void ui_build_main_menu(app_controller_t *app_controller) {
          .backgroundColor =
            app_controller->selected_menu_item == 2 ? M_ORANGE : M_GRAY,
          .cornerRadius = CLAY_CORNER_RADIUS(5)}) {
+        Clay_OnHover(handle_menu_button_hover, (intptr_t)app_controller);
         CLAY_TEXT(CLAY_STRING("Quit"), &TEXT_CONFIG_MEDIUM);
       }
     }
@@ -87,9 +84,9 @@ void ui_build_main_menu(app_controller_t *app_controller) {
     CLAY({.layout = {
             .sizing = {.width = CLAY_SIZING_FIT(), .height = CLAY_SIZING_FIT()},
             .padding = {0, 50, 0, 0}}}) {
-      CLAY_TEXT(
-        CLAY_STRING("Use arrow keys to navigate, Enter to select, ESC to quit"),
-        &TEXT_CONFIG_MEDIUM);
+      CLAY_TEXT(CLAY_STRING("Use arrow keys or mouse to navigate, Enter/Click "
+                            "to select, ESC to quit"),
+                &TEXT_CONFIG_MEDIUM);
     }
   }
 }
@@ -131,12 +128,14 @@ void ui_build_settings_menu(app_controller_t *app_controller) {
 
     // Back button
     CLAY(
-      {.layout = {.sizing = {.width = CLAY_SIZING_FIXED(MENU_BUTTON_WIDTH),
+      {.id = UI_ID_SETTINGS_BACK_BUTTON,
+       .layout = {.sizing = {.width = CLAY_SIZING_FIXED(MENU_BUTTON_WIDTH),
                              .height = CLAY_SIZING_FIXED(MENU_BUTTON_HEIGHT)},
                   .childAlignment = {.x = CLAY_ALIGN_X_CENTER,
                                      .y = CLAY_ALIGN_Y_CENTER}},
        .backgroundColor = M_ORANGE,
        .cornerRadius = CLAY_CORNER_RADIUS(5)}) {
+      Clay_OnHover(handle_menu_button_hover, (intptr_t)app_controller);
       CLAY_TEXT(CLAY_STRING("Back to Menu"), &TEXT_CONFIG_MEDIUM);
     }
 
@@ -177,34 +176,40 @@ void ui_build_pause_menu(app_controller_t *app_controller) {
 
       // Resume button
       CLAY(
-        {.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
+        {.id = UI_ID_PAUSE_RESUME_BUTTON,
+         .layout = {.sizing = {.width = CLAY_SIZING_GROW(),
                                .height = CLAY_SIZING_FIXED(MENU_BUTTON_HEIGHT)},
                     .childAlignment = {.x = CLAY_ALIGN_X_CENTER,
                                        .y = CLAY_ALIGN_Y_CENTER}},
          .backgroundColor = M_GREEN,
          .cornerRadius = CLAY_CORNER_RADIUS(5)}) {
+        Clay_OnHover(handle_menu_button_hover, (intptr_t)app_controller);
         CLAY_TEXT(CLAY_STRING("Resume"), &TEXT_CONFIG_MEDIUM);
       }
 
       // Settings button
       CLAY(
-        {.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
+        {.id = UI_ID_PAUSE_SETTINGS_BUTTON,
+         .layout = {.sizing = {.width = CLAY_SIZING_GROW(),
                                .height = CLAY_SIZING_FIXED(MENU_BUTTON_HEIGHT)},
                     .childAlignment = {.x = CLAY_ALIGN_X_CENTER,
                                        .y = CLAY_ALIGN_Y_CENTER}},
          .backgroundColor = M_GRAY,
          .cornerRadius = CLAY_CORNER_RADIUS(5)}) {
+        Clay_OnHover(handle_menu_button_hover, (intptr_t)app_controller);
         CLAY_TEXT(CLAY_STRING("Settings"), &TEXT_CONFIG_MEDIUM);
       }
 
       // Quit to menu button
       CLAY(
-        {.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
+        {.id = UI_ID_PAUSE_QUIT_BUTTON,
+         .layout = {.sizing = {.width = CLAY_SIZING_GROW(),
                                .height = CLAY_SIZING_FIXED(MENU_BUTTON_HEIGHT)},
                     .childAlignment = {.x = CLAY_ALIGN_X_CENTER,
                                        .y = CLAY_ALIGN_Y_CENTER}},
          .backgroundColor = M_RED,
          .cornerRadius = CLAY_CORNER_RADIUS(5)}) {
+        Clay_OnHover(handle_menu_button_hover, (intptr_t)app_controller);
         CLAY_TEXT(CLAY_STRING("Quit to Menu"), &TEXT_CONFIG_MEDIUM);
       }
 

@@ -1,6 +1,8 @@
+#include "controller/app_controller.h"
 #include "controller/game_controller.h"
 #include "stdio.h"
 #include "ui.h"
+#include "ui_types.h"
 #include <stdio.h>
 
 // ui_event.c
@@ -88,6 +90,51 @@ void handle_hover(Clay_ElementId elementId, Clay_PointerData pointerData,
       ui_push_event((ui_event_t){.type = UI_EVENT_CLICK,
                                  .element_id = elementId,
                                  .element_data = element_data});
+    }
+  }
+}
+
+void handle_menu_button_hover(Clay_ElementId elementId,
+                              Clay_PointerData pointerData, intptr_t userData) {
+  app_controller_t *app_controller = (app_controller_t *)userData;
+
+  // Update hover state for visual feedback on main menu buttons
+  if (elementId.id == UI_ID_MENU_ITEM_NEW_GAME.id) {
+    app_controller->selected_menu_item = 0;
+  } else if (elementId.id == UI_ID_MENU_ITEM_SETTINGS.id) {
+    app_controller->selected_menu_item = 1;
+  } else if (elementId.id == UI_ID_MENU_ITEM_QUIT.id) {
+    app_controller->selected_menu_item = 2;
+  }
+
+  // Handle click events
+  if (pointerData.state == CLAY_POINTER_DATA_RELEASED_THIS_FRAME) {
+    // Main menu button clicks
+    if (elementId.id == UI_ID_MENU_ITEM_NEW_GAME.id) {
+      printf("New Game button clicked via mouse\n");
+      app_controller_start_game(app_controller);
+    } else if (elementId.id == UI_ID_MENU_ITEM_SETTINGS.id) {
+      printf("Settings button clicked via mouse\n");
+      app_controller_open_settings(app_controller);
+    } else if (elementId.id == UI_ID_MENU_ITEM_QUIT.id) {
+      printf("Quit button clicked via mouse\n");
+      app_controller_quit_application(app_controller);
+    }
+    // Settings menu button clicks
+    else if (elementId.id == UI_ID_SETTINGS_BACK_BUTTON.id) {
+      printf("Settings back button clicked via mouse\n");
+      app_controller_set_state(app_controller, APP_STATE_MAIN_MENU);
+    }
+    // Pause menu button clicks
+    else if (elementId.id == UI_ID_PAUSE_RESUME_BUTTON.id) {
+      printf("Resume button clicked via mouse\n");
+      app_controller_resume_game(app_controller);
+    } else if (elementId.id == UI_ID_PAUSE_SETTINGS_BUTTON.id) {
+      printf("Pause settings button clicked via mouse\n");
+      app_controller_open_settings(app_controller);
+    } else if (elementId.id == UI_ID_PAUSE_QUIT_BUTTON.id) {
+      printf("Pause quit button clicked via mouse\n");
+      app_controller_quit_to_menu(app_controller);
     }
   }
 }
