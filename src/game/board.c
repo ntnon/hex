@@ -155,6 +155,10 @@ void add_tile(board_t *board, tile_t *tile) {
   if (!valid_tile(board, tile))
     return;
 
+  // Debug: Print tile data at start of add_tile
+  printf("DEBUG add_tile: entering with tile type=%d, value=%d\n",
+         tile->data.type, tile->data.value);
+
   pool_t *target_pool = NULL;
   pool_t *candidate_pools[MAX_POOL_CANDIDATES];
   uint32_t compatible_pool_ids[MAX_POOL_CANDIDATES];

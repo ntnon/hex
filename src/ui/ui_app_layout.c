@@ -296,15 +296,11 @@ void ui_build_tile_info_card(game_t *game, Vector2 mouse_pos) {
     // Tile value
     CLAY({.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
                                 .height = CLAY_SIZING_FIT()}}}) {
-      if (tile->data.value == 1) {
-        CLAY_TEXT(CLAY_STRING("Value: 1"), &TEXT_CONFIG_MEDIUM);
-      } else if (tile->data.value == 2) {
-        CLAY_TEXT(CLAY_STRING("Value: 2"), &TEXT_CONFIG_MEDIUM);
-      } else if (tile->data.value == 3) {
-        CLAY_TEXT(CLAY_STRING("Value: 3"), &TEXT_CONFIG_MEDIUM);
-      } else {
-        CLAY_TEXT(CLAY_STRING("Value: ?"), &TEXT_CONFIG_MEDIUM);
-      }
+      static char value_text[32];
+      snprintf(value_text, sizeof(value_text), "Value: %d", tile->data.value);
+      Clay_String value_string = {.chars = value_text,
+                                  .length = strlen(value_text)};
+      CLAY_TEXT(value_string, &TEXT_CONFIG_MEDIUM);
     }
 
     // Pool information

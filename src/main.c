@@ -107,8 +107,6 @@ int main(int argc, char *argv[]) {
 
     // Build UI layout based on current app state with error handling
     Clay_RenderCommandArray renderCommands;
-    printf("Building UI layout for app state %d\n",
-           app_controller_get_state(&app_controller));
 
     renderCommands = ui_build_layout(&app_controller);
 
@@ -122,9 +120,6 @@ int main(int argc, char *argv[]) {
       EndDrawing();
       continue;
     }
-
-    printf("UI layout built successfully - %d render commands\n",
-           renderCommands.length);
 
     BeginDrawing();
     ClearBackground(BROWN);
