@@ -1,5 +1,6 @@
 #include "game/camera.h"
 #include "stdio.h"
+#include <math.h>
 
 void camera_init(Camera2D *camera) {
   camera->zoom = 8.0f;

@@ -29,14 +29,25 @@ void controller_update(game_controller_t *controller, input_state_t *input) {
   // Store input state
   controller->input = *input;
 
+  // Sync hovered element ID from event router to input state for camera
+  // controls
+  controller->input.hovered_element_id =
+    controller->event_router.hovered_element_id;
+
   // Get current game bounds
   Clay_BoundingBox game_bounds = Clay_GetElementData(UI_ID_GAME).boundingBox;
 
-  // Update the game itself
-  update_game(controller->game, input);
+  // Set drag bounds to game area if hovering over game area
+  if (controller->input.hovered_element_id.id == UI_ID_GAME.id) {
+    controller->input.drag_bounds = game_bounds;
+  }
 
-  // Process input through input handler
-  input_handler_update(&controller->input_handler, input, game_bounds);
+  // Process input through input handler first (including camera updates)
+  input_handler_update(&controller->input_handler, &controller->input,
+                       game_bounds);
+
+  // Then update the game with the new camera position
+  update_game(controller->game, &controller->input);
 }
 
 void controller_process_events(game_controller_t *controller) {

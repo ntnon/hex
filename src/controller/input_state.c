@@ -75,17 +75,28 @@ void get_input_state(input_state_t *out) {
   // --- Drag detection ---
 
   // Check if mouse is inside the active drag bounds
-  bool mouse_in_drag_bounds =
-    out->mouse.x >= out->drag_bounds.x &&
-    out->mouse.x <= out->drag_bounds.x + out->drag_bounds.width &&
-    out->mouse.y >= out->drag_bounds.y &&
-    out->mouse.y <= out->drag_bounds.y + out->drag_bounds.height;
+  // If drag bounds are not set (all zeros), allow dragging anywhere
+  bool has_drag_bounds =
+    (out->drag_bounds.width > 0 && out->drag_bounds.height > 0);
+  bool mouse_in_drag_bounds = true; // Default to true if no bounds set
 
-  if (!mouse_in_drag_bounds) {
-    // Kill drag immediately if we leave bounds
-    out->mouse_dragging = false;
-    out->mouse_right_down =
-      false; // optional: prevents resuming until button re-press
+  if (has_drag_bounds) {
+    mouse_in_drag_bounds =
+      out->mouse.x >= out->drag_bounds.x &&
+      out->mouse.x <= out->drag_bounds.x + out->drag_bounds.width &&
+      out->mouse.y >= out->drag_bounds.y &&
+      out->mouse.y <= out->drag_bounds.y + out->drag_bounds.height;
+
+    if (!mouse_in_drag_bounds) {
+      // Kill drag immediately if we leave bounds
+      out->mouse_dragging = false;
+      out->mouse_right_down =
+        false; // optional: prevents resuming until button re-press
+    } else {
+      out->mouse_dragging =
+        out->mouse_right_down && (fabsf(out->mouse_delta.x) > drag_threshold ||
+                                  fabsf(out->mouse_delta.y) > drag_threshold);
+    }
   } else {
     out->mouse_dragging =
       out->mouse_right_down && (fabsf(out->mouse_delta.x) > drag_threshold ||
@@ -96,22 +107,31 @@ void get_input_state(input_state_t *out) {
   static bool left_button_was_pressed = false;
 
   if (out->mouse_left_pressed) {
-
+    printf("Left mouse pressed - starting drag detection\n");
     left_button_was_pressed = true;
     out->mouse_left_dragging = false;
     out->mouse_left_was_dragging = false;
   }
 
-  if (left_button_was_pressed && out->mouse_left_down && mouse_in_drag_bounds) {
-    float delta_magnitude = sqrtf(out->mouse_delta.x * out->mouse_delta.x +
-                                  out->mouse_delta.y * out->mouse_delta.y);
-    if (delta_magnitude > drag_threshold) {
-      out->mouse_left_dragging = true;
+  if (left_button_was_pressed && out->mouse_left_down) {
+    // Only check drag bounds if they are set, otherwise allow dragging anywhere
+    bool can_drag = !has_drag_bounds || mouse_in_drag_bounds;
+
+    if (can_drag) {
+      float delta_magnitude = sqrtf(out->mouse_delta.x * out->mouse_delta.x +
+                                    out->mouse_delta.y * out->mouse_delta.y);
+      if (delta_magnitude > drag_threshold && !out->mouse_left_dragging) {
+        printf("Starting drag - delta magnitude: %.2f (threshold: %.2f)\n",
+               delta_magnitude, drag_threshold);
+        out->mouse_left_dragging = true;
+      }
     }
   }
 
   if (out->mouse_left_released) {
-
+    if (out->mouse_left_dragging) {
+      printf("Drag ended\n");
+    }
     left_button_was_pressed = false;
     out->mouse_left_was_dragging = out->mouse_left_dragging;
     out->mouse_left_dragging = false;
