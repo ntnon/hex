@@ -77,10 +77,6 @@ int main(int argc, char *argv[]) {
   const int initial_width = 1300;
   const int initial_height = 700;
 
-  // Initialize window
-  InitWindow(initial_width, initial_height, "HexHex Game");
-  SetTargetFPS(60);
-
   // Initialize app controller
   app_controller_t app_controller;
   app_controller_init(&app_controller);
@@ -93,8 +89,11 @@ int main(int argc, char *argv[]) {
   }
   printf("App controller validation passed\n");
 
-  // Initialize UI system
+  // Initialize UI system (this will create the window)
   UI_Context ui = ui_init(initial_width, initial_height);
+
+  // Set FPS after window is created
+  SetTargetFPS(60);
 
   printf("Starting main game loop\n");
   // Main game loop

@@ -62,7 +62,7 @@ static bool clay_initialized = false;
 UI_Context ui_init(int screen_width, int screen_height) {
   UI_Context ctx = {0};
 
-  Clay_Raylib_Initialize(screen_width, screen_height, "HexHex",
+  Clay_Raylib_Initialize(screen_width, screen_height, "HexHex Game",
                          FLAG_WINDOW_HIGHDPI | FLAG_MSAA_4X_HINT |
                            FLAG_VSYNC_HINT);
   clay_initialized = true;
