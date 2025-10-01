@@ -108,10 +108,10 @@ static void ui_build_reward(game_controller_t *controller) {
   }
 };
 
-Clay_RenderCommandArray ui_build_layout(game_controller_t *controller) {
-  Clay_SetPointerState(
-    (Clay_Vector2){controller->input.mouse.x, controller->input.mouse.y},
-    controller->input.mouse_left_down);
+Clay_RenderCommandArray ui_build_layout(app_controller_t *app_controller) {
+  Clay_SetPointerState((Clay_Vector2){app_controller->input.mouse.x,
+                                      app_controller->input.mouse.y},
+                       app_controller->input.mouse_left_down);
 
   Clay_SetLayoutDimensions(
     (Clay_Dimensions){.width = GetScreenWidth(), .height = GetScreenHeight()});
@@ -125,22 +125,49 @@ Clay_RenderCommandArray ui_build_layout(game_controller_t *controller) {
                                   .height = CLAY_SIZING_GROW()},
         }}) {
 
-    switch (controller->game->state) {
-    case GAME_STATE_PLAYING:
-      ui_build_game_area(controller);
-      ui_build_inventory_area(controller);
+    switch (app_controller_get_state(app_controller)) {
+    case APP_STATE_MAIN_MENU:
+      ui_build_main_menu(app_controller);
       break;
-    case GAME_STATE_REWARD:
-      ui_build_reward_area(controller);
+    case APP_STATE_SETTINGS:
+      ui_build_settings_menu(app_controller);
       break;
-    case GAME_STATE_COLLECT:
-      ui_build_game_area(controller);
-      ui_build_inventory_area(controller);
+    case APP_STATE_PLAYING:
+      // Render game UI using the game controller
+      if (app_controller->game) {
+        game_controller_t *game_controller = &app_controller->game_controller;
+        switch (game_controller->game->state) {
+        case GAME_STATE_PLAYING:
+          ui_build_game_area(game_controller);
+          ui_build_inventory_area(game_controller);
+          break;
+        case GAME_STATE_REWARD:
+          ui_build_reward_area(game_controller);
+          break;
+        case GAME_STATE_COLLECT:
+          ui_build_game_area(game_controller);
+          ui_build_inventory_area(game_controller);
+          break;
+        default:
+          break;
+        }
+      }
       break;
+    case APP_STATE_PAUSED:
+      // Render game UI in background, then pause menu overlay
+      if (app_controller->game) {
+        game_controller_t *game_controller = &app_controller->game_controller;
+        ui_build_game_area(game_controller);
+        ui_build_inventory_area(game_controller);
+      }
+      ui_build_pause_menu(app_controller);
+      break;
+    case APP_STATE_QUIT:
     default:
       break;
     }
   }
 
-  return Clay_EndLayout();
+  Clay_RenderCommandArray commands = Clay_EndLayout();
+  return commands;
 }

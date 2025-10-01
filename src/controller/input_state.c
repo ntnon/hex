@@ -21,10 +21,21 @@ void input_state_init(input_state_t *state) {
   state->mouse_wheel_delta = 0.0f;
 
   state->key_escape = false;
+  state->key_escape_pressed = false;
   state->key_shift = false;
   state->key_ctrl = false;
   state->key_r_pressed = false;
   state->key_m_pressed = false;
+
+  state->key_up_pressed = false;
+  state->key_down_pressed = false;
+  state->key_left_pressed = false;
+  state->key_right_pressed = false;
+  state->key_enter_pressed = false;
+  state->key_space_pressed = false;
+  state->key_tab_pressed = false;
+
+  state->key_f1_pressed = false;
 
   state->mouse_dragging = false;
   state->mouse_left_dragging = false;
@@ -108,9 +119,22 @@ void get_input_state(input_state_t *out) {
   // --- Modifier keys ---
   out->key_shift = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
   out->key_ctrl = IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL);
-  out->key_escape = IsKeyPressed(KEY_ESCAPE);
+  out->key_escape = IsKeyDown(KEY_ESCAPE);
+  out->key_escape_pressed = IsKeyPressed(KEY_ESCAPE);
   out->key_r_pressed = IsKeyPressed(KEY_R);
   out->key_m_pressed = IsKeyPressed(KEY_M);
+
+  // --- Navigation keys ---
+  out->key_up_pressed = IsKeyPressed(KEY_UP);
+  out->key_down_pressed = IsKeyPressed(KEY_DOWN);
+  out->key_left_pressed = IsKeyPressed(KEY_LEFT);
+  out->key_right_pressed = IsKeyPressed(KEY_RIGHT);
+  out->key_enter_pressed = IsKeyPressed(KEY_ENTER);
+  out->key_space_pressed = IsKeyPressed(KEY_SPACE);
+  out->key_tab_pressed = IsKeyPressed(KEY_TAB);
+
+  // --- Function keys ---
+  out->key_f1_pressed = IsKeyPressed(KEY_F1);
 
   // --- Mouse wheel ---
   out->mouse_wheel_delta = GetMouseWheelMove();

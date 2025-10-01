@@ -1,4 +1,5 @@
 #include "ui.h"
+#include <stdio.h>
 
 // COLORS
 const Clay_Color M_LIGHTGRAY = {200, 200, 200, 255}; // Light Gray
@@ -30,30 +31,68 @@ const Clay_Color M_RAYWHITE = {245, 245, 245,
                                255}; // My own White (raylib logo)
 
 // FONTS
-const uint32_t FONT_ID_LATO = 5;
+const uint32_t FONT_ID_LATO = 0;
 
-// Text configs
-Clay_TextElementConfig TEXT_CONFIG_LARGE = {.fontId = FONT_ID_LATO,
-                                            .fontSize = 24,
-                                            .letterSpacing =
-                                              FONT_DEFAULT_SPACING,
-                                            .textColor = M_BLACK};
+// Text configs - initialized after font loading to prevent corruption
+Clay_TextElementConfig TEXT_CONFIG_LARGE = {0};
+Clay_TextElementConfig TEXT_CONFIG_MEDIUM = {0};
 
-Clay_TextElementConfig TEXT_CONFIG_MEDIUM = {.fontId = FONT_ID_LATO,
-                                             .fontSize = 24,
-                                             .letterSpacing =
-                                               FONT_DEFAULT_SPACING,
-                                             .textColor = M_GRAY};
+// Function to safely initialize text configs after fonts are loaded
+void ui_init_text_configs(void) {
+  TEXT_CONFIG_LARGE =
+    (Clay_TextElementConfig){.userData = NULL,
+                             .textColor = M_BLACK,
+                             .fontId = FONT_ID_LATO,
+                             .fontSize = 24,
+                             .letterSpacing = FONT_DEFAULT_SPACING,
+                             .lineHeight = 0, // 0 means use measured height
+                             .wrapMode = CLAY_TEXT_WRAP_WORDS};
+
+  TEXT_CONFIG_MEDIUM =
+    (Clay_TextElementConfig){.userData = NULL,
+                             .textColor = M_GRAY,
+                             .fontId = FONT_ID_LATO,
+                             .fontSize = 20,
+                             .letterSpacing = FONT_DEFAULT_SPACING,
+                             .lineHeight = 0, // 0 means use measured height
+                             .wrapMode = CLAY_TEXT_WRAP_WORDS};
+
+  printf("Text configs initialized safely\n");
+}
 
 Font UI_FONTS[MAX_FONTS] = {0};
 
 void ui_load_fonts(void) {
-  UI_FONTS[0] = LoadFont("resources/sprite_fonts/alagard.png");
-  UI_FONTS[1] = LoadFont("resources/sprite_fonts/pixelplay.png");
-  UI_FONTS[2] = LoadFont("resources/sprite_fonts/mecha.png");
-  UI_FONTS[3] = LoadFont("resources/sprite_fonts/setback.png");
-  UI_FONTS[4] = LoadFont("resources/sprite_fonts/romulus.png");
-  UI_FONTS[5] = LoadFont("resources/sprite_fonts/pixantiqua.png");
-  UI_FONTS[6] = LoadFont("resources/sprite_fonts/alpha_beta.png");
-  UI_FONTS[7] = LoadFont("resources/sprite_fonts/jupiter_crash.png");
+  // Initialize all fonts to default font first
+  Font defaultFont = GetFontDefault();
+  for (int i = 0; i < MAX_FONTS; i++) {
+    UI_FONTS[i] = defaultFont;
+  }
+
+  // Load custom fonts with error checking
+  const char *font_paths[MAX_FONTS - 1] = {
+    "resources/sprite_fonts/pixelplay.png",
+    "resources/sprite_fonts/mecha.png",
+    "resources/sprite_fonts/setback.png",
+    "resources/sprite_fonts/romulus.png",
+    "resources/sprite_fonts/pixantiqua.png",
+    "resources/sprite_fonts/alpha_beta.png",
+    "resources/sprite_fonts/jupiter_crash.png",
+    "resources/sprite_fonts/alagard.png"};
+
+  for (int i = 1; i < MAX_FONTS; i++) {
+    Font loadedFont = LoadFont(font_paths[i - 1]);
+    // Validate font loaded properly
+    if (loadedFont.glyphs != NULL && loadedFont.baseSize > 0) {
+      UI_FONTS[i] = loadedFont;
+      printf("Successfully loaded font %d: %s\n", i, font_paths[i - 1]);
+    } else {
+      printf("Warning: Failed to load font %s, using default font\n",
+             font_paths[i - 1]);
+      // Font already initialized to default above
+    }
+  }
+
+  printf("Font loading completed. Default font baseSize: %d, glyphs: %p\n",
+         UI_FONTS[0].baseSize, UI_FONTS[0].glyphs);
 }

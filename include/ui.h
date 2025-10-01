@@ -3,6 +3,7 @@
 
 #include "third_party/clay.h"
 #include "raylib.h"
+#include "controller/app_controller.h"
 #include "controller/game_controller.h"
 #include "ui_types.h"
 #include <stdint.h>
@@ -14,7 +15,7 @@
 
 
 bool is_id_valid(const Clay_ElementId id);
-Clay_RenderCommandArray ui_build_layout(game_controller_t *controller);
+Clay_RenderCommandArray ui_build_layout(app_controller_t *app_controller);
 
 
 
@@ -51,11 +52,12 @@ extern const Clay_Color M_RAYWHITE;
 
 /* Fonts */
 #define FONT_DEFAULT_SPACING 3
-#define MAX_FONTS 8
+#define MAX_FONTS 9
 extern const uint32_t FONT_ID_LATO;
 extern Font UI_FONTS[MAX_FONTS];
 
 void ui_load_fonts(void);
+void ui_init_text_configs(void);
 
 /* Text configs */
 extern Clay_TextElementConfig TEXT_CONFIG_LARGE;
@@ -86,4 +88,10 @@ ui_event_t ui_poll_event(void);
 void ui_push_event(ui_event_t evt);
 void ui_clear_events(void);
 void game_screen(game_controller_t *controller);
+
+/* App-level UI functions */
+void ui_build_main_menu(app_controller_t *app_controller);
+void ui_build_settings_menu(app_controller_t *app_controller);
+void ui_build_pause_menu(app_controller_t *app_controller);
+void ui_build_game_ui(app_controller_t *app_controller);
 #endif // UI_H

@@ -21,10 +21,23 @@ typedef struct {
     float mouse_wheel_delta;
 
     bool key_escape;
+    bool key_escape_pressed;
     bool key_shift;
     bool key_ctrl;
     bool key_r_pressed;
     bool key_m_pressed;
+    
+    // Navigation keys
+    bool key_up_pressed;
+    bool key_down_pressed;
+    bool key_left_pressed;
+    bool key_right_pressed;
+    bool key_enter_pressed;
+    bool key_space_pressed;
+    bool key_tab_pressed;
+    
+    // Function keys
+    bool key_f1_pressed;
 
     // Optional drag helpers
     bool mouse_dragging;
