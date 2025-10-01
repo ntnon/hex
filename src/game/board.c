@@ -81,11 +81,6 @@ board_t *board_create(grid_type_e grid_type, int radius,
   board->next_pool_id = 1;
 
   camera_init(&board->camera);
-  board->hovered_grid_cell = NULL;
-
-  // Initialize preview system
-  board_init_preview_system(board,
-                            10); // Start with capacity for 10 preview tiles
 
   if (board_type == BOARD_TYPE_MAIN) {
     create_center_cluster(board);
@@ -105,7 +100,7 @@ void clear_board(board_t *board) {
 void free_board(board_t *board) {
   tile_map_free(board->tiles);
   pool_map_free(board->pools);
-  board_free_preview_system(board);
+
   free(board);
 }
 
@@ -543,14 +538,6 @@ board_t *board_clone(board_t *original) {
   // Copy camera
   clone->camera = original->camera;
 
-  // Initialize hovered_grid_cell
-  clone->hovered_grid_cell = NULL;
-
-  // Initialize empty preview system
-  clone->preview_boards = NULL;
-  clone->num_preview_boards = 0;
-  clone->preview_capacity = 0;
-
   // Clone all tiles
   tile_map_entry_t *entry, *tmp;
   HASH_ITER(hh, original->tiles->root, entry, tmp) {
@@ -566,189 +553,6 @@ board_t *board_clone(board_t *original) {
   }
 
   return clone;
-}
-
-// Lightweight preview system implementation
-void board_init_preview_system(board_t *board, size_t initial_capacity) {
-  if (!board)
-    return;
-
-  board->preview_boards = malloc(initial_capacity * sizeof(board_preview_t));
-  board->num_preview_boards = 0;
-  board->preview_capacity = initial_capacity;
-}
-
-void board_free_preview_system(board_t *board) {
-  if (!board || !board->preview_boards)
-    return;
-
-  // Free any existing previews
-  for (size_t i = 0; i < board->num_preview_boards; i++) {
-    board_preview_t *preview = &board->preview_boards[i];
-
-    // Free the lightweight preview data
-    if (preview->preview_positions) {
-      free(preview->preview_positions);
-      preview->preview_positions = NULL;
-    }
-
-    if (preview->preview_tiles) {
-      free(preview->preview_tiles);
-      preview->preview_tiles = NULL;
-    }
-
-    if (preview->conflict_positions) {
-      free(preview->conflict_positions);
-      preview->conflict_positions = NULL;
-    }
-  }
-
-  free(board->preview_boards);
-  board->preview_boards = NULL;
-  board->num_preview_boards = 0;
-  board->preview_capacity = 0;
-}
-
-board_preview_t *board_create_merge_preview(board_t *target_board,
-                                            board_t *source_board,
-                                            grid_cell_t target_position,
-                                            grid_cell_t source_center) {
-  if (!target_board || !source_board)
-    return NULL;
-
-  board_preview_t *preview = malloc(sizeof(board_preview_t));
-  if (!preview)
-    return NULL;
-
-  // Initialize lightweight preview data
-  preview->preview_positions = NULL;
-  preview->preview_tiles = NULL;
-  preview->num_preview_tiles = 0;
-  preview->conflict_positions = NULL;
-  preview->num_conflicts = 0;
-  preview->is_valid_merge = false;
-
-  // Calculate the offset needed for positioning
-  grid_cell_t offset = grid_calculate_offset(target_position, source_center);
-
-  // Count valid tiles and conflicts
-  tile_map_entry_t *entry, *tmp;
-  size_t valid_count = 0;
-  size_t conflict_count = 0;
-
-  HASH_ITER(hh, source_board->tiles->root, entry, tmp) {
-    tile_t *source_tile = entry->tile;
-    grid_cell_t target_pos = grid_apply_offset(source_tile->cell, offset);
-
-    bool is_valid_cell =
-      grid_is_valid_cell_with_radius(target_pos, target_board->radius);
-    tile_t *existing_tile = get_tile_at_cell(target_board, target_pos);
-
-    if (is_valid_cell && existing_tile == NULL) {
-      valid_count++;
-    } else {
-      conflict_count++;
-    }
-  }
-
-  // Allocate arrays
-  if (valid_count > 0) {
-    preview->preview_positions = malloc(valid_count * sizeof(grid_cell_t));
-    preview->preview_tiles = malloc(valid_count * sizeof(tile_data_t));
-  }
-  if (conflict_count > 0) {
-    preview->conflict_positions = malloc(conflict_count * sizeof(grid_cell_t));
-  }
-
-  if ((valid_count > 0 &&
-       (!preview->preview_positions || !preview->preview_tiles)) ||
-      (conflict_count > 0 && !preview->conflict_positions)) {
-    // Allocation failed
-    free(preview->preview_positions);
-    free(preview->preview_tiles);
-    free(preview->conflict_positions);
-    free(preview);
-    return NULL;
-  }
-
-  // Fill arrays
-  size_t valid_index = 0;
-  size_t conflict_index = 0;
-
-  HASH_ITER(hh, source_board->tiles->root, entry, tmp) {
-    tile_t *source_tile = entry->tile;
-    grid_cell_t target_pos = grid_apply_offset(source_tile->cell, offset);
-
-    bool is_valid_cell =
-      grid_is_valid_cell_with_radius(target_pos, target_board->radius);
-    tile_t *existing_tile = get_tile_at_cell(target_board, target_pos);
-
-    if (is_valid_cell && existing_tile == NULL) {
-      preview->preview_positions[valid_index] = target_pos;
-      preview->preview_tiles[valid_index] = source_tile->data;
-      valid_index++;
-    } else {
-      preview->conflict_positions[conflict_index] = target_pos;
-      conflict_index++;
-    }
-  }
-
-  preview->num_preview_tiles = valid_count;
-  preview->num_conflicts = conflict_count;
-  preview->is_valid_merge = (conflict_count == 0);
-
-  return preview;
-}
-
-void board_free_preview(board_preview_t *preview) {
-  if (!preview)
-    return;
-
-  if (preview->preview_positions) {
-    free(preview->preview_positions);
-  }
-
-  if (preview->preview_tiles) {
-    free(preview->preview_tiles);
-  }
-
-  if (preview->conflict_positions) {
-    free(preview->conflict_positions);
-  }
-
-  free(preview);
-}
-
-void board_clear_preview_boards(board_t *board) {
-  if (!board)
-    return;
-
-  // Free existing previews
-  for (size_t i = 0; i < board->num_preview_boards; i++) {
-    board_preview_t *preview = &board->preview_boards[i];
-
-    // Free the lightweight preview data
-    if (preview->preview_positions) {
-      free(preview->preview_positions);
-      preview->preview_positions = NULL;
-    }
-
-    if (preview->preview_tiles) {
-      free(preview->preview_tiles);
-      preview->preview_tiles = NULL;
-    }
-
-    if (preview->conflict_positions) {
-      free(preview->conflict_positions);
-      preview->conflict_positions = NULL;
-    }
-
-    preview->num_preview_tiles = 0;
-    preview->num_conflicts = 0;
-    preview->is_valid_merge = false;
-  }
-
-  board->num_preview_boards = 0;
 }
 
 bool board_validate_tile_map_bounds(const board_t *board,
@@ -768,103 +572,4 @@ bool board_validate_tile_map_bounds(const board_t *board,
   }
 
   return true;
-}
-
-void board_update_preview(board_t *board, board_t *source_board,
-                          grid_cell_t mouse_position) {
-  if (!board || !source_board)
-    return;
-
-  // Clear existing previews
-  board_clear_preview_boards(board);
-
-  // Get the center of the source board
-  grid_cell_t source_center = grid_get_center_cell(source_board->geometry_type);
-
-  // Resize preview array if needed
-  if (board->num_preview_boards >= board->preview_capacity) {
-    board->preview_capacity =
-      board->preview_capacity > 0 ? board->preview_capacity * 2 : 1;
-    board->preview_boards = realloc(
-      board->preview_boards, board->preview_capacity * sizeof(board_preview_t));
-    if (!board->preview_boards) {
-      fprintf(stderr, "Failed to reallocate preview boards array\n");
-      return;
-    }
-  }
-
-  // Get pointer to the preview slot in the array
-  board_preview_t *preview = &board->preview_boards[board->num_preview_boards];
-
-  // Initialize preview data
-  preview->preview_positions = NULL;
-  preview->preview_tiles = NULL;
-  preview->num_preview_tiles = 0;
-  preview->conflict_positions = NULL;
-  preview->num_conflicts = 0;
-  preview->is_valid_merge = false;
-
-  // Calculate offset for the preview
-  grid_cell_t offset = grid_calculate_offset(mouse_position, source_center);
-
-  // Count valid tiles and conflicts (lightweight - no board cloning!)
-  size_t valid_count = 0;
-  size_t conflict_count = 0;
-  tile_map_entry_t *entry, *tmp;
-
-  HASH_ITER(hh, source_board->tiles->root, entry, tmp) {
-    tile_t *source_tile = entry->tile;
-    grid_cell_t target_pos = grid_apply_offset(source_tile->cell, offset);
-
-    bool is_valid_cell =
-      grid_is_valid_cell_with_radius(target_pos, board->radius);
-    tile_t *existing_tile = get_tile_at_cell(board, target_pos);
-
-    if (is_valid_cell && existing_tile == NULL) {
-      valid_count++;
-    } else {
-      conflict_count++;
-    }
-  }
-
-  // Allocate arrays for preview data
-  if (valid_count > 0) {
-    preview->preview_positions = malloc(valid_count * sizeof(grid_cell_t));
-    preview->preview_tiles = malloc(valid_count * sizeof(tile_data_t));
-  }
-  if (conflict_count > 0) {
-    preview->conflict_positions = malloc(conflict_count * sizeof(grid_cell_t));
-  }
-
-  // Fill the arrays
-  size_t valid_index = 0;
-  size_t conflict_index = 0;
-
-  HASH_ITER(hh, source_board->tiles->root, entry, tmp) {
-    tile_t *source_tile = entry->tile;
-    grid_cell_t target_pos = grid_apply_offset(source_tile->cell, offset);
-
-    bool is_valid_cell =
-      grid_is_valid_cell_with_radius(target_pos, board->radius);
-    tile_t *existing_tile = get_tile_at_cell(board, target_pos);
-
-    if (is_valid_cell && existing_tile == NULL) {
-      if (preview->preview_positions && preview->preview_tiles) {
-        preview->preview_positions[valid_index] = target_pos;
-        preview->preview_tiles[valid_index] = source_tile->data;
-        valid_index++;
-      }
-    } else {
-      if (preview->conflict_positions) {
-
-        preview->conflict_positions[conflict_index] = target_pos;
-        conflict_index++;
-      }
-    }
-  }
-
-  preview->num_preview_tiles = valid_count;
-  preview->num_conflicts = conflict_count;
-  preview->is_valid_merge = (conflict_count == 0);
-  board->num_preview_boards++;
 }

@@ -229,6 +229,92 @@ void ui_build_game_ui(app_controller_t *app_controller) {
   // This is a placeholder for any game-specific overlay UI
 }
 
+void ui_build_tile_info_card(game_t *game, Vector2 mouse_pos) {
+  if (!game->should_show_tile_info || !game->hovered_tile) {
+    return;
+  }
+
+  tile_t *tile = game->hovered_tile;
+
+  // Position the info card near the mouse, but keep it on screen
+  float card_width = 200;
+  float card_height = 120;
+  float screen_width = GetScreenWidth();
+  float screen_height = GetScreenHeight();
+
+  // Default position: offset from mouse
+  float card_x = mouse_pos.x + 20;
+  float card_y = mouse_pos.y - card_height / 2;
+
+  // Adjust if card would go off screen
+  if (card_x + card_width > screen_width) {
+    card_x = mouse_pos.x - card_width - 20;
+  }
+  if (card_y < 0) {
+    card_y = 10;
+  } else if (card_y + card_height > screen_height) {
+    card_y = screen_height - card_height - 10;
+  }
+
+  CLAY(
+    {.id = UI_ID_TILE_INFO_CARD,
+     .floating = {.attachTo = CLAY_ATTACH_TO_ROOT,
+                  .offset = {.x = (int)card_x, .y = (int)card_y},
+                  .zIndex = 1000,
+                  .pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH},
+     .layout = {.sizing = {.width = CLAY_SIZING_FIXED(card_width),
+                           .height = CLAY_SIZING_FIXED(card_height)},
+                .padding = CLAY_PADDING_ALL(12),
+                .childGap = 8,
+                .layoutDirection = CLAY_TOP_TO_BOTTOM},
+     .backgroundColor = (Clay_Color){40, 40, 40, 240},
+     .cornerRadius = CLAY_CORNER_RADIUS(6),
+     .border = {.color = (Clay_Color){80, 80, 80, 255}, .width = 1}}) {
+
+    // Tile type/name
+    CLAY({.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
+                                .height = CLAY_SIZING_FIT()}}}) {
+      switch (tile->data.type) {
+      case TILE_MAGENTA:
+        CLAY_TEXT(CLAY_STRING("Magenta Tile"), &TEXT_CONFIG_MEDIUM);
+        break;
+      case TILE_CYAN:
+        CLAY_TEXT(CLAY_STRING("Cyan Tile"), &TEXT_CONFIG_MEDIUM);
+        break;
+      case TILE_YELLOW:
+        CLAY_TEXT(CLAY_STRING("Yellow Tile"), &TEXT_CONFIG_MEDIUM);
+        break;
+      case TILE_GREEN:
+        CLAY_TEXT(CLAY_STRING("Green Tile"), &TEXT_CONFIG_MEDIUM);
+        break;
+      default:
+        CLAY_TEXT(CLAY_STRING("Unknown Tile"), &TEXT_CONFIG_MEDIUM);
+        break;
+      }
+    }
+
+    // Tile value
+    CLAY({.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
+                                .height = CLAY_SIZING_FIT()}}}) {
+      if (tile->data.value == 1) {
+        CLAY_TEXT(CLAY_STRING("Value: 1"), &TEXT_CONFIG_MEDIUM);
+      } else if (tile->data.value == 2) {
+        CLAY_TEXT(CLAY_STRING("Value: 2"), &TEXT_CONFIG_MEDIUM);
+      } else if (tile->data.value == 3) {
+        CLAY_TEXT(CLAY_STRING("Value: 3"), &TEXT_CONFIG_MEDIUM);
+      } else {
+        CLAY_TEXT(CLAY_STRING("Value: ?"), &TEXT_CONFIG_MEDIUM);
+      }
+    }
+
+    // Pool information
+    CLAY({.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
+                                .height = CLAY_SIZING_FIT()}}}) {
+      CLAY_TEXT(CLAY_STRING("Pool info"), &TEXT_CONFIG_MEDIUM);
+    }
+  }
+}
+
 // Helper function implementations
 // Removed problematic ui_build_menu_button functions that caused memory
 // corruption

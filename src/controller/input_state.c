@@ -107,7 +107,7 @@ void get_input_state(input_state_t *out) {
   static bool left_button_was_pressed = false;
 
   if (out->mouse_left_pressed) {
-    printf("Left mouse pressed - starting drag detection\n");
+
     left_button_was_pressed = true;
     out->mouse_left_dragging = false;
     out->mouse_left_was_dragging = false;
@@ -121,17 +121,12 @@ void get_input_state(input_state_t *out) {
       float delta_magnitude = sqrtf(out->mouse_delta.x * out->mouse_delta.x +
                                     out->mouse_delta.y * out->mouse_delta.y);
       if (delta_magnitude > drag_threshold && !out->mouse_left_dragging) {
-        printf("Starting drag - delta magnitude: %.2f (threshold: %.2f)\n",
-               delta_magnitude, drag_threshold);
         out->mouse_left_dragging = true;
       }
     }
   }
 
   if (out->mouse_left_released) {
-    if (out->mouse_left_dragging) {
-      printf("Drag ended\n");
-    }
     left_button_was_pressed = false;
     out->mouse_left_was_dragging = out->mouse_left_dragging;
     out->mouse_left_dragging = false;

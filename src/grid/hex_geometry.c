@@ -570,7 +570,7 @@ bool grid_get_all_coordinates_in_radius(grid_type_e geometry_type, int radius,
 }
 
 bool grid_pixel_to_cell(grid_type_e geometry_type, const layout_t *layout,
-                        int radius, point_t p, grid_cell_t *out_cell) {
+                        point_t p, grid_cell_t *out_cell) {
   if (!layout || !out_cell)
     return false;
 
@@ -599,8 +599,7 @@ bool grid_pixel_to_cell(grid_type_e geometry_type, const layout_t *layout,
     *out_cell =
       (grid_cell_t){.type = GRID_TYPE_HEXAGON, .coord.hex = {qi, ri, si}};
 
-    // Check if within bounds
-    return grid_is_valid_cell_with_radius(*out_cell, radius);
+    return true; // Always return coordinate, regardless of bounds
   }
 
   // Add other geometry types as needed

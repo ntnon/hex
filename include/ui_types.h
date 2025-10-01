@@ -29,6 +29,9 @@
 #define UI_ID_PAUSE_SETTINGS_BUTTON CLAY_ID("pause_settings")
 #define UI_ID_PAUSE_QUIT_BUTTON CLAY_ID("pause_quit")
 
+// Tile info card
+#define UI_ID_TILE_INFO_CARD CLAY_ID("tile_info_card")
+
 
 typedef enum {
     UI_EVENT_NONE = 0,

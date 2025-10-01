@@ -50,7 +50,7 @@ void ui_init_text_configs(void) {
 
   TEXT_CONFIG_MEDIUM =
     (Clay_TextElementConfig){.userData = NULL,
-                             .textColor = M_GRAY,
+                             .textColor = M_WHITE,
                              .fontId = FONT_ID_LATO,
                              .fontSize = 20,
                              .letterSpacing = FONT_DEFAULT_SPACING,

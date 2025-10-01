@@ -282,15 +282,15 @@ bool grid_get_all_coordinates_in_radius(grid_type_e geometry_type, int radius,
                                        grid_cell_t **out_cells, size_t *out_count);
 
 /**
- * @brief Converts pixel coordinates to grid cell using layout and radius (geometry-agnostic).
+ * @brief Converts pixel coordinates to grid cell using pure geometry (no bounds checking).
  * @param geometry_type The type of grid geometry to use.
  * @param layout The layout configuration for pixel conversion.
- * @param radius The maximum radius for bounds checking.
  * @param p The pixel coordinates to convert.
- * @param out_cell Pointer to store the resulting cell (if valid).
- * @return True if conversion successful and cell is within bounds, false otherwise.
+ * @param out_cell Pointer to store the resulting cell.
+ * @return True if conversion successful, false on invalid input.
+ * @note This function performs pure geometric conversion - bounds checking should be done at board level.
  */
-bool grid_pixel_to_cell(grid_type_e geometry_type, const layout_t *layout, int radius, point_t p, grid_cell_t *out_cell);
+bool grid_pixel_to_cell(grid_type_e geometry_type, const layout_t *layout, point_t p, grid_cell_t *out_cell);
 
 /**
  * @brief Calculates corner points for a cell using geometry and layout (geometry-agnostic).

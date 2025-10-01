@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
                           game_bounds.width, game_bounds.height);
         BeginMode2D(app_controller.game->board->camera);
         render_board(app_controller.game->board);
-        render_board_previews(app_controller.game->board);
+        render_game_previews(app_controller.game);
         EndMode2D();
       }
     }

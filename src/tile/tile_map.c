@@ -1,4 +1,5 @@
 #include "../../include/tile/tile_map.h"
+
 #include "../../include/grid/grid_cell_utils.h"
 #include "../../include/grid/grid_geometry.h"
 #include <stdio.h>
@@ -333,4 +334,88 @@ bool tile_map_find_overlaps(const tile_map_t *map1, const tile_map_t *map2,
   *out_overlaps = overlaps;
   *out_count = overlap_count;
   return true;
+}
+
+bool tile_map_find_merge_conflicts(const tile_map_t *source,
+                                   const tile_map_t *dest, grid_cell_t offset,
+                                   grid_cell_t **out_conflicts,
+                                   size_t *out_count) {
+  if (!source || !dest || !out_conflicts || !out_count) {
+    if (out_conflicts)
+      *out_conflicts = NULL;
+    if (out_count)
+      *out_count = 0;
+    return false;
+  }
+
+  if (source->num_tiles == 0) {
+    *out_conflicts = NULL;
+    *out_count = 0;
+    return true; // No conflicts possible
+  }
+
+  // Allocate array for potential conflicts (max size is source tile count)
+  grid_cell_t *conflicts = malloc(source->num_tiles * sizeof(grid_cell_t));
+  if (!conflicts) {
+    *out_conflicts = NULL;
+    *out_count = 0;
+    return false;
+  }
+
+  size_t conflict_count = 0;
+
+  // Check each source tile position after applying offset
+  tile_map_entry_t *entry, *tmp;
+  HASH_ITER(hh, source->root, entry, tmp) {
+    grid_cell_t target_pos = grid_apply_offset(entry->tile->cell, offset);
+
+    // Check if position is occupied in destination
+    if (tile_map_contains(dest, target_pos)) {
+      conflicts[conflict_count] = target_pos;
+      conflict_count++;
+    }
+  }
+
+  if (conflict_count == 0) {
+    free(conflicts);
+    *out_conflicts = NULL;
+    *out_count = 0;
+    return true;
+  }
+
+  // Resize array to exact size needed
+  if (conflict_count < source->num_tiles) {
+    grid_cell_t *resized =
+      realloc(conflicts, conflict_count * sizeof(grid_cell_t));
+    if (resized) {
+      conflicts = resized;
+    }
+  }
+
+  *out_conflicts = conflicts;
+  *out_count = conflict_count;
+  return true;
+}
+
+bool tile_map_can_merge_with_offset(const tile_map_t *source,
+                                    const tile_map_t *dest,
+                                    grid_cell_t offset) {
+  if (!source || !dest)
+    return false;
+
+  if (source->num_tiles == 0)
+    return true; // Empty source can always be merged
+
+  // Check each source tile position after applying offset
+  tile_map_entry_t *entry, *tmp;
+  HASH_ITER(hh, source->root, entry, tmp) {
+    grid_cell_t target_pos = grid_apply_offset(entry->tile->cell, offset);
+
+    // Check if position is occupied in destination
+    if (tile_map_contains(dest, target_pos)) {
+      return false; // Found a conflict
+    }
+  }
+
+  return true; // No conflicts found
 }

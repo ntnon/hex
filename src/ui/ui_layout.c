@@ -140,6 +140,10 @@ Clay_RenderCommandArray ui_build_layout(app_controller_t *app_controller) {
         case GAME_STATE_PLAYING:
           ui_build_game_area(game_controller);
           ui_build_inventory_area(game_controller);
+          // Add tile info card overlay
+          ui_build_tile_info_card(game_controller->game,
+                                  (Vector2){app_controller->input.mouse.x,
+                                            app_controller->input.mouse.y});
           break;
         case GAME_STATE_REWARD:
           ui_build_reward_area(game_controller);
@@ -147,6 +151,10 @@ Clay_RenderCommandArray ui_build_layout(app_controller_t *app_controller) {
         case GAME_STATE_COLLECT:
           ui_build_game_area(game_controller);
           ui_build_inventory_area(game_controller);
+          // Add tile info card overlay
+          ui_build_tile_info_card(game_controller->game,
+                                  (Vector2){app_controller->input.mouse.x,
+                                            app_controller->input.mouse.y});
           break;
         default:
           break;
@@ -159,6 +167,10 @@ Clay_RenderCommandArray ui_build_layout(app_controller_t *app_controller) {
         game_controller_t *game_controller = &app_controller->game_controller;
         ui_build_game_area(game_controller);
         ui_build_inventory_area(game_controller);
+        // Add tile info card overlay even when paused
+        ui_build_tile_info_card(game_controller->game,
+                                (Vector2){app_controller->input.mouse.x,
+                                          app_controller->input.mouse.y});
       }
       ui_build_pause_menu(app_controller);
       break;

@@ -25,24 +25,8 @@ typedef struct {
     pool_map_t *pools;
     uint32_t next_pool_id;
     Camera2D camera;
-    grid_cell_t *hovered_grid_cell;
 
-    // Preview system
-    struct board_preview_t *preview_boards;
-    size_t num_preview_boards;
-    size_t preview_capacity;
 } board_t;
-
-typedef struct board_preview_t {
-    grid_cell_t *preview_positions;   /* Where tiles would be placed */
-    tile_data_t *preview_tiles;       /* What tiles would be placed */
-    size_t num_preview_tiles;
-
-    grid_cell_t *conflict_positions;  /* Positions that would conflict */
-    size_t num_conflicts;
-
-    bool is_valid_merge;              /* Can this merge happen? */
-} board_preview_t;
 
 board_t *board_create(grid_type_e grid_type, int radius, board_type_e board_type);
 board_t *board_clone(board_t *original);
@@ -87,14 +71,7 @@ tile_t *get_tile_at_cell(board_t *board, grid_cell_t cell);
 
 void print_board_debug_info(board_t *board);
 
-// Simplified preview system functions
-void board_init_preview_system(board_t *board, size_t initial_capacity);
-void board_free_preview_system(board_t *board);
-board_preview_t* board_create_merge_preview(board_t *target_board, board_t *source_board,
-                                           grid_cell_t target_position, grid_cell_t source_center);
-void board_free_preview(board_preview_t *preview);
-void board_clear_preview_boards(board_t *board);
-void board_update_preview(board_t *board, board_t *source_board, grid_cell_t mouse_position);
+
 
 /**
  * @brief Validates that all tiles in a tile map are within the board's grid bounds.

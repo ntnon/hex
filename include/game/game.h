@@ -5,6 +5,14 @@
 #include "game/inventory.h"
 #include "controller/input_state.h"
 #include "rule_manager.h"
+#include "tile/tile.h"
+
+typedef struct simple_preview_t {
+    board_t *source_board;           /* Board being previewed for placement */
+    grid_cell_t target_position;     /* Where the center would be placed */
+    bool is_active;                  /* Whether preview is currently active */
+} simple_preview_t;
+
 typedef enum {
     //GAME_STATE_MENU,
     GAME_STATE_PLAYING,
@@ -21,6 +29,14 @@ typedef struct game {
     int reward_count;
     game_state_e state;
     //rule_manager_t *rule_manager;
+    
+    // Hover system
+    tile_t *hovered_tile;
+    grid_cell_t hovered_cell;
+    bool should_show_tile_info;
+    
+    // Simplified preview system
+    simple_preview_t preview;
 } game_t;
 
 /* Function declarations */
@@ -31,6 +47,11 @@ void update_game(game_t *game, const input_state_t *input);
 void update_board_preview(game_t *game);
 void game_render(game_t *game, const input_state_t *input);
 void game_state_cycle(game_t *game);
+
+// Simplified preview system functions
+void game_set_preview(game_t *game, board_t *source_board, grid_cell_t target_position);
+void game_clear_preview(game_t *game);
+bool game_get_preview_conflicts(const game_t *game, grid_cell_t **out_conflicts, size_t *out_count);
 
 
 #endif // GAME_H

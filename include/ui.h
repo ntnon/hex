@@ -5,6 +5,7 @@
 #include "raylib.h"
 #include "controller/app_controller.h"
 #include "controller/game_controller.h"
+#include "game/game.h"
 #include "ui_types.h"
 #include <stdint.h>
 
@@ -94,5 +95,6 @@ void game_screen(game_controller_t *controller);
 void ui_build_main_menu(app_controller_t *app_controller);
 void ui_build_settings_menu(app_controller_t *app_controller);
 void ui_build_pause_menu(app_controller_t *app_controller);
+void ui_build_tile_info_card(game_t *game, Vector2 mouse_pos);
 void ui_build_game_ui(app_controller_t *app_controller);
 #endif // UI_H

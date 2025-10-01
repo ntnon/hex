@@ -3,8 +3,10 @@
 #include <math.h>
 #include <stdio.h>
 
+#include "../include/grid/grid_cell_utils.h"
 #include "../include/grid/grid_geometry.h"
 #include "../include/renderer.h"
+#include "game/game.h"
 #include "raylib.h"
 #include "ui.h"
 
@@ -87,36 +89,64 @@ void render_board(const board_t *board) {
   tile_map_foreach_tile(board->tiles, draw_tile_wrapper, (void *)board);
 }
 
-void render_board_previews(const board_t *board) {
-  if (!board || !board->preview_boards) {
+void render_game_previews(const game_t *game) {
+  if (!game || !game->preview.is_active || !game->preview.source_board) {
     return;
   }
 
-  for (size_t i = 0; i < board->num_preview_boards; i++) {
-    const board_preview_t *preview = &board->preview_boards[i];
+  // Calculate offset from source center to target position
+  grid_cell_t source_center =
+    grid_get_center_cell(game->preview.source_board->geometry_type);
+  grid_cell_t offset =
+    grid_calculate_offset(game->preview.target_position, source_center);
 
-    // Render valid preview tiles with transparency
+  // Get conflicts using the simplified system
+  grid_cell_t *conflicts;
+  size_t conflict_count;
+  bool has_conflicts =
+    game_get_preview_conflicts(game, &conflicts, &conflict_count);
 
-    for (size_t j = 0; j < preview->num_preview_tiles; j++) {
-      grid_cell_t position = preview->preview_positions[j];
-      tile_data_t tile_data = preview->preview_tiles[j];
+  // Render all source tiles with preview colors
+  tile_map_entry_t *entry, *tmp;
+  HASH_ITER(hh, game->preview.source_board->tiles->root, entry, tmp) {
+    tile_t *source_tile = entry->tile;
+    grid_cell_t target_pos = grid_apply_offset(source_tile->cell, offset);
 
-      Clay_Color tile_color = color_from_tile(tile_data);
-      Clay_Color preview_color =
-        (Clay_Color){tile_color.r, tile_color.g, tile_color.b, 180};
+    // Check if this position is valid (within board bounds)
+    bool is_valid_cell =
+      grid_is_valid_cell_with_radius(target_pos, game->board->radius);
 
-      render_hex_cell(board, position, preview_color,
-                      (Clay_Color){0, 255, 0, 255}); // Green border for valid
-    }
+    if (is_valid_cell) {
+      // Check if this position conflicts
+      bool is_conflict = false;
+      if (has_conflicts && conflicts) {
+        for (size_t i = 0; i < conflict_count; i++) {
+          if (grid_cells_equal(&target_pos, &conflicts[i])) {
+            is_conflict = true;
+            break;
+          }
+        }
+      }
 
-    // Render conflicts with red markers
-    if (preview->num_conflicts > 0) {
-      for (size_t j = 0; j < preview->num_conflicts; j++) {
-        render_hex_cell(board, preview->conflict_positions[j],
-                        (Clay_Color){255, 0, 0, 255},  // Semi-transparent red
+      if (is_conflict) {
+        // Render conflict in red
+        render_hex_cell(game->board, target_pos,
+                        (Clay_Color){255, 0, 0, 180},  // Semi-transparent red
                         (Clay_Color){255, 0, 0, 255}); // Red border
+      } else {
+        // Render valid preview tile with transparency
+        Clay_Color tile_color = color_from_tile(source_tile->data);
+        Clay_Color preview_color =
+          (Clay_Color){tile_color.r, tile_color.g, tile_color.b, 180};
+        render_hex_cell(game->board, target_pos, preview_color,
+                        (Clay_Color){0, 255, 0, 255}); // Green border for valid
       }
     }
+  }
+
+  // Free conflicts array if allocated
+  if (conflicts) {
+    free(conflicts);
   }
 }
 

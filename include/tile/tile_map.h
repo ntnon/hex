@@ -94,4 +94,29 @@ tile_map_t *tile_map_clone(const tile_map_t *source);
 bool tile_map_find_overlaps(const tile_map_t *map1, const tile_map_t *map2, 
                            grid_cell_t **out_overlaps, size_t *out_count);
 
+/**
+ * @brief Finds conflicts when merging a source tile map with offset into a destination tile map.
+ * @param source The source tile map to be merged.
+ * @param dest The destination tile map to check against.
+ * @param offset The offset to apply to source tiles before checking.
+ * @param out_conflicts Pointer to store the allocated array of conflicting coordinates.
+ * @param out_count Pointer to store the number of conflicting coordinates.
+ * @return True if successful, false on memory allocation failure.
+ * @note Caller is responsible for freeing the allocated array.
+ * @note Only reports positions that would overlap between the two tile maps.
+ */
+bool tile_map_find_merge_conflicts(const tile_map_t *source, const tile_map_t *dest,
+                                  grid_cell_t offset, grid_cell_t **out_conflicts, 
+                                  size_t *out_count);
+
+/**
+ * @brief Checks if a source tile map can be merged with offset into destination without conflicts.
+ * @param source The source tile map to be merged.
+ * @param dest The destination tile map to check against.
+ * @param offset The offset to apply to source tiles before checking.
+ * @return True if merge is valid (no overlapping positions), false otherwise.
+ */
+bool tile_map_can_merge_with_offset(const tile_map_t *source, const tile_map_t *dest, 
+                                    grid_cell_t offset);
+
 #endif // TILE_MAP_H

@@ -93,12 +93,10 @@ static void handle_game_area_click(event_router_t *router) {
 }
 
 static void handle_tile_placement_click(event_router_t *router) {
-  if (!router->game->board->hovered_grid_cell) {
-    printf("No valid hover position on game board\n");
-    return;
-  }
-
-  grid_cell_t target_position = *(router->game->board->hovered_grid_cell);
+  // Use the game-level hovered cell which is already calculated
+  // We can place tiles even on empty cells, so we don't need to check for
+  // hovered_tile
+  grid_cell_t target_position = router->game->hovered_cell;
 
   game_actions_t actions;
   game_actions_init(&actions, router->game);
