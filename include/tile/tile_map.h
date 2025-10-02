@@ -37,6 +37,8 @@ tile_map_entry_t* tile_map_find(const tile_map_t *map, grid_cell_t cell);
 
 bool tile_map_contains(const tile_map_t *map, grid_cell_t cell);
 
+int tile_map_size(const tile_map_t *map);
+
 /* Remove an entry identified by a cell from the map. */
 void tile_map_remove(tile_map_t *map, grid_cell_t cell);
 
@@ -94,7 +96,7 @@ tile_map_t *tile_map_clone(const tile_map_t *source);
  * @return True if successful, false on memory allocation failure.
  * @note Caller is responsible for freeing the allocated array.
  */
-bool tile_map_find_overlaps(const tile_map_t *map1, const tile_map_t *map2, 
+bool tile_map_find_overlaps(const tile_map_t *map1, const tile_map_t *map2,
                            grid_cell_t **out_overlaps, size_t *out_count);
 
 /**
@@ -109,7 +111,7 @@ bool tile_map_find_overlaps(const tile_map_t *map1, const tile_map_t *map2,
  * @note Only reports positions that would overlap between the two tile maps.
  */
 bool tile_map_find_merge_conflicts(const tile_map_t *source, const tile_map_t *dest,
-                                  grid_cell_t offset, grid_cell_t **out_conflicts, 
+                                  grid_cell_t offset, grid_cell_t **out_conflicts,
                                   size_t *out_count);
 
 /**
@@ -119,7 +121,7 @@ bool tile_map_find_merge_conflicts(const tile_map_t *source, const tile_map_t *d
  * @param offset The offset to apply to source tiles before checking.
  * @return True if merge is valid (no overlapping positions), false otherwise.
  */
-bool tile_map_can_merge_with_offset(const tile_map_t *source, const tile_map_t *dest, 
+bool tile_map_can_merge_with_offset(const tile_map_t *source, const tile_map_t *dest,
                                     grid_cell_t offset);
 
 #endif // TILE_MAP_H

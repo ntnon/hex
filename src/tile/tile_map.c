@@ -20,6 +20,8 @@ bool tile_map_contains(const tile_map_t *map, grid_cell_t cell) {
   return (tile_map_find((tile_map_t *)map, cell) != NULL);
 }
 
+int tile_map_size(const tile_map_t *map) { return map->num_tiles; }
+
 void tile_map_free(tile_map_t *map) {
   if (!map)
     return;
