@@ -303,6 +303,16 @@ void ui_build_tile_info_card(game_t *game, Vector2 mouse_pos) {
       CLAY_TEXT(value_string, &TEXT_CONFIG_MEDIUM);
     }
 
+    // Pool ID
+    CLAY({.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
+                                .height = CLAY_SIZING_FIT()}}}) {
+      static char pool_text[32];
+      snprintf(pool_text, sizeof(pool_text), "Pool: %u", tile->pool_id);
+      Clay_String pool_string = {.chars = pool_text,
+                                 .length = strlen(pool_text)};
+      CLAY_TEXT(pool_string, &TEXT_CONFIG_MEDIUM);
+    }
+
     // Pool information
     CLAY({.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
                                 .height = CLAY_SIZING_FIT()}}}) {

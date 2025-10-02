@@ -29,7 +29,6 @@ typedef struct {
 } board_t;
 
 board_t *board_create(grid_type_e grid_type, int radius, board_type_e board_type);
-board_t *board_clone(board_t *original);
 
 void clear_board(board_t *board);
 
@@ -55,7 +54,6 @@ bool valid_tile(board_t *board, tile_t *tile);
  * @param growth_amount Amount to increase the grid radius by.
  * @return true if growth was successful, false otherwise.
  */
-bool board_grow(board_t *board, int growth_amount);
 
 //static pool_t* find_new_tile_pool_candidates(board_t *board, tile_t *tile);
 
@@ -67,9 +65,8 @@ bool merge_boards(board_t *target_board, board_t *source_board,
 
 bool board_rotate(board_t *board, grid_cell_t center, int rotation_steps);
 
-tile_t *get_tile_at_cell(board_t *board, grid_cell_t cell);
+tile_t *get_tile_at_cell(const board_t *board, grid_cell_t cell);
 
-void print_board_debug_info(board_t *board);
 
 
 

@@ -33,7 +33,7 @@ tile_map_t *tile_map_create(void);
 void tile_map_free(tile_map_t *map);
 
 /* Find an entry in the tile map based on a grid cell key. */
-tile_map_entry_t* tile_map_find(tile_map_t *map, grid_cell_t cell);
+tile_map_entry_t* tile_map_find(const tile_map_t *map, grid_cell_t cell);
 
 bool tile_map_contains(const tile_map_t *map, grid_cell_t cell);
 

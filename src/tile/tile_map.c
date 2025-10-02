@@ -32,7 +32,7 @@ void tile_map_free(tile_map_t *map) {
   free(map);
 }
 
-tile_map_entry_t *tile_map_find(tile_map_t *map, grid_cell_t cell) {
+tile_map_entry_t *tile_map_find(const tile_map_t *map, grid_cell_t cell) {
   if (!map)
     return NULL;
   tile_map_entry_t *entry;
@@ -46,7 +46,7 @@ tile_map_entry_t *tile_map_find(tile_map_t *map, grid_cell_t cell) {
 void tile_map_remove(tile_map_t *map, grid_cell_t cell) {
   if (!map)
     return;
-  tile_map_entry_t *entry = tile_map_find(map, cell);
+  tile_map_entry_t *entry = tile_map_find((const tile_map_t *)map, cell);
   if (entry) {
     HASH_DEL(map->root, entry);
     map->num_tiles--;
@@ -64,7 +64,8 @@ void tile_map_foreach_tile(tile_map_t *map, void (*fn)(tile_t *, void *),
 void tile_map_add(tile_map_t *map, tile_t *tile) {
   if (!map || !tile)
     return;
-  tile_map_entry_t *existing_entry = tile_map_find(map, tile->cell);
+  tile_map_entry_t *existing_entry =
+    tile_map_find((const tile_map_t *)map, tile->cell);
   if (existing_entry) {
     // Update the tile pointer in the existing entry
     existing_entry->tile = tile;

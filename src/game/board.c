@@ -113,18 +113,9 @@ bool valid_tile(board_t *board, tile_t *tile) {
 }
 
 // Helper function to get tile from cell
-tile_t *get_tile_at_cell(board_t *board, grid_cell_t cell) {
+tile_t *get_tile_at_cell(const board_t *board, grid_cell_t cell) {
   tile_map_entry_t *entry = tile_map_find(board->tiles, cell);
   return entry ? entry->tile : NULL;
-}
-
-bool board_grow(board_t *board, int growth_amount) {
-  if (!board || growth_amount <= 0) {
-    return false;
-  }
-
-  board->radius += growth_amount;
-  return true;
 }
 
 // Function to get neighboring pools that accept a specific tile type
@@ -154,10 +145,6 @@ void get_neighbor_pools(board_t *board, tile_t *tile, pool_t **out_pools,
 void add_tile(board_t *board, tile_t *tile) {
   if (!valid_tile(board, tile))
     return;
-
-  // Debug: Print tile data at start of add_tile
-  printf("DEBUG add_tile: entering with tile type=%d, value=%d\n",
-         tile->data.type, tile->data.value);
 
   pool_t *target_pool = NULL;
   pool_t *candidate_pools[MAX_POOL_CANDIDATES];
@@ -377,32 +364,6 @@ void board_fill(board_t *board, int radius, board_type_e board_type) {
   printf("Board filled with %zu tiles\n", created_tiles);
 }
 
-void cycle_tile_type(board_t *board, tile_t *tile);
-
-void print_board_debug_info(board_t *board) {
-  if (!board) {
-    printf("Board is NULL\n");
-    return;
-  }
-
-  printf("=== Board Debug Info ===\n");
-  printf("Grid type: %d\n", board->geometry_type);
-  // Calculate cell count based on radius (hex grid formula)
-  size_t num_cells = 3 * board->radius * (board->radius + 1) + 1;
-  printf("Grid cells: %zu (radius: %d)\n", num_cells, board->radius);
-
-  // Display chunk system status
-  printf("Chunk system: disabled\n");
-  // printf("Chunk system: enabled with %zu active chunks (size %d)\n",
-  //        board->grid->chunk_system.num_chunks,
-  //        board->grid->chunk_system.chunk_size);
-
-  printf("Tiles in board: %d\n", board->tiles->num_tiles);
-  printf("Pools in board: %zu\n", board->pools->num_pools);
-  printf("Next pool ID: %u\n", board->next_pool_id);
-  printf("========================\n");
-}
-
 // Function to check if a board merge is valid (no tile overlaps)
 bool is_merge_valid(board_t *target_board, board_t *source_board,
                     grid_cell_t target_center, grid_cell_t source_center) {
@@ -516,47 +477,6 @@ bool board_rotate(board_t *board, grid_cell_t center, int rotation_steps) {
   tile_map_free(temp_map);
 
   return success;
-}
-
-// Board cloning function
-board_t *board_clone(board_t *original) {
-  if (!original)
-    return NULL;
-
-  board_t *clone = malloc(sizeof(board_t));
-  if (!clone)
-    return NULL;
-
-  // Copy geometry configuration
-  clone->geometry_type = original->geometry_type;
-  clone->geometry = original->geometry;
-  clone->layout = original->layout;
-  clone->radius = original->radius;
-  clone->board_type = original->board_type;
-
-  // Create new tile and pool maps
-  clone->tiles = tile_map_create();
-  clone->pools = pool_map_create();
-  clone->next_pool_id = original->next_pool_id;
-
-  // Copy camera
-  clone->camera = original->camera;
-
-  // Clone all tiles
-  tile_map_entry_t *entry, *tmp;
-  HASH_ITER(hh, original->tiles->root, entry, tmp) {
-    tile_t *original_tile = entry->tile;
-    tile_t *cloned_tile = malloc(sizeof(tile_t));
-    if (!cloned_tile) {
-      free_board(clone);
-      return NULL;
-    }
-
-    *cloned_tile = *original_tile; // Copy tile data
-    tile_map_add(clone->tiles, cloned_tile);
-  }
-
-  return clone;
 }
 
 bool board_validate_tile_map_bounds(const board_t *board,
