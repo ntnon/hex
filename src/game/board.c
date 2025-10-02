@@ -15,7 +15,7 @@ const orientation_t layout_pointy_t = {.f0 = 1.732050808,
                                        .b1 = -0.333333333,
                                        .b2 = 0.0,
                                        .b3 = 0.666666667,
-                                       .start_angle = 0.5};
+                                       .start_angle = -0.5};
 
 layout_t default_layout = {
   .orientation = layout_pointy_t,
@@ -80,6 +80,14 @@ board_t *board_create(grid_type_e grid_type, int radius,
   board->pools = pool_map_create();
   board->next_pool_id = 1;
 
+  board->edge_list = edge_render_list_create();
+  if (!board->edge_list) {
+    tile_map_free(board->tiles);
+    pool_map_free(board->pools);
+    free(board);
+    return NULL;
+  }
+
   camera_init(&board->camera);
 
   if (board_type == BOARD_TYPE_MAIN) {
@@ -92,6 +100,7 @@ board_t *board_create(grid_type_e grid_type, int radius,
 void clear_board(board_t *board) {
   tile_map_free(board->tiles);
   pool_map_free(board->pools);
+  edge_render_list_clear(board->edge_list);
   board->tiles = tile_map_create();
   board->pools = pool_map_create();
   board->next_pool_id = 1;
@@ -100,6 +109,7 @@ void clear_board(board_t *board) {
 void free_board(board_t *board) {
   tile_map_free(board->tiles);
   pool_map_free(board->pools);
+  edge_render_list_free(board->edge_list);
 
   free(board);
 }
@@ -209,7 +219,10 @@ void add_tile(board_t *board, tile_t *tile) {
   pool_add_tile_to_pool(target_pool, tile);
   // TODO: Fix pool_update to work without grid instance
   // pool_update(target_pool, board->geometry_type, board->layout,
-  // board->radius);
+  //             board->radius);
+
+  // Update edge list after adding tile
+  board_update_edge_list(board);
 
   // Mark chunk dirty for rendering updates - DISABLED
   // chunk_id_t chunk_id = grid_get_chunk_id(board->grid, tile->cell);
@@ -233,6 +246,9 @@ void remove_tile(board_t *board, tile_t *tile) {
 
   // Remove tile from board's tile map
   tile_map_remove(board->tiles, tile->cell);
+
+  // Update edge list after removing tile
+  board_update_edge_list(board);
 
   // Mark chunk dirty for rendering updates - DISABLED
   // chunk_id_t chunk_id = grid_get_chunk_id(board->grid, tile->cell);
@@ -306,6 +322,9 @@ void board_randomize(board_t *board, int radius, board_type_e board_type) {
   }
 
   free(all_coords);
+
+  // Update edge list after all tiles added
+  board_update_edge_list(board);
 }
 
 void board_fill(board_t *board, int radius, board_type_e board_type) {
@@ -362,6 +381,9 @@ void board_fill(board_t *board, int radius, board_type_e board_type) {
 
   free(all_coords);
   printf("Board filled with %zu tiles\n", created_tiles);
+
+  // Update edge list after all tiles added
+  board_update_edge_list(board);
 }
 
 // Function to check if a board merge is valid (no tile overlaps)
@@ -477,6 +499,108 @@ bool board_rotate(board_t *board, grid_cell_t center, int rotation_steps) {
   tile_map_free(temp_map);
 
   return success;
+}
+
+// Get neighbor cell in a specific hex direction
+
+// Check if this tile should draw the edge in the given direction
+// Uses deterministic ownership to prevent duplicate edge drawing
+static bool should_draw_edge(const board_t *board, grid_cell_t cell,
+                             hex_edge_direction_t edge_dir) {
+  if (!board)
+    return false;
+
+  // Get the tile at current cell
+  tile_t *current_tile = get_tile_at_cell(board, cell);
+  if (!current_tile)
+    return false; // No tile here, no edges to draw
+
+  // Get neighbor cell using geometry-native function
+  grid_cell_t neighbor = hex_get_edge_neighbor(cell, edge_dir);
+
+  // Check if neighbor is out of bounds
+  if (!grid_is_valid_cell_with_radius(neighbor, board->radius)) {
+    return true; // Always draw boundary edges
+  }
+
+  // Get tile at neighbor
+  tile_t *neighbor_tile = get_tile_at_cell(board, neighbor);
+
+  // Only draw edge if there's a pool boundary
+  if (!neighbor_tile) {
+    return true; // Edge to empty space (pool boundary)
+  }
+
+  if (current_tile->pool_id == neighbor_tile->pool_id) {
+    return false; // Same pool, no edge needed
+  }
+
+  // Different pools - use deterministic ownership to prevent duplicates
+  // Only draw the edge if this tile "owns" it based on consistent criteria
+
+  // Compare coordinates to determine ownership
+  hex_coord_t curr_hex = cell.coord.hex;
+  hex_coord_t neighbor_hex = neighbor.coord.hex;
+
+  // Primary criterion: tile with smaller q coordinate owns the edge
+  if (curr_hex.q < neighbor_hex.q) {
+    return true;
+  } else if (curr_hex.q > neighbor_hex.q) {
+    return false;
+  }
+
+  // If q is equal, use r coordinate as tiebreaker
+  if (curr_hex.r < neighbor_hex.r) {
+    return true;
+  } else if (curr_hex.r > neighbor_hex.r) {
+    return false;
+  }
+
+  // If both q and r are equal, use s coordinate (shouldn't happen for valid
+  // neighbors)
+  return curr_hex.s < neighbor_hex.s;
+}
+
+void board_update_edge_list(board_t *board) {
+  if (!board || !board->edge_list)
+    return;
+
+  // Clear existing edges
+  edge_render_list_clear(board->edge_list);
+
+  // Default edge appearance
+  Color edge_color = (Color){0, 0, 0, 55}; // Black
+  float edge_thickness = 0.5f;
+  float vertex_radius = 0.25f;
+
+  // Iterate through all tiles
+  tile_map_entry_t *entry, *tmp;
+  HASH_ITER(hh, board->tiles->root, entry, tmp) {
+    tile_t *tile = entry->tile;
+
+    // Check each hex edge direction using geometry-native approach
+    for (int dir = 0; dir < 6; dir++) {
+      hex_edge_direction_t edge_dir = (hex_edge_direction_t)dir;
+      if (should_draw_edge(board, tile->cell, edge_dir)) {
+        // Get edge endpoints directly from geometry
+        point_t start_pt =
+          hex_get_edge_start(&board->layout, tile->cell, edge_dir);
+        point_t end_pt = hex_get_edge_end(&board->layout, tile->cell, edge_dir);
+
+        Vector2 start = {start_pt.x, start_pt.y};
+        Vector2 end = {end_pt.x, end_pt.y};
+
+        edge_render_list_add_edge(board->edge_list, start, end, edge_color,
+                                  edge_thickness);
+
+        // Add corner circles (vertices) using geometry-native vertex positions
+        edge_render_list_add_vertex(board->edge_list, start, edge_color,
+                                    vertex_radius);
+        edge_render_list_add_vertex(board->edge_list, end, edge_color,
+                                    vertex_radius);
+      }
+    }
+  }
 }
 
 bool board_validate_tile_map_bounds(const board_t *board,

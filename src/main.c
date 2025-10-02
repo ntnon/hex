@@ -11,7 +11,7 @@
 #include "game/board.h"
 #include "game/camera.h"
 
-#include "renderer.h"
+#include "renderer/renderer.h"
 #include "ui.h"
 #include "utility/string.h"
 

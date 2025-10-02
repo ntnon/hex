@@ -5,6 +5,7 @@
 #include "tile/tile_map.h"
 #include "tile/pool_map.h"
 #include "utility/array_shuffle.h"
+#include "renderer/edge_render_list.h"
 #include "raylib.h"
 
 typedef enum {
@@ -24,8 +25,10 @@ typedef struct {
     tile_map_t *tiles;
     pool_map_t *pools;
     uint32_t next_pool_id;
-    Camera2D camera;
+    
+    edge_render_list_t *edge_list;  // Rendered edge list for pool boundaries
 
+    Camera2D camera; // Camera for this board
 } board_t;
 
 board_t *board_create(grid_type_e grid_type, int radius, board_type_e board_type);
@@ -66,6 +69,13 @@ bool merge_boards(board_t *target_board, board_t *source_board,
 bool board_rotate(board_t *board, grid_cell_t center, int rotation_steps);
 
 tile_t *get_tile_at_cell(const board_t *board, grid_cell_t cell);
+
+/**
+ * @brief Updates the edge render list for pool boundaries
+ * @param board The board to update edges for
+ */
+void board_update_edge_list(board_t *board);
+
 
 
 

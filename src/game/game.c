@@ -21,8 +21,8 @@ void game_init(game_t *game) {
 
   game->state = GAME_STATE_PLAYING;
   // board_randomize(game->board);
-  // board_fill(game->board, 1, BOARD_TYPE_MAIN);
-  // inventory_fill(game->inventory, 1);
+  board_fill(game->board, 5, BOARD_TYPE_MAIN);
+  inventory_fill(game->inventory, 1);
 }
 
 void free_game(game_t *game) {

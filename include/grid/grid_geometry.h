@@ -4,6 +4,26 @@
 #include "grid_types.h"
 #include <stdlib.h>
 
+// Hex-specific edge directions (clockwise from East)
+typedef enum {
+    HEX_EDGE_E = 0,     // East
+    HEX_EDGE_NE = 1,    // Northeast  
+    HEX_EDGE_NW = 2,    // Northwest
+    HEX_EDGE_W = 3,     // West
+    HEX_EDGE_SW = 4,    // Southwest
+    HEX_EDGE_SE = 5     // Southeast
+} hex_edge_direction_t;
+
+// Hex vertex directions (corners, clockwise from Northeast)
+typedef enum {
+    HEX_VERTEX_NE = 0,  // Northeast corner
+    HEX_VERTEX_N = 1,   // North corner
+    HEX_VERTEX_NW = 2,  // Northwest corner  
+    HEX_VERTEX_SW = 3,  // Southwest corner
+    HEX_VERTEX_S = 4,   // South corner
+    HEX_VERTEX_SE = 5   // Southeast corner
+} hex_vertex_direction_t;
+
 // Forward declarations
 typedef struct grid_t grid_t;
 
@@ -300,6 +320,41 @@ bool grid_pixel_to_cell(grid_type_e geometry_type, const layout_t *layout, point
  * @param corners Array to store the corner points (must be appropriately sized).
  */
 void grid_get_cell_corners(grid_type_e geometry_type, const layout_t *layout, grid_cell_t cell, point_t corners[]);
+
+/**
+ * @brief Gets the start point of a specific hex edge.
+ * @param layout The layout configuration for positioning and scaling.
+ * @param cell The hex cell.
+ * @param edge The edge direction.
+ * @return The start point of the edge.
+ */
+point_t hex_get_edge_start(const layout_t *layout, grid_cell_t cell, hex_edge_direction_t edge);
+
+/**
+ * @brief Gets the end point of a specific hex edge.
+ * @param layout The layout configuration for positioning and scaling.
+ * @param cell The hex cell.
+ * @param edge The edge direction.
+ * @return The end point of the edge.
+ */
+point_t hex_get_edge_end(const layout_t *layout, grid_cell_t cell, hex_edge_direction_t edge);
+
+/**
+ * @brief Gets the position of a specific hex vertex.
+ * @param layout The layout configuration for positioning and scaling.
+ * @param cell The hex cell.
+ * @param vertex The vertex direction.
+ * @return The position of the vertex.
+ */
+point_t hex_get_vertex_position(const layout_t *layout, grid_cell_t cell, hex_vertex_direction_t vertex);
+
+/**
+ * @brief Gets the neighboring cell across a specific hex edge.
+ * @param cell The starting hex cell.
+ * @param edge The edge direction to cross.
+ * @return The neighboring cell across that edge.
+ */
+grid_cell_t hex_get_edge_neighbor(grid_cell_t cell, hex_edge_direction_t edge);
 
 /**
  * @brief Grows the grid by the specified amount.

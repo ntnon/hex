@@ -632,6 +632,154 @@ void grid_get_cell_corners(grid_type_e geometry_type, const layout_t *layout,
   // Add other geometry types as needed
 }
 
+point_t hex_get_edge_start(const layout_t *layout, grid_cell_t cell,
+                           hex_edge_direction_t edge) {
+  if (!layout || cell.type != GRID_TYPE_HEXAGON) {
+    return (point_t){0.0, 0.0};
+  }
+
+  // Get all corners first
+  point_t corners[6];
+  grid_get_cell_corners(GRID_TYPE_HEXAGON, layout, cell, corners);
+
+  // Map edge direction to starting corner index
+  // For pointy-topped hex with start_angle = 0.5, corners are at:
+  // 0: NE (30°), 1: N (90°), 2: NW (150°), 3: SW (210°), 4: S (270°), 5: SE
+  // (330°)
+  int corner_index;
+  switch (edge) {
+  case HEX_EDGE_E:
+    corner_index = 5;
+    break; // E edge: SE to NE
+  case HEX_EDGE_NE:
+    corner_index = 0;
+    break; // NE edge: NE to N
+  case HEX_EDGE_NW:
+    corner_index = 1;
+    break; // NW edge: N to NW
+  case HEX_EDGE_W:
+    corner_index = 2;
+    break; // W edge: NW to SW
+  case HEX_EDGE_SW:
+    corner_index = 3;
+    break; // SW edge: SW to S
+  case HEX_EDGE_SE:
+    corner_index = 4;
+    break; // SE edge: S to SE
+  default:
+    corner_index = 0;
+    break;
+  }
+
+  return corners[corner_index];
+}
+
+point_t hex_get_edge_end(const layout_t *layout, grid_cell_t cell,
+                         hex_edge_direction_t edge) {
+  if (!layout || cell.type != GRID_TYPE_HEXAGON) {
+    return (point_t){0.0, 0.0};
+  }
+
+  // Get all corners first
+  point_t corners[6];
+  grid_get_cell_corners(GRID_TYPE_HEXAGON, layout, cell, corners);
+
+  // Map edge direction to ending corner index
+  int corner_index;
+  switch (edge) {
+  case HEX_EDGE_E:
+    corner_index = 0;
+    break; // E edge: SE to NE
+  case HEX_EDGE_NE:
+    corner_index = 1;
+    break; // NE edge: NE to N
+  case HEX_EDGE_NW:
+    corner_index = 2;
+    break; // NW edge: N to NW
+  case HEX_EDGE_W:
+    corner_index = 3;
+    break; // W edge: NW to SW
+  case HEX_EDGE_SW:
+    corner_index = 4;
+    break; // SW edge: SW to S
+  case HEX_EDGE_SE:
+    corner_index = 5;
+    break; // SE edge: S to SE
+  default:
+    corner_index = 1;
+    break;
+  }
+
+  return corners[corner_index];
+}
+
+point_t hex_get_vertex_position(const layout_t *layout, grid_cell_t cell,
+                                hex_vertex_direction_t vertex) {
+  if (!layout || cell.type != GRID_TYPE_HEXAGON) {
+    return (point_t){0.0, 0.0};
+  }
+
+  // Get all corners first
+  point_t corners[6];
+  grid_get_cell_corners(GRID_TYPE_HEXAGON, layout, cell, corners);
+
+  // Map vertex direction to corner index
+  int corner_index;
+  switch (vertex) {
+  case HEX_VERTEX_NE:
+    corner_index = 0;
+    break;
+  case HEX_VERTEX_N:
+    corner_index = 1;
+    break;
+  case HEX_VERTEX_NW:
+    corner_index = 2;
+    break;
+  case HEX_VERTEX_SW:
+    corner_index = 3;
+    break;
+  case HEX_VERTEX_S:
+    corner_index = 4;
+    break;
+  case HEX_VERTEX_SE:
+    corner_index = 5;
+    break;
+  default:
+    corner_index = 0;
+    break;
+  }
+
+  return corners[corner_index];
+}
+
+grid_cell_t hex_get_edge_neighbor(grid_cell_t cell, hex_edge_direction_t edge) {
+  if (cell.type != GRID_TYPE_HEXAGON) {
+    return (grid_cell_t){.type = GRID_TYPE_UNKNOWN};
+  }
+
+  // Hex direction offsets (q, r, s) - same as existing get_hex_neighbor
+  // function
+  static const int hex_directions[6][3] = {
+    {+1, -1, 0}, // E
+    {+1, 0, -1}, // NE
+    {0, +1, -1}, // NW
+    {-1, +1, 0}, // W
+    {-1, 0, +1}, // SW
+    {0, -1, +1}  // SE
+  };
+
+  if (edge < 0 || edge > 5) {
+    return (grid_cell_t){.type = GRID_TYPE_UNKNOWN};
+  }
+
+  grid_cell_t neighbor = cell;
+  neighbor.coord.hex.q += hex_directions[edge][0];
+  neighbor.coord.hex.r += hex_directions[edge][1];
+  neighbor.coord.hex.s += hex_directions[edge][2];
+
+  return neighbor;
+}
+
 bool grid_grow(grid_t *grid, int growth_amount) {
   if (!grid || growth_amount <= 0) {
     return false;

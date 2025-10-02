@@ -25,6 +25,7 @@ void render_hex_rounded_outline(const board_t *board, grid_cell_t cell,
 /* Optimized rendering functions (require raylib initialization) */
 void render_board_optimized(const board_t *board);
 void render_hex_grid_optimized(const grid_t *grid);
+void render_board_edges(const board_t *board);
 void render_game_previews(const game_t *game);
 void render_board_in_bounds(const board_t *board, Rectangle bounds);
 void render_inventory(const inventory_t *inventory);
