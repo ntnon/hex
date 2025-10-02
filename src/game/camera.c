@@ -26,8 +26,8 @@ void update_camera(Camera2D *camera, const input_state_t *input) {
     // Apply zoom change
     float old_zoom = camera->zoom;
     camera->zoom += input->mouse_wheel_delta * 0.05f;
-    if (camera->zoom < 1.0f)
-      camera->zoom = 1.0f;
+    if (camera->zoom < 0.1f)
+      camera->zoom = 0.1f;
     if (camera->zoom > 10.0f)
       camera->zoom = 10.0f;
     // Convert mouse to world after zoom

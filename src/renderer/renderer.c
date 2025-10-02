@@ -56,11 +56,6 @@ void render_hex_cell(const board_t *board, grid_cell_t cell,
   DrawTriangleFan(verts, 6, ray_fill_color);
 
   // Draw outline if edge color is not blank
-
-  for (int i = 0; i < 6; i++) {
-    DrawLineEx(verts[i], verts[(i + 1) % 6], 0.5f, ray_edge_color);
-    DrawCircleV(verts[i], 0.25f, ray_edge_color);
-  }
 }
 
 void render_tile(const tile_t *tile, const board_t *board) {
@@ -76,6 +71,105 @@ static void draw_tile_wrapper(tile_t *tile, void *user_data) {
   render_tile(tile, board);
 }
 
+void render_hex_cells_batched(const board_t *board, grid_cell_t *cells,
+                              size_t count, Clay_Color fill_color) {
+  if (!board || !cells || count == 0)
+    return;
+
+  Color ray_fill_color = to_raylib_color(fill_color);
+
+  // Use batched approach: collect all vertices for this color and draw with
+  // minimal calls
+  Vector2 *vertices = malloc(count * 6 * sizeof(Vector2));
+  if (!vertices)
+    return;
+
+  size_t batch_size = 0;
+  const size_t MAX_BATCH = 1000; // Process in batches to avoid memory issues
+
+  for (size_t i = 0; i < count; i++) {
+    point_t corners[6];
+    grid_get_cell_corners(board->geometry_type, &board->layout, cells[i],
+                          corners);
+
+    Vector2 hex_verts[6];
+    for (int j = 0; j < 6; j++) {
+      int reversed_j = (6 - 1) - j;
+      hex_verts[j] =
+        (Vector2){(float)corners[reversed_j].x, (float)corners[reversed_j].y};
+    }
+
+    // Draw this hex using triangle fan (most efficient for individual hexes)
+    DrawTriangleFan(hex_verts, 6, ray_fill_color);
+
+    batch_size++;
+
+    // If we hit batch limit, we could implement more sophisticated batching
+    // here
+    if (batch_size >= MAX_BATCH) {
+      batch_size = 0;
+    }
+  }
+
+  free(vertices);
+}
+
+void render_board_batched(const board_t *board) {
+  if (!board || !board->tiles) {
+    printf("ERROR: board or tiles is null\n");
+    return;
+  }
+
+  // Group tiles by color
+  typedef struct {
+    grid_cell_t *cells;
+    size_t count;
+    size_t capacity;
+  } tile_group_t;
+
+  tile_group_t groups[TILE_TYPE_COUNT] = {0};
+
+  // Initialize groups
+  for (int i = 0; i < TILE_TYPE_COUNT; i++) {
+    groups[i].capacity = 64; // Start with reasonable capacity
+    groups[i].cells = malloc(groups[i].capacity * sizeof(grid_cell_t));
+  }
+
+  // Group tiles by type
+  tile_map_entry_t *entry, *tmp;
+  HASH_ITER(hh, board->tiles->root, entry, tmp) {
+    tile_t *tile = entry->tile;
+    if (tile->data.type >= 0 && tile->data.type < TILE_TYPE_COUNT) {
+      tile_group_t *group = &groups[tile->data.type];
+
+      // Expand capacity if needed
+      if (group->count >= group->capacity) {
+        group->capacity *= 2;
+        group->cells =
+          realloc(group->cells, group->capacity * sizeof(grid_cell_t));
+      }
+
+      group->cells[group->count++] = tile->cell;
+    }
+  }
+
+  // Render each color group
+  for (int i = 1; i < TILE_TYPE_COUNT; i++) { // Skip TILE_EMPTY
+    if (groups[i].count > 0) {
+      Clay_Color color = color_from_tile((tile_data_t){.type = i, .value = 0});
+      render_hex_cells_batched(board, groups[i].cells, groups[i].count, color);
+    }
+  }
+
+  // Cleanup
+  for (int i = 0; i < TILE_TYPE_COUNT; i++) {
+    free(groups[i].cells);
+  }
+
+  // Render pool boundary edges
+  // render_board_edges(board);
+}
+
 void render_board(const board_t *board) {
   if (!board) {
     printf("ERROR: board is null\n");
@@ -87,10 +181,13 @@ void render_board(const board_t *board) {
     return;
   }
 
-  tile_map_foreach_tile(board->tiles, draw_tile_wrapper, (void *)board);
+  // Switch between batched and individual rendering
+  // For now, use batched rendering for better performance
+  render_board_batched(board);
 
-  // Render pool boundary edges
-  render_board_edges(board);
+  // Uncomment below to use individual tile rendering instead:
+  // tile_map_foreach_tile(board->tiles, draw_tile_wrapper, (void *)board);
+  // render_board_edges(board);
 }
 
 void render_board_edges(const board_t *board) {

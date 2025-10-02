@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #define MAX_POOL_CANDIDATES 10
 
@@ -19,7 +20,7 @@ const orientation_t layout_pointy_t = {.f0 = 1.732050808,
 
 layout_t default_layout = {
   .orientation = layout_pointy_t,
-  .size = {5.0, 5.0},   // Hex size (adjust as needed)
+  .size = {10.0, 10.0}, // Hex size (adjust as needed)
   .origin = {0.0, 0.0}, // Center of the screen (adjust as needed)
   .scale = 1.0f, // scale factor for hex size (adjust as needed)          //
                  // radius of the hexagon (adjust as needed)
@@ -221,8 +222,8 @@ void add_tile(board_t *board, tile_t *tile) {
   // pool_update(target_pool, board->geometry_type, board->layout,
   //             board->radius);
 
-  // Update edge list after adding tile
-  board_update_edge_list(board);
+  // Note: Edge list update moved to batch operations for performance
+  // board_update_edge_list(board);
 
   // Mark chunk dirty for rendering updates - DISABLED
   // chunk_id_t chunk_id = grid_get_chunk_id(board->grid, tile->cell);
@@ -328,6 +329,14 @@ void board_randomize(board_t *board, int radius, board_type_e board_type) {
 }
 
 void board_fill(board_t *board, int radius, board_type_e board_type) {
+  // Use batched version for better performance
+  board_fill_batch(board, radius, board_type);
+}
+
+void board_fill_fast(board_t *board, int radius, board_type_e board_type) {
+  clock_t start_time = clock();
+  printf("Starting board_fill_fast with radius %d\n", radius);
+
   // Clamp radius to board's maximum radius
   if (radius > board->radius) {
     radius = board->radius;
@@ -343,18 +352,25 @@ void board_fill(board_t *board, int radius, board_type_e board_type) {
 
   // Get all valid coordinates for this geometry type within the specified
   // radius
+  clock_t coords_start = clock();
   grid_cell_t *all_coords;
   size_t coord_count;
   if (!grid_get_all_coordinates_in_radius(board->geometry_type, radius,
                                           &all_coords, &coord_count)) {
     return;
   }
+  printf("Generated %zu coordinates in %.3fs\n", coord_count,
+         (double)(clock() - coords_start) / CLOCKS_PER_SEC);
+
+  // Pre-allocate array for tiles
+  tile_t **tiles = malloc(coord_count * sizeof(tile_t *));
+  size_t tile_count = 0;
 
   size_t created_tiles = (board_type == BOARD_TYPE_MAIN)
                            ? 1
                            : 0; // Start with 1 for center tile if main board
 
-  // Fill all valid cells in the grid (except center which we already placed)
+  // Generate all tile data first (no pool assignment yet)
   for (size_t i = 0; i < coord_count; i++) {
     grid_cell_t cell = all_coords[i];
 
@@ -371,19 +387,239 @@ void board_fill(board_t *board, int radius, board_type_e board_type) {
 
     tile_t *tile = tile_create_random_ptr(cell);
     if (tile->data.type != TILE_EMPTY) {
-      tile->pool_id = 0; // Will be assigned in add_tile
-      add_tile(board, tile);
+      tile->pool_id = 1; // Assign all tiles to single pool for fast mode
+      tiles[tile_count++] = tile;
       created_tiles++;
     } else {
       free(tile); // Free empty tiles
     }
   }
 
-  free(all_coords);
-  printf("Board filled with %zu tiles\n", created_tiles);
+  clock_t batch_start = clock();
+  // Add all tiles to board at once (no pool logic)
+  add_tiles_batch(board, tiles, tile_count);
+  printf("Added %zu tiles in %.3fs\n", tile_count,
+         (double)(clock() - batch_start) / CLOCKS_PER_SEC);
 
-  // Update edge list after all tiles added
+  // Create single pool for all tiles (fast mode)
+  clock_t pools_start = clock();
+  pool_t *single_pool = pool_map_create_pool(board->pools);
+  single_pool->accepted_tile_type = TILE_MAGENTA; // Accept any type
+  single_pool->id = 1;
+
+  // Add all tiles to single pool
+  for (size_t i = 0; i < tile_count; i++) {
+    pool_add_tile_to_pool(single_pool, tiles[i]);
+  }
+  printf("Assigned single pool in %.3fs\n",
+         (double)(clock() - pools_start) / CLOCKS_PER_SEC);
+
+  // Skip edge calculation for fast mode
+  printf("Skipping edge calculation for fast mode\n");
+
+  free(tiles);
+  free(all_coords);
+  printf("Board filled with %zu tiles in %.3fs total (FAST MODE)\n",
+         created_tiles, (double)(clock() - start_time) / CLOCKS_PER_SEC);
+}
+
+void board_fill_batch(board_t *board, int radius, board_type_e board_type) {
+  clock_t start_time = clock();
+  printf("Starting board_fill_batch with radius %d\n", radius);
+
+  // Clamp radius to board's maximum radius
+  if (radius > board->radius) {
+    radius = board->radius;
+  }
+
+  // Clear existing tiles and pools
+  clear_board(board);
+
+  // Place three clustered tiles for main boards
+  if (board_type == BOARD_TYPE_MAIN) {
+    create_center_cluster(board);
+  }
+
+  // Get all valid coordinates for this geometry type within the specified
+  // radius
+  clock_t coords_start = clock();
+  grid_cell_t *all_coords;
+  size_t coord_count;
+  if (!grid_get_all_coordinates_in_radius(board->geometry_type, radius,
+                                          &all_coords, &coord_count)) {
+    return;
+  }
+  printf("Generated %zu coordinates in %.3fs\n", coord_count,
+         (double)(clock() - coords_start) / CLOCKS_PER_SEC);
+
+  // Pre-allocate array for tiles
+  tile_t **tiles = malloc(coord_count * sizeof(tile_t *));
+  size_t tile_count = 0;
+
+  size_t created_tiles = (board_type == BOARD_TYPE_MAIN)
+                           ? 1
+                           : 0; // Start with 1 for center tile if main board
+
+  // Generate all tile data first (no pool assignment yet)
+  for (size_t i = 0; i < coord_count; i++) {
+    grid_cell_t cell = all_coords[i];
+
+    // Skip center coordinate if we placed a center tile
+    if (board_type == BOARD_TYPE_MAIN) {
+      grid_cell_t center = grid_get_center_cell(board->geometry_type);
+      bool is_center = (cell.coord.hex.q == center.coord.hex.q &&
+                        cell.coord.hex.r == center.coord.hex.r &&
+                        cell.coord.hex.s == center.coord.hex.s);
+      if (is_center) {
+        continue;
+      }
+    }
+
+    tile_t *tile = tile_create_random_ptr(cell);
+    if (tile->data.type != TILE_EMPTY) {
+      tile->pool_id = 0; // Will be assigned later
+      tiles[tile_count++] = tile;
+      created_tiles++;
+    } else {
+      free(tile); // Free empty tiles
+    }
+  }
+
+  clock_t batch_start = clock();
+  // Add all tiles to board at once (no pool logic)
+  add_tiles_batch(board, tiles, tile_count);
+  printf("Added %zu tiles in %.3fs\n", tile_count,
+         (double)(clock() - batch_start) / CLOCKS_PER_SEC);
+
+  clock_t pools_start = clock();
+  // Assign pools efficiently after all tiles exist
+  assign_pools_batch(board);
+  printf("Assigned pools in %.3fs\n",
+         (double)(clock() - pools_start) / CLOCKS_PER_SEC);
+
+  clock_t edges_start = clock();
+  // Update edge list once at the end
+  printf("Starting edge calculation for %zu tiles...\n", tile_count);
   board_update_edge_list(board);
+  printf("Updated edges in %.3fs\n",
+         (double)(clock() - edges_start) / CLOCKS_PER_SEC);
+
+  free(tiles);
+  free(all_coords);
+  printf("Board filled with %zu tiles in %.3fs total\n", created_tiles,
+         (double)(clock() - start_time) / CLOCKS_PER_SEC);
+}
+
+void add_tiles_batch(board_t *board, tile_t **tiles, size_t count) {
+  if (!board || !tiles || count == 0)
+    return;
+
+  // Add all tiles to the board's tile map without pool assignment
+  for (size_t i = 0; i < count; i++) {
+    if (tiles[i] && valid_tile(board, tiles[i])) {
+      tile_map_add_unchecked(board->tiles, tiles[i]);
+    }
+  }
+}
+
+void assign_pools_batch(board_t *board) {
+  if (!board || !board->tiles)
+    return;
+
+  // Use flood-fill algorithm to find connected components of same-colored tiles
+  // This is much more efficient than checking neighbors for each tile
+  // individually
+
+  tile_map_entry_t *entry, *tmp;
+
+  // First pass: mark all tiles as unassigned
+  HASH_ITER(hh, board->tiles->root, entry, tmp) {
+    entry->tile->pool_id = 0; // 0 means unassigned
+  }
+
+  uint32_t next_pool_id = 1;
+
+  // Second pass: flood-fill to assign pools
+  printf("Starting pool assignment for %zu tiles...\n",
+         tile_map_size(board->tiles));
+  size_t pools_created = 0;
+  HASH_ITER(hh, board->tiles->root, entry, tmp) {
+    tile_t *tile = entry->tile;
+
+    if (tile->pool_id == 0) { // Unassigned
+      // Create new pool and flood-fill
+      pool_t *new_pool = pool_map_create_pool(board->pools);
+      new_pool->accepted_tile_type = tile->data.type;
+      new_pool->id = next_pool_id++;
+
+      // Flood-fill all connected tiles of same type
+      flood_fill_assign_pool(board, tile, new_pool);
+      pools_created++;
+
+      if (pools_created % 10 == 0) {
+        printf("Created %zu pools so far...\n", pools_created);
+      }
+    }
+  }
+  printf("Created %zu pools total\n", pools_created);
+}
+
+void flood_fill_assign_pool(board_t *board, tile_t *start_tile, pool_t *pool) {
+  if (!board || !start_tile || !pool || start_tile->pool_id != 0)
+    return;
+
+  // Use iterative flood-fill with stack to prevent stack overflow on large
+  // boards
+  tile_t **stack =
+    malloc(100000 * sizeof(tile_t *)); // Start with larger size for big boards
+  size_t stack_size = 0;
+  size_t stack_capacity = 100000;
+
+  // Add start tile to stack
+  stack[stack_size++] = start_tile;
+
+  while (stack_size > 0) {
+    // Pop tile from stack
+    tile_t *current_tile = stack[--stack_size];
+
+    // Skip if already processed
+    if (current_tile->pool_id != 0)
+      continue;
+
+    // Assign to pool
+    current_tile->pool_id = pool->id;
+    pool_add_tile_to_pool(pool, current_tile);
+
+    // Check all 6 neighbors
+    for (int dir = 0; dir < 6; dir++) {
+      grid_cell_t neighbor_cell;
+      board->geometry->get_neighbor_cell(current_tile->cell, dir,
+                                         &neighbor_cell);
+      tile_t *neighbor = get_tile_at_cell(board, neighbor_cell);
+
+      if (neighbor && neighbor->pool_id == 0 &&             // Unassigned
+          neighbor->data.type == current_tile->data.type) { // Same type
+
+        // Expand stack if needed (use larger increments)
+        if (stack_size >= stack_capacity) {
+          size_t new_capacity = stack_capacity + 50000; // Add 50k at a time
+          tile_t **new_stack = realloc(stack, new_capacity * sizeof(tile_t *));
+          if (!new_stack) {
+            printf("ERROR: Failed to expand flood-fill stack\n");
+            free(stack);
+            return;
+          }
+          stack = new_stack;
+          stack_capacity = new_capacity;
+        }
+
+        // Add neighbor to stack
+        stack[stack_size++] = neighbor;
+      }
+    }
+  }
+
+  free(stack);
 }
 
 // Function to check if a board merge is valid (no tile overlaps)
@@ -573,6 +809,13 @@ void board_update_edge_list(board_t *board) {
   float edge_thickness = 0.5f;
   float vertex_radius = 0.25f;
 
+  // Progress tracking for large boards
+  size_t total_tiles = tile_map_size(board->tiles);
+  size_t processed = 0;
+  size_t progress_interval = total_tiles / 20; // Report every 5%
+  if (progress_interval == 0)
+    progress_interval = 1000;
+
   // Iterate through all tiles
   tile_map_entry_t *entry, *tmp;
   HASH_ITER(hh, board->tiles->root, entry, tmp) {
@@ -599,6 +842,12 @@ void board_update_edge_list(board_t *board) {
         edge_render_list_add_vertex(board->edge_list, end, edge_color,
                                     vertex_radius);
       }
+    }
+
+    processed++;
+    if (processed % progress_interval == 0) {
+      printf("Edge calculation progress: %zu/%zu tiles (%.1f%%)\n", processed,
+             total_tiles, (100.0 * processed) / total_tiles);
     }
   }
 }

@@ -82,6 +82,21 @@ void tile_map_add(tile_map_t *map, tile_t *tile) {
   }
 }
 
+void tile_map_add_unchecked(tile_map_t *map, tile_t *tile) {
+  if (!map || !tile)
+    return;
+
+  tile_map_entry_t *entry = malloc(sizeof(tile_map_entry_t));
+  if (!entry) {
+    fprintf(stderr, "Out of memory!\n");
+    return;
+  }
+  entry->cell = tile->cell;
+  entry->tile = tile;
+  HASH_ADD(hh, map->root, cell, sizeof(entry->cell), entry);
+  map->num_tiles++;
+}
+
 bool tile_map_apply_offset(tile_map_t *tile_map, grid_cell_t offset) {
   if (!tile_map)
     return false;

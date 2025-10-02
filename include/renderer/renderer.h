@@ -19,6 +19,10 @@ void render_hex_grid(const board_t *board);
 void render_tile(const tile_t *tile, const board_t *board);
 void render_hex_cell(const board_t *board, grid_cell_t cell, Clay_Color fill_color,
                      Clay_Color edge_color);
+
+// Batched rendering functions
+void render_board_batched(const board_t *board);
+void render_hex_cells_batched(const board_t *board, grid_cell_t *cells, size_t count, Clay_Color fill_color);
 void render_hex_rounded_outline(const board_t *board, grid_cell_t cell,
                                 Clay_Color edge_color, float thickness);
 

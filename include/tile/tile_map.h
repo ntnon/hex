@@ -43,6 +43,9 @@ void tile_map_remove(tile_map_t *map, grid_cell_t cell);
 /* Add a tile into the map. */
 void tile_map_add(tile_map_t *map, tile_t *tile);
 
+/* Add a tile into the map without checking for existing entry (faster for batch operations). */
+void tile_map_add_unchecked(tile_map_t *map, tile_t *tile);
+
 /* Iterate over each tile map entry. */
 void tile_map_foreach_tile(tile_map_t *map, void (*fn)(tile_t *, void *),
                            void *user_data);

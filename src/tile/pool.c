@@ -87,7 +87,7 @@ bool pool_add_tile_to_pool(pool_t *pool, const tile_t *tile) {
   }
 
   // Add the tile to the pool's internal tile map.
-  tile_map_add(pool->tiles, (tile_t *)tile);
+  tile_map_add_unchecked(pool->tiles, (tile_t *)tile);
 
   if (pool->accepted_tile_type == TILE_UNDEFINED) {
     // If the pool has no accepted tile type, set it to the tile's type.
@@ -104,7 +104,7 @@ void pool_free(pool_t *pool) {
 };
 
 void pool_add_tile(pool_t *pool, const tile_t *tile_ptr) {
-  tile_map_add(pool->tiles, (tile_t *)tile_ptr);
+  tile_map_add_unchecked(pool->tiles, (tile_t *)tile_ptr);
 }
 
 // UTILITY

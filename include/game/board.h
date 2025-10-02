@@ -39,8 +39,13 @@ void free_board(board_t *board);
 
 void board_randomize(board_t *board, int radius, board_type_e board_type);
 void board_fill(board_t *board, int radius, board_type_e board_type);
+void board_fill_batch(board_t *board, int radius, board_type_e board_type);
+void board_fill_fast(board_t *board, int radius, board_type_e board_type);
 
 void add_tile(board_t *board, tile_t* tile);
+void add_tiles_batch(board_t *board, tile_t **tiles, size_t count);
+void assign_pools_batch(board_t *board);
+void flood_fill_assign_pool(board_t *board, tile_t *start_tile, pool_t *pool);
 
 void get_neighbor_pools(board_t *board, tile_t *tile, pool_t **out_pools,
                         size_t max_neighbors);

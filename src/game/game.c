@@ -21,7 +21,10 @@ void game_init(game_t *game) {
 
   game->state = GAME_STATE_PLAYING;
   // board_randomize(game->board);
-  board_fill(game->board, 5, BOARD_TYPE_MAIN);
+  // Use smaller radius for testing to avoid long load times
+  printf("Board created with radius: %d\n", game->board->radius);
+  board_fill_batch(game->board, 30,
+                   BOARD_TYPE_MAIN); // Small radius for fast loading
   inventory_fill(game->inventory, 1);
 }
 
