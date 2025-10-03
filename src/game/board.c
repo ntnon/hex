@@ -176,23 +176,23 @@ void add_tile(board_t *board, tile_t *tile) {
     if (neighbor_tile && neighbor_tile->data.type == tile->data.type) {
       printf("DEBUG: Found same-color neighbor type %d with pool_id %d\n",
              neighbor_tile->data.type, neighbor_tile->pool_id);
-      pool_map_entry_t *pool_entry =
-        pool_map_find_by_id(board->pools, neighbor_tile->pool_id);
+      pool_t *neighbor_pool =
+        pool_map_get_pool(board->pools, neighbor_tile->pool_id);
 
-      if (pool_entry && pool_entry->pool) {
+      if (neighbor_pool) {
         // Check if we already have this pool ID
         bool already_added = false;
         for (size_t j = 0; j < num_compatible_pools; j++) {
-          if (compatible_pool_ids[j] == pool_entry->pool->id) {
+          if (compatible_pool_ids[j] == neighbor_pool->id) {
             already_added = true;
             break;
           }
         }
         if (!already_added) {
-          compatible_pool_ids[num_compatible_pools] = pool_entry->pool->id;
+          compatible_pool_ids[num_compatible_pools] = neighbor_pool->id;
           num_compatible_pools++;
           printf("DEBUG: Added pool_id %d to compatible list\n",
-                 pool_entry->pool->id);
+                 neighbor_pool->id);
         }
       }
     }
@@ -210,18 +210,15 @@ void add_tile(board_t *board, tile_t *tile) {
     // Use the first compatible pool (could implement scoring here later)
     printf("DEBUG: Found %zu compatible pools, using pool_id %d\n",
            num_compatible_pools, compatible_pool_ids[0]);
-    pool_map_entry_t *pool_entry =
-      pool_map_find_by_id(board->pools, compatible_pool_ids[0]);
-    target_pool = pool_entry->pool;
+    target_pool = pool_map_get_pool(board->pools, compatible_pool_ids[0]);
     tile->pool_id = target_pool->id;
     printf("DEBUG: Assigned tile to existing pool_id %d\n", target_pool->id);
 
     // If multiple pools, merge them into the target pool
     for (size_t i = 1; i < num_compatible_pools; i++) {
-      pool_map_entry_t *merge_entry =
-        pool_map_find_by_id(board->pools, compatible_pool_ids[i]);
-      if (merge_entry && merge_entry->pool) {
-        pool_t *merge_pool = merge_entry->pool;
+      pool_t *merge_pool =
+        pool_map_get_pool(board->pools, compatible_pool_ids[i]);
+      if (merge_pool) {
 
         // Move all tiles from merge_pool to target_pool
         tile_map_entry_t *tile_entry, *tmp;
