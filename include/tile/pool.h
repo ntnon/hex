@@ -24,6 +24,13 @@
      edge_map_entry_t *edges;
      tile_map_t *tiles;
      tile_type_t accepted_tile_type;
+     
+     // 3-bit range (0-7), stored efficiently
+     uint8_t range : 3;
+     uint8_t _padding : 5;  // Reserved for future use
+     
+     // Pool modifier (can be negative/positive)
+     float modifier;
  } pool_t;
 
 // --- Pool Lifecycle Functions ---
@@ -37,9 +44,11 @@
  */
 
 pool_t * pool_create (void);
-int pool_score(const pool_t *pool);
+int pool_compatibility_score(const pool_t *pool);
 
 void pool_free(pool_t* pool);
+
+int pool_tile_score(const pool_t *pool);
 
 // --- Pool Membership Functions ---
 
@@ -88,6 +97,43 @@ pool_calculate_score (pool_t *pool, const grid_t *grid);
 
 void
 pool_add_tile (pool_t *pool, const tile_t *tile_ptr);
+
+// --- Range and Modifier Functions ---
+
+/**
+ * @brief Sets the range value for a pool (clamped to 0-7).
+ * @param pool Pointer to the pool.
+ * @param range Range value (will be clamped to 0-7).
+ */
+void pool_set_range(pool_t *pool, uint8_t range);
+
+/**
+ * @brief Gets the range value for a pool.
+ * @param pool Pointer to the pool.
+ * @return The pool's range (0-7).
+ */
+uint8_t pool_get_range(const pool_t *pool);
+
+/**
+ * @brief Sets the modifier value for a pool.
+ * @param pool Pointer to the pool.
+ * @param modifier Modifier value (can be negative or positive).
+ */
+void pool_set_modifier(pool_t *pool, float modifier);
+
+/**
+ * @brief Adds to the current modifier value for a pool.
+ * @param pool Pointer to the pool.
+ * @param modifier_delta Value to add to current modifier.
+ */
+void pool_add_modifier(pool_t *pool, float modifier_delta);
+
+/**
+ * @brief Gets the modifier value for a pool.
+ * @param pool Pointer to the pool.
+ * @return The pool's modifier value.
+ */
+float pool_get_modifier(const pool_t *pool);
 
 
 #endif // TILE_POOL_H

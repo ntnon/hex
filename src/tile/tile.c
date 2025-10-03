@@ -9,6 +9,8 @@ tile_t *tile_create_ptr(grid_cell_t cell, tile_data_t data) {
   if (t) {
     t->cell = cell;
     t->data = data;
+    t->range = 0;       // Initialize range to 0
+    t->modifier = 0.0f; // Initialize modifier to 0
   }
   return t;
 }
@@ -112,4 +114,36 @@ void tile_cycle(tile_t *tile) { tile->data.type = (tile->data.type + 1) % 3; }
 void tile_destroy(tile_t *tile) {
   printf("Tile destroyed\n");
   free(tile);
+}
+
+// --- Range and Modifier Functions ---
+
+void tile_set_range(tile_t *tile, uint8_t range) {
+  if (tile) {
+    tile->range = range & 0x07; // Clamp to 0-7 (3 bits)
+  }
+}
+
+uint8_t tile_get_range(const tile_t *tile) { return tile ? tile->range : 0; }
+
+void tile_set_modifier(tile_t *tile, float modifier) {
+  if (tile) {
+    tile->modifier = modifier;
+  }
+}
+
+void tile_add_modifier(tile_t *tile, float modifier_delta) {
+  if (tile) {
+    tile->modifier += modifier_delta;
+  }
+}
+
+float tile_get_modifier(const tile_t *tile) {
+  return tile ? tile->modifier : 0.0f;
+}
+
+float tile_get_effective_production(const tile_t *tile) {
+  if (!tile)
+    return 0.0f;
+  return (float)tile->data.value + tile->modifier;
 }

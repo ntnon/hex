@@ -34,6 +34,13 @@ typedef struct {
     grid_cell_t cell;    // The cell this tile occupies. Crucially, this will be our hash key.
     tile_data_t data;    // Any specific value for the tile (e.g., resource amount).
     uint32_t pool_id;    // ID of the pool this tile belongs to
+    
+    // 3-bit range (0-7), stored efficiently
+    uint8_t range : 3;
+    uint8_t _padding : 5;  // Reserved for future use
+    
+    // Per-tile modifier (can be negative/positive)
+    float modifier;
 } tile_t;
 
 /**
@@ -59,5 +66,49 @@ Clay_Color tile_get_color_from_type(const tile_data_t tile_data);
 
 void tile_destroy(tile_t *tile);
 void tile_cycle(tile_t *tile);
+
+// --- Range and Modifier Functions ---
+
+/**
+ * @brief Sets the range value for a tile (clamped to 0-7).
+ * @param tile Pointer to the tile.
+ * @param range Range value (will be clamped to 0-7).
+ */
+void tile_set_range(tile_t *tile, uint8_t range);
+
+/**
+ * @brief Gets the range value for a tile.
+ * @param tile Pointer to the tile.
+ * @return The tile's range (0-7).
+ */
+uint8_t tile_get_range(const tile_t *tile);
+
+/**
+ * @brief Sets the modifier value for a tile.
+ * @param tile Pointer to the tile.
+ * @param modifier Modifier value (can be negative or positive).
+ */
+void tile_set_modifier(tile_t *tile, float modifier);
+
+/**
+ * @brief Adds to the current modifier value for a tile.
+ * @param tile Pointer to the tile.
+ * @param modifier_delta Value to add to current modifier.
+ */
+void tile_add_modifier(tile_t *tile, float modifier_delta);
+
+/**
+ * @brief Gets the modifier value for a tile.
+ * @param tile Pointer to the tile.
+ * @return The tile's modifier value.
+ */
+float tile_get_modifier(const tile_t *tile);
+
+/**
+ * @brief Gets the effective production value (base value + modifier).
+ * @param tile Pointer to the tile.
+ * @return The effective production as a float.
+ */
+float tile_get_effective_production(const tile_t *tile);
 
 #endif // TILE_H

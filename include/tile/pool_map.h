@@ -37,6 +37,10 @@ void pool_map_remove(pool_map_t *map, int id);
 // Find an entry in the pool map by pool id.
 pool_map_entry_t *pool_map_find_by_id(pool_map_t *map, int pool_id);
 
+// Direct pool access functions (better ergonomics)
+pool_t *pool_map_get_pool(pool_map_t *map, int pool_id);
+pool_t *pool_map_get_pool_by_tile(pool_map_t *map, tile_t* tile);
+
 // Optionally, if you need to map from a tile (or tile id) to a pool, add:
 pool_map_entry_t *pool_map_find_by_tile(pool_map_t *map, tile_t* tile);
 
