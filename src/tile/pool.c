@@ -2,6 +2,7 @@
 #include "../../include/grid/grid_cell_utils.h"
 #include "../../include/grid/grid_geometry.h"
 #include "../../include/third_party/uthash.h"
+#include "tile/tile_map.h"
 #include <stdio.h>
 
 // LIFECYCLE
@@ -17,6 +18,8 @@ pool_t *pool_create() {
   pool->edges = edge_map_create();
   pool->highest_n = 0;
   pool->accepted_tile_type = TILE_UNDEFINED; // Default to empty type.
+  pool->range = 0;                           // Initialize range to 0
+  pool->modifier = 1.0f;                     // Initialize modifier to 0
 
   return pool;
 }
@@ -46,6 +49,32 @@ void pool_update_center(pool_t *pool) {
 
 bool pool_contains_tile(const pool_t *pool, const tile_t *tile_ptr) {
   return tile_map_find(pool->tiles, tile_ptr->cell) != NULL;
+}
+
+// --- Range and Modifier Functions ---
+
+void pool_set_range(pool_t *pool, uint8_t range) {
+  if (pool) {
+    pool->range = range & 0x07; // Clamp to 0-7 (3 bits)
+  }
+}
+
+uint8_t pool_get_range(const pool_t *pool) { return pool ? pool->range : 0; }
+
+void pool_set_modifier(pool_t *pool, float modifier) {
+  if (pool) {
+    pool->modifier = modifier;
+  }
+}
+
+void pool_add_modifier(pool_t *pool, float modifier_delta) {
+  if (pool) {
+    pool->modifier += modifier_delta;
+  }
+}
+
+float pool_get_modifier(const pool_t *pool) {
+  return pool ? pool->modifier : -99.0f;
 }
 
 // Helper: Returns true if the tile's type is allowed in the pool.
@@ -119,7 +148,7 @@ void pool_add_tile(pool_t *pool, const tile_t *tile_ptr) {
 }
 
 // UTILITY
-int pool_score(const pool_t *pool) {
+int pool_compatibility_score(const pool_t *pool) {
   // Example: prioritize size, then lower ID as tiebreaker
   // You can adjust weights as needed
   return 100000 * pool->tiles->num_tiles - pool->id;
@@ -127,8 +156,8 @@ int pool_score(const pool_t *pool) {
 int compare_pools_by_score(const void *a, const void *b) {
   const pool_t *pool_a = *(const pool_t **)a;
   const pool_t *pool_b = *(const pool_t **)b;
-  int score_a = pool_score(pool_a);
-  int score_b = pool_score(pool_b);
+  int score_a = pool_compatibility_score(pool_a);
+  int score_b = pool_compatibility_score(pool_b);
   return score_b - score_a;
 }
 
@@ -186,4 +215,20 @@ void pool_calculate_score(pool_t *pool, const grid_t *grid) {
 
 void pool_update(pool_t *pool, const grid_t *grid) {
   pool_calculate_score(pool, grid);
+}
+
+static void add_tile_value(tile_t *tile, void *user_data) {
+  int *total_value = (int *)user_data;
+  *total_value += tile->data.value;
+}
+
+int pool_tile_score(const pool_t *pool) {
+  if (!pool || !pool->tiles) {
+    return 0;
+  }
+
+  // int total_value = 0;
+  // tile_map_foreach_tile(pool->tiles, add_tile_value, &total_value);
+  // return total_value;
+  return pool->tiles->num_tiles;
 }
