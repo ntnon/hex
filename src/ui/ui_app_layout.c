@@ -1,4 +1,5 @@
 #include "controller/app_controller.h"
+#include "tile/pool.h"
 #include "ui.h"
 #include "ui_types.h"
 #include <stdio.h>
@@ -235,7 +236,8 @@ void ui_build_tile_info_card(game_t *game, Vector2 mouse_pos) {
   }
 
   tile_t *tile = game->hovered_tile;
-
+  pool_t *pool = pool_map_get_pool_by_tile(game->board->pools, tile);
+  int score = pool_tile_score(pool);
   // Position the info card near the mouse, but keep it on screen
   float card_width = 200;
   float card_height = 120;
@@ -256,67 +258,98 @@ void ui_build_tile_info_card(game_t *game, Vector2 mouse_pos) {
     card_y = screen_height - card_height - 10;
   }
 
-  CLAY(
-    {.id = UI_ID_TILE_INFO_CARD,
-     .floating = {.attachTo = CLAY_ATTACH_TO_ROOT,
-                  .offset = {.x = (int)card_x, .y = (int)card_y},
-                  .zIndex = 1000,
-                  .pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH},
-     .layout = {.sizing = {.width = CLAY_SIZING_FIXED(card_width),
-                           .height = CLAY_SIZING_FIXED(card_height)},
-                .padding = CLAY_PADDING_ALL(12),
-                .childGap = 8,
-                .layoutDirection = CLAY_TOP_TO_BOTTOM},
-     .backgroundColor = (Clay_Color){40, 40, 40, 240},
-     .cornerRadius = CLAY_CORNER_RADIUS(6),
-     .border = {.color = (Clay_Color){80, 80, 80, 255}, .width = 1}}) {
+  CLAY({
+    .id = UI_ID_TILE_INFO_CARD,
+    .floating = {.attachTo = CLAY_ATTACH_TO_ROOT,
+                 .offset = {.x = (int)card_x, .y = (int)card_y},
+                 .zIndex = 1000,
+                 .pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH},
+    .layout = {.sizing = {.width = CLAY_SIZING_FIT(),
+                          .height = CLAY_SIZING_FIT()},
+               .padding = CLAY_PADDING_ALL(12),
+               .childGap = 8,
+               .layoutDirection = CLAY_TOP_TO_BOTTOM},
+  }) {
 
-    // Tile type/name
+    // Tile card
     CLAY({.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
-                                .height = CLAY_SIZING_FIT()}}}) {
+                                .height = CLAY_SIZING_GROW()},
+                     .padding = CLAY_PADDING_ALL(12),
+                     .childGap = 8,
+                     .layoutDirection = CLAY_TOP_TO_BOTTOM},
+
+          .backgroundColor = (Clay_Color){40, 40, 40, 240},
+          .cornerRadius = CLAY_CORNER_RADIUS(6),
+          .border = {.color = (Clay_Color){80, 80, 80, 255}, .width = 1}}) {
       switch (tile->data.type) {
       case TILE_MAGENTA:
-        CLAY_TEXT(CLAY_STRING("Magenta Tile"), &TEXT_CONFIG_MEDIUM);
+        CLAY_TEXT(CLAY_STRING("Magenta tile"), &TEXT_CONFIG_MEDIUM);
         break;
       case TILE_CYAN:
-        CLAY_TEXT(CLAY_STRING("Cyan Tile"), &TEXT_CONFIG_MEDIUM);
+        CLAY_TEXT(CLAY_STRING("Cyan tile"), &TEXT_CONFIG_MEDIUM);
         break;
       case TILE_YELLOW:
-        CLAY_TEXT(CLAY_STRING("Yellow Tile"), &TEXT_CONFIG_MEDIUM);
+        CLAY_TEXT(CLAY_STRING("Yellow tile"), &TEXT_CONFIG_MEDIUM);
         break;
       case TILE_GREEN:
-        CLAY_TEXT(CLAY_STRING("Green Tile"), &TEXT_CONFIG_MEDIUM);
+        CLAY_TEXT(CLAY_STRING("Green tile"), &TEXT_CONFIG_MEDIUM);
         break;
       default:
-        CLAY_TEXT(CLAY_STRING("Unknown Tile"), &TEXT_CONFIG_MEDIUM);
+        CLAY_TEXT(CLAY_STRING("Unknown tile"), &TEXT_CONFIG_MEDIUM);
         break;
       }
-    }
 
-    // Tile value
-    CLAY({.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
-                                .height = CLAY_SIZING_FIT()}}}) {
       static char value_text[32];
       snprintf(value_text, sizeof(value_text), "Value: %d", tile->data.value);
       Clay_String value_string = {.chars = value_text,
                                   .length = strlen(value_text)};
       CLAY_TEXT(value_string, &TEXT_CONFIG_MEDIUM);
+
+      static char tile_modifier_text[32];
+      snprintf(tile_modifier_text, sizeof(tile_modifier_text), "Modifier: %.2f",
+               tile_get_modifier(tile));
+      Clay_String tile_modifier = {.chars = tile_modifier_text,
+                                   .length = strlen(tile_modifier_text)};
+      CLAY_TEXT(tile_modifier, &TEXT_CONFIG_MEDIUM);
+
+      static char tile_range_text[32];
+      snprintf(tile_range_text, sizeof(tile_range_text), "Range: %d",
+               tile_get_range(tile));
+      Clay_String tile_range = {.chars = tile_range_text,
+                                .length = strlen(tile_modifier_text)};
+      CLAY_TEXT(tile_range, &TEXT_CONFIG_MEDIUM);
     }
 
-    // Pool ID
+    // Pool card
     CLAY({.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
-                                .height = CLAY_SIZING_FIT()}}}) {
+                                .height = CLAY_SIZING_GROW()},
+                     .padding = CLAY_PADDING_ALL(12),
+                     .childGap = 8,
+                     .layoutDirection = CLAY_TOP_TO_BOTTOM},
+
+          .backgroundColor = (Clay_Color){40, 40, 40, 240},
+          .cornerRadius = CLAY_CORNER_RADIUS(6),
+          .border = {.color = (Clay_Color){80, 80, 80, 255}, .width = 1}}) {
+      CLAY_TEXT(CLAY_STRING("Pool"), &TEXT_CONFIG_MEDIUM);
       static char pool_text[32];
-      snprintf(pool_text, sizeof(pool_text), "Pool: %u", tile->pool_id);
-      Clay_String pool_string = {.chars = pool_text,
-                                 .length = strlen(pool_text)};
-      CLAY_TEXT(pool_string, &TEXT_CONFIG_MEDIUM);
-    }
+      snprintf(pool_text, sizeof(pool_text), "Tiles: %u", score);
+      Clay_String pool_score = {.chars = pool_text,
+                                .length = strlen(pool_text)};
+      CLAY_TEXT(pool_score, &TEXT_CONFIG_MEDIUM);
 
-    // Pool information
-    CLAY({.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
-                                .height = CLAY_SIZING_FIT()}}}) {
-      CLAY_TEXT(CLAY_STRING("Pool info"), &TEXT_CONFIG_MEDIUM);
+      static char pool_modifier_text[32];
+      snprintf(pool_modifier_text, sizeof(pool_text), "Modifier: %.2f",
+               pool_get_modifier(pool));
+      Clay_String pool_modifier = {.chars = pool_modifier_text,
+                                   .length = strlen(pool_modifier_text)};
+      CLAY_TEXT(pool_modifier, &TEXT_CONFIG_MEDIUM);
+
+      static char pool_range_text[32];
+      snprintf(pool_range_text, sizeof(pool_text), "Range: %d",
+               pool_get_range(pool));
+      Clay_String pool_range = {.chars = pool_range_text,
+                                .length = strlen(pool_modifier_text)};
+      CLAY_TEXT(pool_range, &TEXT_CONFIG_MEDIUM);
     }
   }
 }
