@@ -34,8 +34,8 @@ void app_controller_init(app_controller_t *app_controller) {
 
   // Game will be initialized when entering PLAYING state
   app_controller->game = NULL;
-
-  printf("App controller initialized in MAIN_MENU state\n");
+  app_controller_start_game(app_controller);
+  printf("App controller initialized in PLAYING state\n");
 }
 
 void app_controller_cleanup(app_controller_t *app_controller) {
