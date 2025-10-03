@@ -157,43 +157,64 @@ void add_tile(board_t *board, tile_t *tile) {
   if (!valid_tile(board, tile))
     return;
 
+  printf("DEBUG: Adding tile type %d at (%d,%d,%d)\n", tile->data.type,
+         tile->cell.coord.hex.q, tile->cell.coord.hex.r,
+         tile->cell.coord.hex.s);
+
   pool_t *target_pool = NULL;
-  pool_t *candidate_pools[MAX_POOL_CANDIDATES];
   uint32_t compatible_pool_ids[MAX_POOL_CANDIDATES];
   size_t num_compatible_pools = 0;
 
-  // Get neighboring pools that accept this tile type
-  get_neighbor_pools(board, tile, candidate_pools, 6);
+  // Look for neighboring tiles of the same color/type
+  grid_cell_t neighbor_cells[6];
+  board->geometry->get_neighbor_cells(tile->cell, neighbor_cells);
 
   for (size_t i = 0; i < 6 && num_compatible_pools < MAX_POOL_CANDIDATES; i++) {
-    if (candidate_pools[i] &&
-        pool_accepts_tile_type(candidate_pools[i], tile->data.type)) {
-      // Check if we already have this pool ID
-      bool already_added = false;
-      for (size_t j = 0; j < num_compatible_pools; j++) {
-        if (compatible_pool_ids[j] == candidate_pools[i]->id) {
-          already_added = true;
-          break;
+    tile_t *neighbor_tile = get_tile_at_cell(board, neighbor_cells[i]);
+
+    // Only consider neighbors of the same color
+    if (neighbor_tile && neighbor_tile->data.type == tile->data.type) {
+      printf("DEBUG: Found same-color neighbor type %d with pool_id %d\n",
+             neighbor_tile->data.type, neighbor_tile->pool_id);
+      pool_map_entry_t *pool_entry =
+        pool_map_find_by_id(board->pools, neighbor_tile->pool_id);
+
+      if (pool_entry && pool_entry->pool) {
+        // Check if we already have this pool ID
+        bool already_added = false;
+        for (size_t j = 0; j < num_compatible_pools; j++) {
+          if (compatible_pool_ids[j] == pool_entry->pool->id) {
+            already_added = true;
+            break;
+          }
         }
-      }
-      if (!already_added) {
-        compatible_pool_ids[num_compatible_pools] = candidate_pools[i]->id;
-        num_compatible_pools++;
+        if (!already_added) {
+          compatible_pool_ids[num_compatible_pools] = pool_entry->pool->id;
+          num_compatible_pools++;
+          printf("DEBUG: Added pool_id %d to compatible list\n",
+                 pool_entry->pool->id);
+        }
       }
     }
   }
 
   if (num_compatible_pools == 0) {
     // Create new pool
+    printf("DEBUG: No compatible pools found, creating new pool\n");
     target_pool = pool_map_create_pool(board->pools);
     target_pool->accepted_tile_type = tile->data.type;
     tile->pool_id = target_pool->id;
+    printf("DEBUG: Created new pool with ID %d for tile type %d\n",
+           target_pool->id, tile->data.type);
   } else {
     // Use the first compatible pool (could implement scoring here later)
+    printf("DEBUG: Found %zu compatible pools, using pool_id %d\n",
+           num_compatible_pools, compatible_pool_ids[0]);
     pool_map_entry_t *pool_entry =
       pool_map_find_by_id(board->pools, compatible_pool_ids[0]);
     target_pool = pool_entry->pool;
     tile->pool_id = target_pool->id;
+    printf("DEBUG: Assigned tile to existing pool_id %d\n", target_pool->id);
 
     // If multiple pools, merge them into the target pool
     for (size_t i = 1; i < num_compatible_pools; i++) {
@@ -405,7 +426,7 @@ void board_fill_fast(board_t *board, int radius, board_type_e board_type) {
   clock_t pools_start = clock();
   pool_t *single_pool = pool_map_create_pool(board->pools);
   single_pool->accepted_tile_type = TILE_MAGENTA; // Accept any type
-  single_pool->id = 1;
+  // Don't overwrite ID - pool_map_create_pool already assigns unique ID
 
   // Add all tiles to single pool
   for (size_t i = 0; i < tile_count; i++) {
@@ -537,11 +558,11 @@ void assign_pools_batch(board_t *board) {
     entry->tile->pool_id = 0; // 0 means unassigned
   }
 
-  uint32_t next_pool_id = 1;
+  // next_pool_id removed - pool_map manages IDs automatically
 
   // Second pass: flood-fill to assign pools
   printf("Starting pool assignment for %zu tiles...\n",
-         tile_map_size(board->tiles));
+         (size_t)tile_map_size(board->tiles));
   size_t pools_created = 0;
   HASH_ITER(hh, board->tiles->root, entry, tmp) {
     tile_t *tile = entry->tile;
@@ -550,7 +571,7 @@ void assign_pools_batch(board_t *board) {
       // Create new pool and flood-fill
       pool_t *new_pool = pool_map_create_pool(board->pools);
       new_pool->accepted_tile_type = tile->data.type;
-      new_pool->id = next_pool_id++;
+      // Don't overwrite ID - pool_map_create_pool already assigns unique ID
 
       // Flood-fill all connected tiles of same type
       flood_fill_assign_pool(board, tile, new_pool);

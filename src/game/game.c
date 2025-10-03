@@ -5,7 +5,7 @@
 #include "stdio.h"
 
 void game_init(game_t *game) {
-  game->board = board_create(GRID_TYPE_HEXAGON, 200, BOARD_TYPE_MAIN);
+  game->board = board_create(GRID_TYPE_HEXAGON, 50, BOARD_TYPE_MAIN);
   game->inventory = inventory_create(2);
   game->reward_count = 3;
 
@@ -23,8 +23,8 @@ void game_init(game_t *game) {
   // board_randomize(game->board);
   // Use smaller radius for testing to avoid long load times
   printf("Board created with radius: %d\n", game->board->radius);
-  board_fill_batch(game->board, 30,
-                   BOARD_TYPE_MAIN); // Small radius for fast loading
+  board_fill_batch(game->board, 30, BOARD_TYPE_MAIN); // Small radius for
+  // fast loading
   inventory_fill(game->inventory, 1);
 }
 
