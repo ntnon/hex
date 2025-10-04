@@ -224,7 +224,8 @@ void add_tile(board_t *board, tile_t *tile) {
         tile_map_entry_t *tile_entry, *tmp;
         HASH_ITER(hh, merge_pool->tiles->root, tile_entry, tmp) {
           tile_entry->tile->pool_id = target_pool->id;
-          pool_add_tile_to_pool(target_pool, tile_entry->tile);
+          pool_add_tile_to_pool(target_pool, tile_entry->tile,
+                                board->geometry_type);
         }
 
         // Remove the merged pool
@@ -235,7 +236,7 @@ void add_tile(board_t *board, tile_t *tile) {
 
   // Add tile to board's tile map and pool
   tile_map_add(board->tiles, tile);
-  pool_add_tile_to_pool(target_pool, tile);
+  pool_add_tile_to_pool(target_pool, tile, board->geometry_type);
   // TODO: Fix pool_update to work without grid instance
   // pool_update(target_pool, board->geometry_type, board->layout,
   //             board->radius);
@@ -427,7 +428,7 @@ void board_fill_fast(board_t *board, int radius, board_type_e board_type) {
 
   // Add all tiles to single pool
   for (size_t i = 0; i < tile_count; i++) {
-    pool_add_tile_to_pool(single_pool, tiles[i]);
+    pool_add_tile_to_pool(single_pool, tiles[i], board->geometry_type);
   }
   printf("Assigned single pool in %.3fs\n",
          (double)(clock() - pools_start) / CLOCKS_PER_SEC);
@@ -606,7 +607,7 @@ void flood_fill_assign_pool(board_t *board, tile_t *start_tile, pool_t *pool) {
 
     // Assign to pool
     current_tile->pool_id = pool->id;
-    pool_add_tile_to_pool(pool, current_tile);
+    pool_add_tile_to_pool(pool, current_tile, board->geometry_type);
 
     // Check all 6 neighbors
     for (int dir = 0; dir < 6; dir++) {

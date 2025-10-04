@@ -166,6 +166,39 @@ typedef struct {
     grid_cell_t* (*get_cell_at_pixel)(const grid_t* grid, point_t p);
     void (*print_cell)(const grid_t *grid, grid_cell_t cell);
 
+    /**
+     * @brief Calculates the diameter (maximum distance between any two cells) in a collection.
+     * @param cells Array of grid cells.
+     * @param cell_count Number of cells in the array.
+     * @return The diameter of the cell collection, or 0 if less than 2 cells.
+     */
+    int (*calculate_cells_diameter)(grid_cell_t *cells, size_t cell_count);
+
+    /**
+     * @brief Calculates the geometric center of a collection of cells.
+     * @param cells Array of grid cells.
+     * @param cell_count Number of cells in the array.
+     * @return The geometric center as a grid cell (may not correspond to an actual cell).
+     */
+    grid_cell_t (*calculate_cells_center)(grid_cell_t *cells, size_t cell_count);
+
+    /**
+     * @brief Calculates the average distance from cells to a center point.
+     * @param cells Array of grid cells.
+     * @param cell_count Number of cells in the array.
+     * @param center The center point to measure distances from.
+     * @return The average distance from cells to center.
+     */
+    float (*calculate_cells_avg_center_distance)(grid_cell_t *cells, size_t cell_count, grid_cell_t center);
+
+    /**
+     * @brief Calculates the number of external edges for a collection of cells.
+     * @param cells Array of grid cells.
+     * @param cell_count Number of cells in the array.
+     * @return The number of external edges (edges that border non-collection cells).
+     */
+    int (*calculate_cells_edge_count)(grid_cell_t *cells, size_t cell_count);
+
 
 } grid_vtable_t;
 
@@ -357,6 +390,82 @@ point_t hex_get_vertex_position(const layout_t *layout, grid_cell_t cell, hex_ve
 grid_cell_t hex_get_edge_neighbor(grid_cell_t cell, hex_edge_direction_t edge);
 
 /**
+ * @brief Calculates the diameter (maximum distance between any two cells) in a collection.
+ * @param grid The grid system instance.
+ * @param cells Array of grid cells.
+ * @param cell_count Number of cells in the array.
+ * @return The diameter of the cell collection, or 0 if less than 2 cells.
+ */
+int grid_calculate_cells_diameter(const grid_t* grid, grid_cell_t *cells, size_t cell_count);
+
+/**
+ * @brief Calculates the geometric center of a collection of cells.
+ * @param grid The grid system instance.
+ * @param cells Array of grid cells.
+ * @param cell_count Number of cells in the array.
+ * @return The geometric center as a grid cell (may not correspond to an actual cell).
+ */
+grid_cell_t grid_calculate_cells_center(const grid_t* grid, grid_cell_t *cells, size_t cell_count);
+
+/**
+ * @brief Calculates the average distance from cells to a center point.
+ * @param grid The grid system instance.
+ * @param cells Array of grid cells.
+ * @param cell_count Number of cells in the array.
+ * @param center The center point to measure distances from.
+ * @return The average distance from cells to center.
+ */
+float grid_calculate_cells_avg_center_distance(const grid_t* grid, grid_cell_t *cells, size_t cell_count, grid_cell_t center);
+
+/**
+ * @brief Calculates the number of external edges for a collection of cells.
+ * @param grid The grid system instance.
+ * @param cells Array of grid cells.
+ * @param cell_count Number of cells in the array.
+ * @return The number of external edges (edges that border non-collection cells).
+ */
+int grid_calculate_cells_edge_count(const grid_t* grid, grid_cell_t *cells, size_t cell_count);
+
+// --- Geometry-Agnostic Functions (No Grid Instance Required) ---
+
+/**
+ * @brief Calculates the diameter (maximum distance between any two cells) using pure geometry.
+ * @param geometry_type The type of grid geometry to use.
+ * @param cells Array of grid cells.
+ * @param cell_count Number of cells in the array.
+ * @return The diameter of the cell collection, or 0 if less than 2 cells.
+ */
+int grid_geometry_calculate_cells_diameter(grid_type_e geometry_type, grid_cell_t *cells, size_t cell_count);
+
+/**
+ * @brief Calculates the geometric center of a collection of cells using pure geometry.
+ * @param geometry_type The type of grid geometry to use.
+ * @param cells Array of grid cells.
+ * @param cell_count Number of cells in the array.
+ * @return The geometric center as a grid cell (may not correspond to an actual cell).
+ */
+grid_cell_t grid_geometry_calculate_cells_center(grid_type_e geometry_type, grid_cell_t *cells, size_t cell_count);
+
+/**
+ * @brief Calculates the average distance from cells to a center point using pure geometry.
+ * @param geometry_type The type of grid geometry to use.
+ * @param cells Array of grid cells.
+ * @param cell_count Number of cells in the array.
+ * @param center The center point to measure distances from.
+ * @return The average distance from cells to center.
+ */
+float grid_geometry_calculate_cells_avg_center_distance(grid_type_e geometry_type, grid_cell_t *cells, size_t cell_count, grid_cell_t center);
+
+/**
+ * @brief Calculates the number of external edges for a collection of cells using pure geometry.
+ * @param geometry_type The type of grid geometry to use.
+ * @param cells Array of grid cells.
+ * @param cell_count Number of cells in the array.
+ * @return The number of external edges (edges that border non-collection cells).
+ */
+int grid_geometry_calculate_cells_edge_count(grid_type_e geometry_type, grid_cell_t *cells, size_t cell_count);
+
+/**
  * @brief Grows the grid by the specified amount.
  * @param grid The grid system instance.
  * @param growth_amount Amount to increase the grid radius by.
@@ -378,8 +487,9 @@ int grid_get_total_growth(const grid_t* grid);
  */
 int grid_get_initial_radius(const grid_t* grid);
 
+
 /**
- * @brief The public instance of the v-table for hexagonal grids.
+ * @brief The public instance of the v-table for.
  *
  * This struct is initialized in hex_grid.c with pointers to the static
  * implementation functions. The grid_create() factory function uses this

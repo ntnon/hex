@@ -1,4 +1,5 @@
 #include "../../include/grid/grid_geometry.h"
+#include "../../include/third_party/uthash.h"
 #include "ui.h"
 #include <math.h>
 #include <stdio.h>
@@ -805,24 +806,268 @@ int grid_get_initial_radius(const grid_t *grid) {
   return grid->initial_radius;
 }
 
-// --- Public vtable instance ---
+static int calculate_cells_diameter(grid_cell_t *cells, size_t cell_count) {
+  if (!cells || cell_count < 2) {
+    return 0;
+  }
 
-const grid_vtable_t hex_grid_vtable = {.to_pixel = to_pixel,
-                                       .from_pixel = from_pixel,
-                                       .get_neighbor_cell = get_neighbor_cell,
-                                       .get_neighbor_cells = get_neighbor_cells,
-                                       .get_cells_in_range = get_cells_in_range,
-                                       .rotate_coordinates = rotate_coordinates,
-                                       .distance = distance,
-                                       .get_corners = get_corners,
-                                       .get_all_cells = get_all_cells,
-                                       .get_hex_mesh = get_hex_mesh,
-                                       .grid_create = grid_create,
-                                       .num_neighbors = 6,
-                                       .is_valid_cell = is_valid_cell,
-                                       .grid_free = grid_free,
-                                       .calculate_offset = calculate_offset,
-                                       .apply_offset = apply_offset,
-                                       .get_center_cell = get_center_cell,
-                                       .get_cell_at_pixel = get_cell_at_pixel,
-                                       .print_cell = print_cell};
+  // Find actual extreme tiles - O(n)
+  grid_cell_t *min_q_tile = &cells[0], *max_q_tile = &cells[0];
+  grid_cell_t *min_r_tile = &cells[0], *max_r_tile = &cells[0];
+  grid_cell_t *min_s_tile = &cells[0], *max_s_tile = &cells[0];
+
+  for (size_t i = 1; i < cell_count; i++) {
+    if (cells[i].coord.hex.q < min_q_tile->coord.hex.q)
+      min_q_tile = &cells[i];
+    if (cells[i].coord.hex.q > max_q_tile->coord.hex.q)
+      max_q_tile = &cells[i];
+    if (cells[i].coord.hex.r < min_r_tile->coord.hex.r)
+      min_r_tile = &cells[i];
+    if (cells[i].coord.hex.r > max_r_tile->coord.hex.r)
+      max_r_tile = &cells[i];
+    if (cells[i].coord.hex.s < min_s_tile->coord.hex.s)
+      min_s_tile = &cells[i];
+    if (cells[i].coord.hex.s > max_s_tile->coord.hex.s)
+      max_s_tile = &cells[i];
+  }
+
+  // Check distances between actual extreme tiles - O(1)
+  grid_cell_t *extremes[] = {min_q_tile, max_q_tile, min_r_tile,
+                             max_r_tile, min_s_tile, max_s_tile};
+  int max_distance = 0;
+
+  for (int i = 0; i < 6; i++) {
+    for (int j = i + 1; j < 6; j++) {
+      // Skip if same tile (can happen when multiple extremes point to same
+      // tile)
+      if (extremes[i] == extremes[j])
+        continue;
+
+      int dist = distance(*extremes[i], *extremes[j]);
+      if (dist > max_distance) {
+        max_distance = dist;
+      }
+    }
+  }
+
+  return max_distance;
+}
+
+static grid_cell_t calculate_cells_center(grid_cell_t *cells,
+                                          size_t cell_count) {
+  grid_cell_t invalid_cell = {.type = GRID_TYPE_UNKNOWN};
+  if (!cells || cell_count == 0) {
+    return invalid_cell;
+  }
+
+  // Calculate average coordinates
+  int sum_q = 0, sum_r = 0, sum_s = 0;
+  for (size_t i = 0; i < cell_count; i++) {
+    sum_q += cells[i].coord.hex.q;
+    sum_r += cells[i].coord.hex.r;
+    sum_s += cells[i].coord.hex.s;
+  }
+
+  grid_cell_t center = {.type = GRID_TYPE_HEXAGON,
+                        .coord.hex = {.q = sum_q / (int)cell_count,
+                                      .r = sum_r / (int)cell_count,
+                                      .s = sum_s / (int)cell_count}};
+
+  return center;
+}
+
+static float calculate_cells_avg_center_distance(grid_cell_t *cells,
+                                                 size_t cell_count,
+                                                 grid_cell_t center) {
+  if (!cells || cell_count == 0) {
+    return 0.0f;
+  }
+
+  int total_distance = 0;
+  for (size_t i = 0; i < cell_count; i++) {
+    total_distance += distance(cells[i], center);
+  }
+
+  return (float)total_distance / (float)cell_count;
+}
+
+static int calculate_cells_edge_count(grid_cell_t *cells, size_t cell_count) {
+  if (!cells || cell_count == 0) {
+    return 0;
+  }
+
+  // Create a hash set of cells for fast lookup
+  typedef struct {
+    grid_cell_t cell;
+    UT_hash_handle hh;
+  } cell_set_entry_t;
+
+  cell_set_entry_t *cell_set = NULL;
+
+  // Add all cells to hash set
+  for (size_t i = 0; i < cell_count; i++) {
+    cell_set_entry_t *entry = malloc(sizeof(cell_set_entry_t));
+    entry->cell = cells[i];
+    HASH_ADD(hh, cell_set, cell, sizeof(grid_cell_t), entry);
+  }
+
+  int external_edges = 0;
+
+  // For each cell, check its neighbors
+  for (size_t i = 0; i < cell_count; i++) {
+    grid_cell_t neighbors[6];
+    get_neighbor_cells(cells[i], neighbors);
+
+    for (int j = 0; j < 6; j++) {
+      cell_set_entry_t *found = NULL;
+      HASH_FIND(hh, cell_set, &neighbors[j], sizeof(grid_cell_t), found);
+      if (!found) {
+        // Neighbor is not in our collection, so this is an external edge
+        external_edges++;
+      }
+    }
+  }
+
+  // Clean up hash set
+  cell_set_entry_t *entry, *tmp;
+  HASH_ITER(hh, cell_set, entry, tmp) {
+    HASH_DEL(cell_set, entry);
+    free(entry);
+  }
+
+  return external_edges;
+}
+
+const grid_vtable_t hex_grid_vtable = {
+  .to_pixel = to_pixel,
+  .from_pixel = from_pixel,
+  .get_neighbor_cell = get_neighbor_cell,
+  .get_neighbor_cells = get_neighbor_cells,
+  .get_cells_in_range = get_cells_in_range,
+  .rotate_coordinates = rotate_coordinates,
+  .distance = distance,
+  .get_corners = get_corners,
+  .get_all_cells = get_all_cells,
+  .get_hex_mesh = get_hex_mesh,
+  .grid_create = grid_create,
+  .num_neighbors = 6,
+  .is_valid_cell = is_valid_cell,
+  .grid_free = grid_free,
+  .calculate_offset = calculate_offset,
+  .apply_offset = apply_offset,
+  .get_center_cell = get_center_cell,
+  .get_cell_at_pixel = get_cell_at_pixel,
+  .print_cell = print_cell,
+  .calculate_cells_diameter = calculate_cells_diameter,
+  .calculate_cells_center = calculate_cells_center,
+  .calculate_cells_avg_center_distance = calculate_cells_avg_center_distance,
+  .calculate_cells_edge_count = calculate_cells_edge_count};
+
+// --- Public Grid API Functions ---
+
+int grid_calculate_cells_diameter(const grid_t *grid, grid_cell_t *cells,
+                                  size_t cell_count) {
+  if (!grid || !grid->vtable || !grid->vtable->calculate_cells_diameter) {
+    return 0;
+  }
+  return grid->vtable->calculate_cells_diameter(cells, cell_count);
+}
+
+grid_cell_t grid_calculate_cells_center(const grid_t *grid, grid_cell_t *cells,
+                                        size_t cell_count) {
+  grid_cell_t invalid_cell = {.type = GRID_TYPE_UNKNOWN};
+  if (!grid || !grid->vtable || !grid->vtable->calculate_cells_center) {
+    return invalid_cell;
+  }
+  return grid->vtable->calculate_cells_center(cells, cell_count);
+}
+
+float grid_calculate_cells_avg_center_distance(const grid_t *grid,
+                                               grid_cell_t *cells,
+                                               size_t cell_count,
+                                               grid_cell_t center) {
+  if (!grid || !grid->vtable ||
+      !grid->vtable->calculate_cells_avg_center_distance) {
+    return 0.0f;
+  }
+  return grid->vtable->calculate_cells_avg_center_distance(cells, cell_count,
+                                                           center);
+}
+
+int grid_calculate_cells_edge_count(const grid_t *grid, grid_cell_t *cells,
+                                    size_t cell_count) {
+  if (!grid || !grid->vtable || !grid->vtable->calculate_cells_edge_count) {
+    return 0;
+  }
+  return grid->vtable->calculate_cells_edge_count(cells, cell_count);
+}
+
+// --- Geometry-Agnostic Functions (No Grid Instance Required) ---
+
+int grid_geometry_calculate_cells_diameter(grid_type_e geometry_type,
+                                           grid_cell_t *cells,
+                                           size_t cell_count) {
+  switch (geometry_type) {
+  case GRID_TYPE_HEXAGON:
+    return calculate_cells_diameter(cells, cell_count);
+  case GRID_TYPE_SQUARE:
+    // TODO: Implement square geometry diameter calculation
+    return 0;
+  case GRID_TYPE_TRIANGLE:
+    // TODO: Implement triangle geometry diameter calculation
+    return 0;
+  default:
+    return 0;
+  }
+}
+
+grid_cell_t grid_geometry_calculate_cells_center(grid_type_e geometry_type,
+                                                 grid_cell_t *cells,
+                                                 size_t cell_count) {
+  switch (geometry_type) {
+  case GRID_TYPE_HEXAGON:
+    return calculate_cells_center(cells, cell_count);
+  case GRID_TYPE_SQUARE:
+    // TODO: Implement square geometry center calculation
+    return (grid_cell_t){.type = GRID_TYPE_UNKNOWN};
+  case GRID_TYPE_TRIANGLE:
+    // TODO: Implement triangle geometry center calculation
+    return (grid_cell_t){.type = GRID_TYPE_UNKNOWN};
+  default:
+    return (grid_cell_t){.type = GRID_TYPE_UNKNOWN};
+  }
+}
+
+float grid_geometry_calculate_cells_avg_center_distance(
+  grid_type_e geometry_type, grid_cell_t *cells, size_t cell_count,
+  grid_cell_t center) {
+  switch (geometry_type) {
+  case GRID_TYPE_HEXAGON:
+    return calculate_cells_avg_center_distance(cells, cell_count, center);
+  case GRID_TYPE_SQUARE:
+    // TODO: Implement square geometry avg center distance calculation
+    return 0.0f;
+  case GRID_TYPE_TRIANGLE:
+    // TODO: Implement triangle geometry avg center distance calculation
+    return 0.0f;
+  default:
+    return 0.0f;
+  }
+}
+
+int grid_geometry_calculate_cells_edge_count(grid_type_e geometry_type,
+                                             grid_cell_t *cells,
+                                             size_t cell_count) {
+  switch (geometry_type) {
+  case GRID_TYPE_HEXAGON:
+    return calculate_cells_edge_count(cells, cell_count);
+  case GRID_TYPE_SQUARE:
+    // TODO: Implement square geometry edge count calculation
+    return 0;
+  case GRID_TYPE_TRIANGLE:
+    // TODO: Implement triangle geometry edge count calculation
+    return 0;
+  default:
+    return 0;
+  }
+}

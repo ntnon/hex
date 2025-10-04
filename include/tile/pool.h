@@ -25,12 +25,14 @@
      tile_map_t *tiles;
      tile_type_t accepted_tile_type;
      
-     // 3-bit range (0-7), stored efficiently
-     uint8_t range : 3;
-     uint8_t _padding : 5;  // Reserved for future use
-     
      // Pool modifier (can be negative/positive)
      float modifier;
+     
+     // Geometric properties
+     int diameter;              // Farthest distance between any two tiles
+     float avg_center_distance; // Average distance from geometric center
+     int edge_count;           // External edges
+     float compactness_score;  // edge_count / tile_count ratio
  } pool_t;
 
 // --- Pool Lifecycle Functions ---
@@ -58,7 +60,7 @@ int pool_tile_score(const pool_t *pool);
  * @param tile_ptr A pointer to the tile_t to add.
  */
 
-bool pool_add_tile_to_pool (pool_t *pool, const tile_t *tile);
+bool pool_add_tile_to_pool (pool_t *pool, const tile_t *tile, grid_type_e geometry_type);
 
 /**
  * @brief Removes a tile from a pool.
@@ -96,23 +98,9 @@ void
 pool_calculate_score (pool_t *pool, const grid_t *grid);
 
 void
-pool_add_tile (pool_t *pool, const tile_t *tile_ptr);
+pool_add_tile (pool_t *pool, const tile_t *tile_ptr, grid_type_e geometry_type);
 
-// --- Range and Modifier Functions ---
-
-/**
- * @brief Sets the range value for a pool (clamped to 0-7).
- * @param pool Pointer to the pool.
- * @param range Range value (will be clamped to 0-7).
- */
-void pool_set_range(pool_t *pool, uint8_t range);
-
-/**
- * @brief Gets the range value for a pool.
- * @param pool Pointer to the pool.
- * @return The pool's range (0-7).
- */
-uint8_t pool_get_range(const pool_t *pool);
+// --- Modifier Functions ---
 
 /**
  * @brief Sets the modifier value for a pool.
@@ -134,6 +122,60 @@ void pool_add_modifier(pool_t *pool, float modifier_delta);
  * @return The pool's modifier value.
  */
 float pool_get_modifier(const pool_t *pool);
+
+// --- Geometric Property Functions ---
+
+/**
+ * @brief Calculates and updates all geometric properties of a pool.
+ * @param pool Pointer to the pool.
+ * @param geometry_type The grid geometry type for calculations.
+ */
+void pool_update_geometric_properties(pool_t *pool, grid_type_e geometry_type);
+
+/**
+ * @brief Calculates the diameter (maximum distance between any two tiles) of a pool.
+ * @param pool Pointer to the pool.
+ * @param geometry_type The grid geometry type for calculations.
+ * @return The diameter of the pool, or 0 if less than 2 tiles.
+ */
+int pool_calculate_diameter(const pool_t *pool, grid_type_e geometry_type);
+
+/**
+ * @brief Calculates the geometric center of a pool.
+ * @param pool Pointer to the pool.
+ * @param geometry_type The grid geometry type for calculations.
+ * @return The geometric center as a grid cell.
+ */
+grid_cell_t pool_calculate_center(const pool_t *pool, grid_type_e geometry_type);
+
+/**
+ * @brief Calculates the average distance from tiles to pool center.
+ * @param pool Pointer to the pool.
+ * @param geometry_type The grid geometry type for calculations.
+ * @return The average distance from tiles to center.
+ */
+float pool_calculate_avg_center_distance(const pool_t *pool, grid_type_e geometry_type);
+
+/**
+ * @brief Calculates the number of external edges of a pool.
+ * @param pool Pointer to the pool.
+ * @param geometry_type The grid geometry type for calculations.
+ * @return The number of external edges.
+ */
+int pool_calculate_edge_count(const pool_t *pool, grid_type_e geometry_type);
+
+/**
+ * @brief Calculates the compactness score of a pool.
+ * @param pool Pointer to the pool.
+ * @return The compactness score (edge_count / tile_count ratio).
+ */
+float pool_calculate_compactness_score(const pool_t *pool);
+
+/**
+ * @brief Prints all easily printable properties of a pool.
+ * @param pool Pointer to the pool to print.
+ */
+void pool_print(const pool_t *pool);
 
 
 #endif // TILE_POOL_H

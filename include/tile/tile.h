@@ -111,4 +111,6 @@ float tile_get_modifier(const tile_t *tile);
  */
 float tile_get_effective_production(const tile_t *tile);
 
+
+
 #endif // TILE_H

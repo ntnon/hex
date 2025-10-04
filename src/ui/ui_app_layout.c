@@ -238,6 +238,8 @@ void ui_build_tile_info_card(game_t *game, Vector2 mouse_pos) {
   tile_t *tile = game->hovered_tile;
   pool_t *pool = pool_map_get_pool_by_tile(game->board->pools, tile);
   int score = pool_tile_score(pool);
+  pool_print(pool);
+
   // Position the info card near the mouse, but keep it on screen
   float card_width = 200;
   float card_height = 120;
@@ -344,12 +346,12 @@ void ui_build_tile_info_card(game_t *game, Vector2 mouse_pos) {
                                    .length = strlen(pool_modifier_text)};
       CLAY_TEXT(pool_modifier, &TEXT_CONFIG_MEDIUM);
 
-      static char pool_range_text[32];
-      snprintf(pool_range_text, sizeof(pool_text), "Range: %d",
-               pool_get_range(pool));
-      Clay_String pool_range = {.chars = pool_range_text,
-                                .length = strlen(pool_modifier_text)};
-      CLAY_TEXT(pool_range, &TEXT_CONFIG_MEDIUM);
+      // static char pool_range_text[32];
+      // snprintf(pool_range_text, sizeof(pool_text), "Range: %d",
+      //          pool_get_range(pool));
+      // Clay_String pool_range = {.chars = pool_range_text,
+      //                           .length = strlen(pool_modifier_text)};
+      // CLAY_TEXT(pool_range, &TEXT_CONFIG_MEDIUM);
     }
   }
 }
