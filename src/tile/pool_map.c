@@ -9,7 +9,7 @@ pool_map_t *pool_map_create(void) {
   }
   map->root = NULL;
   map->num_pools = 0;
-  map->next_id = 0;
+  map->next_id = 1; // Start from 1 since 0 means "no pool"
   return map;
 }
 
@@ -22,7 +22,7 @@ void pool_map_free(pool_map_t *map) {
     free(el);
   }
   map->num_pools = 0;
-  map->next_id = 0;
+  map->next_id = 1; // Reset to 1 since 0 means "no pool"
   free(map);
 }
 

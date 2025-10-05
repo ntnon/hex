@@ -14,7 +14,22 @@ $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
 # Pattern rule: build each test binary from its .c file
-$(BIN_DIR)/%_test: $(SRC_DIR)/%_test.c ../src/tile/tile_map.c
+$(BIN_DIR)/tile_map_test: $(SRC_DIR)/tile_map_test.c ../src/tile/tile_map.c
+	$(CC) $(CFLAGS) -o $@ $^
+
+# Pool logic test needs more dependencies
+$(BIN_DIR)/pool_logic_test: $(SRC_DIR)/pool_logic_test.c \
+	../src/game/board.c \
+	../src/game/camera.c \
+	../src/tile/tile_map.c \
+	../src/tile/pool_map.c \
+	../src/tile/pool.c \
+	../src/tile/tile.c \
+	../src/grid/hex_geometry.c \
+	../src/grid/grid_cell_utils.c \
+	../src/grid/edge_map.c \
+	../src/renderer/edge_render_list.c \
+	../src/utility/array_shuffle.c
 	$(CC) $(CFLAGS) -o $@ $^
 
 clean:

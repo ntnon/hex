@@ -1,6 +1,7 @@
 #include "controller/app_controller.h"
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 
 #define CLAY_IMPLEMENTATION
 #include "../include/third_party/clay.h" // UI system
@@ -74,6 +75,15 @@ Pay with inventory slots
 */
 
 int main(int argc, char *argv[]) {
+  // Check for test mode
+  if (argc > 1 && strcmp(argv[1], "--test-pools") == 0) {
+    printf("Running pool logic tests...\n");
+    board_t *test_board = board_create(GRID_TYPE_HEXAGON, 10, BOARD_TYPE_MAIN);
+    test_pool_logic(test_board);
+    free(test_board);
+    return 0;
+  }
+
   const int initial_width = 1300;
   const int initial_height = 700;
 

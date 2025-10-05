@@ -237,8 +237,12 @@ void ui_build_tile_info_card(game_t *game, Vector2 mouse_pos) {
 
   tile_t *tile = game->hovered_tile;
   pool_t *pool = pool_map_get_pool_by_tile(game->board->pools, tile);
-  int score = pool_tile_score(pool);
-  pool_print(pool);
+  int score = pool ? pool_tile_score(pool) : 0;
+  if (pool) {
+    pool_print(pool);
+  } else {
+    printf("Pool: NULL\n");
+  }
 
   // Position the info card near the mouse, but keep it on screen
   float card_width = 200;
@@ -323,6 +327,7 @@ void ui_build_tile_info_card(game_t *game, Vector2 mouse_pos) {
     }
 
     // Pool card
+    // Pool card
     CLAY({.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
                                 .height = CLAY_SIZING_GROW()},
                      .padding = CLAY_PADDING_ALL(12),
@@ -332,26 +337,50 @@ void ui_build_tile_info_card(game_t *game, Vector2 mouse_pos) {
           .backgroundColor = (Clay_Color){40, 40, 40, 240},
           .cornerRadius = CLAY_CORNER_RADIUS(6),
           .border = {.color = (Clay_Color){80, 80, 80, 255}, .width = 1}}) {
-      CLAY_TEXT(CLAY_STRING("Pool"), &TEXT_CONFIG_MEDIUM);
-      static char pool_text[32];
-      snprintf(pool_text, sizeof(pool_text), "Tiles: %u", score);
-      Clay_String pool_score = {.chars = pool_text,
-                                .length = strlen(pool_text)};
-      CLAY_TEXT(pool_score, &TEXT_CONFIG_MEDIUM);
+      if (pool) {
+        CLAY_TEXT(CLAY_STRING("Pool"), &TEXT_CONFIG_MEDIUM);
 
-      static char pool_modifier_text[32];
-      snprintf(pool_modifier_text, sizeof(pool_text), "Modifier: %.2f",
-               pool_get_modifier(pool));
-      Clay_String pool_modifier = {.chars = pool_modifier_text,
-                                   .length = strlen(pool_modifier_text)};
-      CLAY_TEXT(pool_modifier, &TEXT_CONFIG_MEDIUM);
+        static char pool_text[32];
+        snprintf(pool_text, sizeof(pool_text), "Tiles: %u", score);
+        Clay_String pool_score = {.chars = pool_text,
+                                  .length = strlen(pool_text)};
+        CLAY_TEXT(pool_score, &TEXT_CONFIG_MEDIUM);
 
-      // static char pool_range_text[32];
-      // snprintf(pool_range_text, sizeof(pool_text), "Range: %d",
-      //          pool_get_range(pool));
-      // Clay_String pool_range = {.chars = pool_range_text,
-      //                           .length = strlen(pool_modifier_text)};
-      // CLAY_TEXT(pool_range, &TEXT_CONFIG_MEDIUM);
+        static char pool_modifier_text[32];
+        snprintf(pool_modifier_text, sizeof(pool_modifier_text),
+                 "Modifier: %.2f", pool_get_modifier(pool));
+        Clay_String pool_modifier = {.chars = pool_modifier_text,
+                                     .length = strlen(pool_modifier_text)};
+        CLAY_TEXT(pool_modifier, &TEXT_CONFIG_MEDIUM);
+
+        // Geometric properties with user-friendly names
+        static char span_text[32];
+        snprintf(span_text, sizeof(span_text), "Span: %d", pool->diameter);
+        Clay_String span = {.chars = span_text, .length = strlen(span_text)};
+        CLAY_TEXT(span, &TEXT_CONFIG_MEDIUM);
+
+        static char spread_text[32];
+        snprintf(spread_text, sizeof(spread_text), "Spread: %.1f",
+                 pool->avg_center_distance);
+        Clay_String spread = {.chars = spread_text,
+                              .length = strlen(spread_text)};
+        CLAY_TEXT(spread, &TEXT_CONFIG_MEDIUM);
+
+        static char edge_text[32];
+        snprintf(edge_text, sizeof(edge_text), "Edges: %d", pool->edge_count);
+        Clay_String edge = {.chars = edge_text, .length = strlen(edge_text)};
+        CLAY_TEXT(edge, &TEXT_CONFIG_MEDIUM);
+
+        static char compactness_text[32];
+        snprintf(compactness_text, sizeof(compactness_text),
+                 "Compactness: %.2f", pool->compactness_score);
+        Clay_String compactness = {.chars = compactness_text,
+                                   .length = strlen(compactness_text)};
+        CLAY_TEXT(compactness, &TEXT_CONFIG_MEDIUM);
+      } else {
+        CLAY_TEXT(CLAY_STRING("Singleton Tile"), &TEXT_CONFIG_MEDIUM);
+        CLAY_TEXT(CLAY_STRING("Not part of a pool"), &TEXT_CONFIG_MEDIUM);
+      }
     }
   }
 }

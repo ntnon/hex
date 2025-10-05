@@ -80,6 +80,8 @@ void pool_update_geometric_properties(pool_t *pool, grid_type_e geometry_type) {
   if (!pool)
     return;
 
+  size_t old_tile_count = pool->tiles ? pool->tiles->num_tiles : 0;
+
   pool->diameter = pool_calculate_diameter(pool, geometry_type);
   grid_cell_t center = pool_calculate_center(pool, geometry_type);
   pool->avg_center_distance =
@@ -254,31 +256,20 @@ bool pool_add_tile_to_pool(pool_t *pool, const tile_t *tile,
   if (!pool || !tile)
     return false;
 
-  printf("DEBUG: pool_add_tile_to_pool - pool_id %d, tile type %d, pool "
-         "accepts type %d\n",
-         pool->id, tile->data.type, pool->accepted_tile_type);
-
   if (pool_contains_tile(pool, tile)) {
-    printf("Tile already exists in pool %d\n", pool->id);
     return false;
   }
 
   if (!pool_accepts_tile_type(pool, tile->data.type)) {
-    printf("Tile type %d not allowed in pool %d (pool accepts type %d)\n",
-           tile->data.type, pool->id, pool->accepted_tile_type);
     return false;
   }
 
   // Add the tile to the pool's internal tile map.
   tile_map_add_unchecked(pool->tiles, (tile_t *)tile);
-  printf("DEBUG: Successfully added tile type %d to pool %d\n", tile->data.type,
-         pool->id);
 
   if (pool->accepted_tile_type == TILE_UNDEFINED) {
     // If the pool has no accepted tile type, set it to the tile's type.
     pool->accepted_tile_type = tile->data.type;
-    printf("DEBUG: Set pool %d accepted type to %d\n", pool->id,
-           tile->data.type);
   }
 
   // Update geometric properties after adding tile
