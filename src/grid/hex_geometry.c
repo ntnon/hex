@@ -1,6 +1,5 @@
 #include "../../include/grid/grid_geometry.h"
 #include "../../include/third_party/uthash.h"
-#include "ui.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1070,4 +1069,55 @@ int grid_geometry_calculate_cells_edge_count(grid_type_e geometry_type,
   default:
     return 0;
   }
+}
+
+int grid_calculate_internal_edges(grid_type_e geometry_type, grid_cell_t *cells,
+                                  size_t cell_count) {
+  if (geometry_type != GRID_TYPE_HEXAGON || !cells || cell_count == 0) {
+    return 0;
+  }
+
+  // Create a hash set of cells for fast lookup
+  typedef struct {
+    grid_cell_t cell;
+    UT_hash_handle hh;
+  } cell_set_entry_t;
+
+  cell_set_entry_t *cell_set = NULL;
+
+  // Add all cells to hash set
+  for (size_t i = 0; i < cell_count; i++) {
+    cell_set_entry_t *entry = malloc(sizeof(cell_set_entry_t));
+    entry->cell = cells[i];
+    HASH_ADD(hh, cell_set, cell, sizeof(grid_cell_t), entry);
+  }
+
+  int internal_edges = 0;
+
+  // For each cell, check its neighbors
+  for (size_t i = 0; i < cell_count; i++) {
+    grid_cell_t neighbors[6];
+    get_neighbor_cells(cells[i], neighbors);
+
+    for (int j = 0; j < 6; j++) {
+      cell_set_entry_t *found = NULL;
+      HASH_FIND(hh, cell_set, &neighbors[j], sizeof(grid_cell_t), found);
+      if (found) {
+        // Neighbor is in our collection, so this is an internal edge
+        internal_edges++;
+      }
+    }
+  }
+
+  // Each internal edge is counted twice (once from each side), so divide by 2
+  internal_edges = internal_edges / 2;
+
+  // Clean up hash set
+  cell_set_entry_t *entry, *tmp;
+  HASH_ITER(hh, cell_set, entry, tmp) {
+    HASH_DEL(cell_set, entry);
+    free(entry);
+  }
+
+  return internal_edges;
 }

@@ -487,6 +487,17 @@ int grid_get_total_growth(const grid_t* grid);
  */
 int grid_get_initial_radius(const grid_t* grid);
 
+/**
+ * @brief Calculates the number of internal (shared) edges within a collection of tiles.
+ * Internal edges are edges that are shared between two tiles in the collection.
+ * @param geometry_type The type of grid geometry to use.
+ * @param cells Array of grid cells representing actual tiles.
+ * @param cell_count Number of cells in the array.
+ * @return The number of internal edges (shared between tiles in the collection).
+ */
+int grid_calculate_internal_edges(grid_type_e geometry_type, grid_cell_t *cells, size_t cell_count);
+
+
 
 /**
  * @brief The public instance of the v-table for.

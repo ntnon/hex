@@ -198,13 +198,43 @@ float pool_calculate_compactness_score(const pool_t *pool) {
     return 0.0f;
   }
 
-  if (pool->edge_count == 0) {
-    return 0.0f; // Avoid division by zero
+  // Get actual tile count
+  int actual_tiles = pool->tiles->num_tiles;
+
+  // Extract coordinates from tile map hash table
+  grid_cell_t *coordinates = malloc(actual_tiles * sizeof(grid_cell_t));
+  if (!coordinates) {
+    return 0.0f;
   }
 
-  // Compactness = edge_count / tile_count ratio
-  // Lower values = more compact (fewer edges per tile)
-  return (float)pool->edge_count / (float)pool->tiles->num_tiles;
+  int index = 0;
+  tile_map_entry_t *entry, *tmp;
+  HASH_ITER(hh, pool->tiles->root, entry, tmp) {
+    coordinates[index++] = entry->cell;
+  }
+
+  // Calculate internal edges (shared between tiles in pool)
+  int internal_edges =
+    grid_calculate_internal_edges(GRID_TYPE_HEXAGON, coordinates, actual_tiles);
+
+  free(coordinates);
+
+  // External edges are already calculated and stored in pool
+  int external_edges = pool->edge_count;
+
+  // Total edges = internal + external
+  int total_edges = internal_edges + external_edges;
+
+  if (total_edges == 0) {
+    return 0.0f;
+  }
+
+  // Compactness = internal edges / total edges
+  // 1.0 = all edges are internal (impossible), 0.0 = all edges are external
+  // Higher values = more compact (more shared edges)
+  float score = (float)internal_edges / (float)total_edges;
+
+  return score;
 }
 
 void pool_print(const pool_t *pool) {

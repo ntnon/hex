@@ -32,7 +32,7 @@
      int diameter;              // Farthest distance between any two tiles
      float avg_center_distance; // Average distance from geometric center
      int edge_count;           // External edges
-     float compactness_score;  // edge_count / tile_count ratio
+     float compactness_score;  // Normalized compactness (0.0-1.0, 1.0 = perfect)
  } pool_t;
 
 // --- Pool Lifecycle Functions ---
@@ -167,7 +167,7 @@ int pool_calculate_edge_count(const pool_t *pool, grid_type_e geometry_type);
 /**
  * @brief Calculates the compactness score of a pool.
  * @param pool Pointer to the pool.
- * @return The compactness score (edge_count / tile_count ratio).
+ * @return The compactness score (0.0-1.0, where 1.0 represents perfect compactness).
  */
 float pool_calculate_compactness_score(const pool_t *pool);
 

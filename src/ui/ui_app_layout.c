@@ -377,9 +377,6 @@ void ui_build_tile_info_card(game_t *game, Vector2 mouse_pos) {
         Clay_String compactness = {.chars = compactness_text,
                                    .length = strlen(compactness_text)};
         CLAY_TEXT(compactness, &TEXT_CONFIG_MEDIUM);
-      } else {
-        CLAY_TEXT(CLAY_STRING("Singleton Tile"), &TEXT_CONFIG_MEDIUM);
-        CLAY_TEXT(CLAY_STRING("Not part of a pool"), &TEXT_CONFIG_MEDIUM);
       }
     }
   }
