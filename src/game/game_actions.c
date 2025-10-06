@@ -52,7 +52,7 @@ bool game_actions_place_tile(game_actions_t *actions,
   if (merge_boards(actions->game->board, selected_board, target_position,
                    source_center)) {
     printf("Successfully placed tile on main board\n");
-    game_actions_enter_collect_state(actions);
+    // game_actions_enter_collect_state(actions);
     return true;
   } else {
     printf("Failed to place tile - invalid placement\n");
