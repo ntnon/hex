@@ -30,7 +30,6 @@
      
      // Geometric properties
      int diameter;              // Farthest distance between any two tiles
-     float avg_center_distance; // Average distance from geometric center
      int edge_count;           // External edges
      float compactness_score;  // Normalized compactness (0.0-1.0, 1.0 = perfect)
  } pool_t;
@@ -148,13 +147,7 @@ int pool_calculate_diameter(const pool_t *pool, grid_type_e geometry_type);
  */
 grid_cell_t pool_calculate_center(const pool_t *pool, grid_type_e geometry_type);
 
-/**
- * @brief Calculates the average distance from tiles to pool center.
- * @param pool Pointer to the pool.
- * @param geometry_type The grid geometry type for calculations.
- * @return The average distance from tiles to center.
- */
-float pool_calculate_avg_center_distance(const pool_t *pool, grid_type_e geometry_type);
+
 
 /**
  * @brief Calculates the number of external edges of a pool.

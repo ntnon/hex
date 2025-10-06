@@ -359,13 +359,6 @@ void ui_build_tile_info_card(game_t *game, Vector2 mouse_pos) {
         Clay_String span = {.chars = span_text, .length = strlen(span_text)};
         CLAY_TEXT(span, &TEXT_CONFIG_MEDIUM);
 
-        static char spread_text[32];
-        snprintf(spread_text, sizeof(spread_text), "Spread: %.1f",
-                 pool->avg_center_distance);
-        Clay_String spread = {.chars = spread_text,
-                              .length = strlen(spread_text)};
-        CLAY_TEXT(spread, &TEXT_CONFIG_MEDIUM);
-
         static char edge_text[32];
         snprintf(edge_text, sizeof(edge_text), "Edges: %d", pool->edge_count);
         Clay_String edge = {.chars = edge_text, .length = strlen(edge_text)};

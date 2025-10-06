@@ -22,7 +22,6 @@ pool_t *pool_create() {
 
   // Initialize geometric properties
   pool->diameter = 0;
-  pool->avg_center_distance = 0.0f;
   pool->edge_count = 0;
   pool->compactness_score = 0.0f;
 
@@ -83,9 +82,6 @@ void pool_update_geometric_properties(pool_t *pool, grid_type_e geometry_type) {
   size_t old_tile_count = pool->tiles ? pool->tiles->num_tiles : 0;
 
   pool->diameter = pool_calculate_diameter(pool, geometry_type);
-  grid_cell_t center = pool_calculate_center(pool, geometry_type);
-  pool->avg_center_distance =
-    pool_calculate_avg_center_distance(pool, geometry_type);
   pool->edge_count = pool_calculate_edge_count(pool, geometry_type);
   pool->compactness_score = pool_calculate_compactness_score(pool);
 }
@@ -138,35 +134,6 @@ grid_cell_t pool_calculate_center(const pool_t *pool,
     geometry_type, cells, pool->tiles->num_tiles);
   free(cells);
   return center;
-}
-
-float pool_calculate_avg_center_distance(const pool_t *pool,
-                                         grid_type_e geometry_type) {
-  if (!pool || !pool->tiles || pool->tiles->num_tiles == 0) {
-    return 0.0f;
-  }
-
-  // Extract cells from pool tiles
-  grid_cell_t *cells = malloc(pool->tiles->num_tiles * sizeof(grid_cell_t));
-  if (!cells)
-    return 0.0f;
-
-  tile_map_entry_t *entry, *tmp;
-  size_t i = 0;
-  HASH_ITER(hh, pool->tiles->root, entry, tmp) {
-    cells[i] = entry->tile->cell;
-    i++;
-  }
-
-  // Calculate center first
-  grid_cell_t center = grid_geometry_calculate_cells_center(
-    geometry_type, cells, pool->tiles->num_tiles);
-
-  // Use geometry-agnostic calculation
-  float avg_distance = grid_geometry_calculate_cells_avg_center_distance(
-    geometry_type, cells, pool->tiles->num_tiles, center);
-  free(cells);
-  return avg_distance;
 }
 
 int pool_calculate_edge_count(const pool_t *pool, grid_type_e geometry_type) {
@@ -251,7 +218,6 @@ void pool_print(const pool_t *pool) {
   printf("Modifier: %.2f\n", pool->modifier);
   printf("--- Geometric Properties ---\n");
   printf("Diameter: %d\n", pool->diameter);
-  printf("Average center distance: %.2f\n", pool->avg_center_distance);
   printf("Edge count: %d\n", pool->edge_count);
   printf("Compactness score: %.3f\n", pool->compactness_score);
   printf("========================\n");
