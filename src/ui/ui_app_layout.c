@@ -327,17 +327,16 @@ void ui_build_tile_info_card(game_t *game, Vector2 mouse_pos) {
     }
 
     // Pool card
-    // Pool card
-    CLAY({.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
-                                .height = CLAY_SIZING_GROW()},
-                     .padding = CLAY_PADDING_ALL(12),
-                     .childGap = 8,
-                     .layoutDirection = CLAY_TOP_TO_BOTTOM},
+    if (pool) {
+      CLAY({.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
+                                  .height = CLAY_SIZING_GROW()},
+                       .padding = CLAY_PADDING_ALL(12),
+                       .childGap = 8,
+                       .layoutDirection = CLAY_TOP_TO_BOTTOM},
 
-          .backgroundColor = (Clay_Color){40, 40, 40, 240},
-          .cornerRadius = CLAY_CORNER_RADIUS(6),
-          .border = {.color = (Clay_Color){80, 80, 80, 255}, .width = 1}}) {
-      if (pool) {
+            .backgroundColor = (Clay_Color){40, 40, 40, 240},
+            .cornerRadius = CLAY_CORNER_RADIUS(6),
+            .border = {.color = (Clay_Color){80, 80, 80, 255}, .width = 1}}) {
         CLAY_TEXT(CLAY_STRING("Pool"), &TEXT_CONFIG_MEDIUM);
 
         static char pool_text[32];

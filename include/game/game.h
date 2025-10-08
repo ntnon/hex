@@ -28,7 +28,7 @@ typedef struct game {
     inventory_t *inventory;
     int reward_count;
     game_state_e state;
-    //rule_manager_t *rule_manager;
+    rule_manager_t *rule_manager;
     
     // Hover system
     tile_t *hovered_tile;

@@ -1,6 +1,5 @@
 #include "controller/game_controller.h"
 #include "controller/input_state.h"
-#include "ui.h"
 #include <stdio.h>
 
 void controller_init(game_controller_t *controller, game_t *game) {
