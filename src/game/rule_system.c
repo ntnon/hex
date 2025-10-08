@@ -1,75 +1,83 @@
 /**************************************************************************/ /**
                                                                               * @file rule_system.c
-                                                                              * @brief Implementation of comprehensive rule system for hexhex game
+                                                                              * @brief Implementation of player-driven rule system with priority-based evaluation
                                                                               *****************************************************************************/
 
 #include "game/rule_system.h"
-#include "game/board.h"
-#include "grid/grid_geometry.h"
-#include "tile/pool.h"
+#include "grid/hex_geometry.h"
+#include "tile/tile_map.h"
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-// --- Internal Helper Functions ---
+// --- Helper Functions ---
 
-/**
- * @brief Resize rule array if needed
- */
+static int rule_priority_compare(const void *a, const void *b) {
+  const rule_t *rule_a = *(const rule_t **)a;
+  const rule_t *rule_b = *(const rule_t **)b;
+  return rule_a->priority - rule_b->priority;
+}
+
 static bool rule_registry_ensure_capacity(rule_registry_t *registry) {
   if (registry->rule_count >= registry->rule_capacity) {
-    size_t new_capacity =
-      registry->rule_capacity == 0 ? 32 : registry->rule_capacity * 2;
+    size_t new_capacity = registry->rule_capacity * 2;
+    if (new_capacity == 0)
+      new_capacity = 16;
+
     rule_t **new_rules =
       realloc(registry->all_rules, new_capacity * sizeof(rule_t *));
-    if (!new_rules) {
+    if (!new_rules)
       return false;
-    }
+
     registry->all_rules = new_rules;
     registry->rule_capacity = new_capacity;
   }
   return true;
 }
 
-/**
- * @brief Calculate affected cells for a rule based on scope
- */
-static void rule_calculate_affected_cells(rule_t *rule, const board_t *board) {
+static void rule_calculate_affected_cells(rule_t *rule,
+                                          const tile_t *source_tile) {
+  if (!rule || !source_tile)
+    return;
+
   switch (rule->scope) {
-  case RULE_SCOPE_TILE:
-    // Only affects the source cell
+  case RULE_SCOPE_SELF: {
     rule->affected_cells = malloc(sizeof(grid_cell_t));
     if (rule->affected_cells) {
-      rule->affected_cells[0] = rule->source_cell;
+      rule->affected_cells[0] = source_tile->cell;
       rule->affected_count = 1;
     }
     break;
+  }
 
   case RULE_SCOPE_NEIGHBORS: {
-    // Get neighbors of source cell
     grid_cell_t *neighbors;
     size_t neighbor_count;
-    grid_get_neighbors(tile->cell, &neighbors, &neighbor_count);
+    hex_get_neighbors(source_tile->cell, &neighbors, &neighbor_count);
 
     rule->affected_cells = neighbors;
     rule->affected_count = neighbor_count;
     break;
   }
 
-  case RULE_SCOPE_POOL:
-    // TODO: Get all cells in the pool containing source_cell
+  case RULE_SCOPE_POOL: {
+    // TODO: Get all cells in the same pool
     rule->affected_cells = malloc(sizeof(grid_cell_t));
     if (rule->affected_cells) {
-      rule->affected_cells[0] = rule->source_cell;
+      rule->affected_cells[0] = source_tile->cell;
       rule->affected_count = 1;
     }
     break;
+  }
 
-  case RULE_SCOPE_GLOBAL:
-    // Global rules don't need spatial indexing
+  case RULE_SCOPE_TYPE_GLOBAL:
+  case RULE_SCOPE_GLOBAL: {
+    // Global rules don't need specific affected cells
     rule->affected_cells = NULL;
     rule->affected_count = 0;
     break;
+  }
   }
 }
 
@@ -79,8 +87,11 @@ bool rule_registry_init(rule_registry_t *registry) {
   if (!registry)
     return false;
 
-  memset(registry, 0, sizeof(rule_registry_t));
-  registry->next_rule_id = 1; // Start IDs at 1 (0 reserved for invalid)
+  memset(registry->buckets, 0, sizeof(registry->buckets));
+  registry->all_rules = NULL;
+  registry->rule_count = 0;
+  registry->rule_capacity = 0;
+  registry->next_rule_id = 1;
 
   return true;
 }
@@ -94,169 +105,159 @@ void rule_registry_cleanup(rule_registry_t *registry) {
     rule_t *rule = registry->all_rules[i];
     if (rule) {
       free(rule->affected_cells);
+      free(rule->effects);
       free(rule);
     }
   }
 
-  // Free arrays
   free(registry->all_rules);
-
-  // Clear hash buckets
-  memset(registry->buckets, 0, sizeof(registry->buckets));
-
-  memset(registry, 0, sizeof(rule_registry_t));
+  memset(registry, 0, sizeof(*registry));
 }
 
-uint32_t rule_registry_add(rule_registry_t *registry, const rule_t *rule) {
-  if (!registry || !rule)
+uint32_t rule_registry_add(rule_registry_t *registry,
+                           const rule_t *rule_template) {
+  if (!registry || !rule_template)
     return 0;
 
-  // Ensure capacity
-  if (!rule_registry_ensure_capacity(registry)) {
+  if (!rule_registry_ensure_capacity(registry))
     return 0;
+
+  // Create a copy of the rule
+  rule_t *rule = malloc(sizeof(rule_t));
+  if (!rule)
+    return 0;
+
+  *rule = *rule_template;
+  rule->id = registry->next_rule_id++;
+  rule->is_active = true;
+  rule->executed = false;
+
+  // Copy effects array
+  if (rule_template->effects && rule_template->effect_count > 0) {
+    rule->effects = malloc(rule_template->effect_count * sizeof(rule_effect_t));
+    if (!rule->effects) {
+      free(rule);
+      return 0;
+    }
+    memcpy(rule->effects, rule_template->effects,
+           rule_template->effect_count * sizeof(rule_effect_t));
   }
 
-  // Create rule copy
-  rule_t *new_rule = malloc(sizeof(rule_t));
-  if (!new_rule)
-    return 0;
-
-  memcpy(new_rule, rule, sizeof(rule_t));
-  new_rule->id = registry->next_rule_id++;
-  new_rule->next = NULL;
-  new_rule->affected_cells = NULL;
-  new_rule->affected_count = 0;
-
-  // Calculate affected cells for spatial indexing
-  rule_calculate_affected_cells(new_rule, NULL); // TODO: Pass board
-
-  // Add to main array
-  registry->all_rules[registry->rule_count] = new_rule;
+  // Add to registry
+  registry->all_rules[registry->rule_count] = rule;
   registry->rule_count++;
 
-  // Add to spatial hash buckets
-  if (new_rule->affected_cells) {
-    for (size_t i = 0; i < new_rule->affected_count; i++) {
-      uint32_t hash = rule_hash_cell(new_rule->affected_cells[i]);
-      uint32_t bucket_idx = hash % RULE_HASH_SIZE;
+  // Add to spatial hash if needed
+  if (rule->affected_cells) {
+    for (size_t i = 0; i < rule->affected_count; i++) {
+      uint32_t hash = rule_hash_cell(rule->affected_cells[i]);
+      uint32_t bucket = hash % RULE_HASH_SIZE;
 
-      // Add to front of bucket chain
-      rule_t *old_head = registry->buckets[bucket_idx];
-      registry->buckets[bucket_idx] = new_rule;
-      new_rule->next = old_head;
+      rule->next = registry->buckets[bucket];
+      registry->buckets[bucket] = rule;
     }
   }
 
-  return new_rule->id;
+  return rule->id;
 }
 
 bool rule_registry_remove(rule_registry_t *registry, uint32_t rule_id) {
-  if (!registry || rule_id == 0)
+  if (!registry)
     return false;
 
-  // Find rule in main array
-  size_t rule_idx = SIZE_MAX;
-  rule_t *target_rule = NULL;
-
+  // Find and remove from all_rules array
   for (size_t i = 0; i < registry->rule_count; i++) {
     if (registry->all_rules[i]->id == rule_id) {
-      rule_idx = i;
-      target_rule = registry->all_rules[i];
-      break;
-    }
-  }
+      rule_t *rule = registry->all_rules[i];
 
-  if (!target_rule)
-    return false;
+      // Remove from spatial hash
+      if (rule->affected_cells) {
+        for (size_t j = 0; j < rule->affected_count; j++) {
+          uint32_t hash = rule_hash_cell(rule->affected_cells[j]);
+          uint32_t bucket = hash % RULE_HASH_SIZE;
 
-  // Remove from hash buckets
-  if (target_rule->affected_cells) {
-    for (size_t i = 0; i < target_rule->affected_count; i++) {
-      uint32_t hash = rule_hash_cell(target_rule->affected_cells[i]);
-      uint32_t bucket_idx = hash % RULE_HASH_SIZE;
-
-      rule_t **current = &registry->buckets[bucket_idx];
-      while (*current) {
-        if (*current == target_rule) {
-          *current = (*current)->next;
-          break;
+          rule_t **current = &registry->buckets[bucket];
+          while (*current) {
+            if (*current == rule) {
+              *current = (*current)->next;
+              break;
+            }
+            current = &(*current)->next;
+          }
         }
-        current = &(*current)->next;
       }
+
+      // Free rule memory
+      free(rule->affected_cells);
+      free(rule->effects);
+      free(rule);
+
+      // Shift array elements
+      for (size_t j = i; j < registry->rule_count - 1; j++) {
+        registry->all_rules[j] = registry->all_rules[j + 1];
+      }
+      registry->rule_count--;
+
+      return true;
     }
   }
 
-  // Remove from main array (swap with last)
-  registry->rule_count--;
-  if (rule_idx < registry->rule_count) {
-    registry->all_rules[rule_idx] = registry->all_rules[registry->rule_count];
-  }
-  registry->all_rules[registry->rule_count] = NULL;
-
-  // Free rule memory
-  free(target_rule->affected_cells);
-  free(target_rule);
-
-  return true;
+  return false;
 }
 
 void rule_registry_get_rules_for_cell(const rule_registry_t *registry,
                                       grid_cell_t cell, rule_t ***out_rules,
                                       size_t *out_count) {
-  if (!registry || !out_rules || !out_count)
+  if (!registry || !out_rules || !out_count) {
+    if (out_rules)
+      *out_rules = NULL;
+    if (out_count)
+      *out_count = 0;
     return;
-
-  *out_rules = NULL;
-  *out_count = 0;
+  }
 
   uint32_t hash = rule_hash_cell(cell);
-  uint32_t bucket_idx = hash % RULE_HASH_SIZE;
+  uint32_t bucket = hash % RULE_HASH_SIZE;
 
-  // Count rules in bucket that affect this cell
+  // Count matching rules
   size_t count = 0;
-  rule_t *current = registry->buckets[bucket_idx];
+  rule_t *current = registry->buckets[bucket];
   while (current) {
-    // Check if rule actually affects this cell
-    bool affects_cell = false;
-    for (size_t i = 0; i < current->affected_count; i++) {
-      if (current->affected_cells[i].coord.hex.q == cell.coord.hex.q &&
-          current->affected_cells[i].coord.hex.r == cell.coord.hex.r) {
-        affects_cell = true;
-        break;
-      }
-    }
-    if (affects_cell)
+    if (current->is_active) {
       count++;
+    }
     current = current->next;
   }
 
-  if (count == 0)
+  if (count == 0) {
+    *out_rules = NULL;
+    *out_count = 0;
     return;
+  }
 
-  // Allocate array and populate
+  // Allocate array for results
   rule_t **rules = malloc(count * sizeof(rule_t *));
-  if (!rules)
+  if (!rules) {
+    *out_rules = NULL;
+    *out_count = 0;
     return;
+  }
 
-  size_t idx = 0;
-  current = registry->buckets[bucket_idx];
-  while (current && idx < count) {
-    bool affects_cell = false;
-    for (size_t i = 0; i < current->affected_count; i++) {
-      if (current->affected_cells[i].coord.hex.q == cell.coord.hex.q &&
-          current->affected_cells[i].coord.hex.r == cell.coord.hex.r) {
-        affects_cell = true;
-        break;
-      }
-    }
-    if (affects_cell) {
-      rules[idx++] = current;
+  // Fill array with matching rules
+  size_t index = 0;
+  current = registry->buckets[bucket];
+  while (current && index < count) {
+    if (current->is_active) {
+      rules[index++] = current;
     }
     current = current->next;
   }
+
+  // Sort by priority
+  qsort(rules, count, sizeof(rule_t *), rule_priority_compare);
 
   *out_rules = rules;
-  *out_count = idx;
+  *out_count = count;
 }
 
 void rule_registry_remove_by_source(rule_registry_t *registry,
@@ -265,134 +266,408 @@ void rule_registry_remove_by_source(rule_registry_t *registry,
   if (!registry)
     return;
 
-  // Build list of rule IDs to remove
-  uint32_t *to_remove = malloc(registry->rule_count * sizeof(uint32_t));
-  size_t remove_count = 0;
-
+  // Mark rules for removal (can't remove during iteration)
   for (size_t i = 0; i < registry->rule_count; i++) {
     rule_t *rule = registry->all_rules[i];
     if (rule->source_cell.coord.hex.q == source_cell.coord.hex.q &&
         rule->source_cell.coord.hex.r == source_cell.coord.hex.r &&
         rule->is_tile_source == is_tile_source) {
-      to_remove[remove_count++] = rule->id;
+      rule->is_active = false;
     }
   }
 
-  // Remove rules
-  for (size_t i = 0; i < remove_count; i++) {
-    rule_registry_remove(registry, to_remove[i]);
+  // Actually remove inactive rules
+  for (size_t i = 0; i < registry->rule_count;) {
+    if (!registry->all_rules[i]->is_active) {
+      rule_registry_remove(registry, registry->all_rules[i]->id);
+    } else {
+      i++;
+    }
+  }
+}
+
+// --- Rule Catalog Implementation ---
+
+bool rule_catalog_init(rule_catalog_t *catalog, size_t player_count) {
+  if (!catalog || player_count == 0)
+    return false;
+
+  catalog->rule_catalog = NULL;
+  catalog->catalog_size = 0;
+  catalog->player_count = player_count;
+
+  // Allocate per-player arrays
+  catalog->player_available = calloc(player_count, sizeof(player_rule_t *));
+  catalog->player_active = calloc(player_count, sizeof(player_rule_t *));
+  catalog->player_available_count = calloc(player_count, sizeof(size_t));
+  catalog->player_active_count = calloc(player_count, sizeof(size_t));
+  catalog->player_rule_points = calloc(player_count, sizeof(int));
+
+  if (!catalog->player_available || !catalog->player_active ||
+      !catalog->player_available_count || !catalog->player_active_count ||
+      !catalog->player_rule_points) {
+    rule_catalog_cleanup(catalog);
+    return false;
   }
 
-  free(to_remove);
+  // Initialize rule points for each player
+  for (size_t i = 0; i < player_count; i++) {
+    catalog->player_rule_points[i] = 100; // Starting rule points
+  }
+
+  return true;
 }
 
-// --- Rule Factory Implementation ---
+void rule_catalog_cleanup(rule_catalog_t *catalog) {
+  if (!catalog)
+    return;
 
-rule_t rule_factory_neighbor_bonus(grid_cell_t source_cell,
-                                   tile_type_t neighbor_type,
-                                   float bonus_per_neighbor) {
-  rule_t rule = {0};
+  free(catalog->rule_catalog);
+  free(catalog->player_available);
+  free(catalog->player_active);
+  free(catalog->player_available_count);
+  free(catalog->player_active_count);
+  free(catalog->player_rule_points);
 
-  rule.lifecycle = RULE_LIFECYCLE_PERSISTENT;
-  rule.phase = RULE_PHASE_CALCULATION;
-  rule.scope = RULE_SCOPE_TILE;
-  rule.target = RULE_TARGET_MODIFIER;
-
-  rule.condition.type = RULE_CONDITION_NEIGHBOR_TYPE;
-  rule.condition.params.neighbor_type.required_type = neighbor_type;
-
-  rule.effect.type = RULE_EFFECT_ADD_FLAT;
-  rule.effect.params.flat_value = bonus_per_neighbor;
-
-  rule.source_cell = source_cell;
-  rule.is_tile_source = true;
-  rule.priority = 100; // Default priority
-
-  return rule;
+  memset(catalog, 0, sizeof(*catalog));
 }
 
-rule_t rule_factory_perception_override(grid_cell_t source_cell,
-                                        tile_type_t override_type, int range) {
-  rule_t rule = {0};
+bool rule_catalog_add_rule(rule_catalog_t *catalog, const player_rule_t *rule) {
+  if (!catalog || !rule)
+    return false;
 
-  rule.lifecycle = RULE_LIFECYCLE_PERSISTENT;
-  rule.phase = RULE_PHASE_PERCEPTION;
-  rule.scope = RULE_SCOPE_NEIGHBORS;
-  rule.target = RULE_TARGET_PERCEPTION;
+  // Expand catalog if needed
+  size_t new_size = catalog->catalog_size + 1;
+  player_rule_t *new_catalog =
+    realloc(catalog->rule_catalog, new_size * sizeof(player_rule_t));
+  if (!new_catalog)
+    return false;
 
-  rule.condition.type = RULE_CONDITION_ALWAYS;
+  catalog->rule_catalog = new_catalog;
+  catalog->rule_catalog[catalog->catalog_size] = *rule;
+  catalog->catalog_size = new_size;
 
-  rule.effect.type = RULE_EFFECT_OVERRIDE_TYPE;
-  rule.effect.params.override_type = override_type;
-
-  rule.source_cell = source_cell;
-  rule.is_tile_source = true;
-  rule.priority = 50; // Earlier priority for perception
-
-  return rule;
+  return true;
 }
 
-rule_t rule_factory_pool_size_bonus(grid_cell_t source_cell, int min_size,
-                                    float bonus_percentage) {
-  rule_t rule = {0};
+bool rule_catalog_can_acquire(const rule_catalog_t *catalog, uint32_t player_id,
+                              uint32_t rule_id) {
+  if (!catalog || player_id >= catalog->player_count)
+    return false;
 
-  rule.lifecycle = RULE_LIFECYCLE_PERSISTENT;
-  rule.phase = RULE_PHASE_CALCULATION;
-  rule.scope = RULE_SCOPE_POOL;
-  rule.target = RULE_TARGET_MODIFIER;
+  // Find rule in catalog
+  const player_rule_t *rule = NULL;
+  for (size_t i = 0; i < catalog->catalog_size; i++) {
+    if (catalog->rule_catalog[i].rule_template.id == rule_id) {
+      rule = &catalog->rule_catalog[i];
+      break;
+    }
+  }
 
-  rule.condition.type = RULE_CONDITION_POOL_SIZE;
-  rule.condition.params.pool_size.min_size = min_size;
-  rule.condition.params.pool_size.max_size = INT32_MAX;
+  if (!rule)
+    return false;
 
-  rule.effect.type = RULE_EFFECT_ADD_PERCENT;
-  rule.effect.params.percentage = bonus_percentage;
+  // Check status
+  if (rule->status != RULE_STATUS_AVAILABLE)
+    return false;
 
-  rule.source_cell = source_cell;
-  rule.is_tile_source = false; // Pool source
-  rule.priority = 100;
+  // Check cost
+  if (catalog->player_rule_points[player_id] < rule->cost_to_acquire)
+    return false;
 
-  return rule;
+  // Check instance limit
+  if (rule->max_instances > 0 &&
+      rule->current_instances >= rule->max_instances) {
+    return false;
+  }
+
+  // Check prerequisites
+  for (size_t i = 0; i < rule->prerequisite_count; i++) {
+    uint32_t prereq_id = rule->prerequisites[i];
+    bool has_prereq = false;
+
+    for (size_t j = 0; j < catalog->player_active_count[player_id]; j++) {
+      if (catalog->player_active[player_id][j].rule_template.id == prereq_id) {
+        has_prereq = true;
+        break;
+      }
+    }
+
+    if (!has_prereq)
+      return false;
+  }
+
+  // Check conflicts
+  for (size_t i = 0; i < rule->conflict_count; i++) {
+    uint32_t conflict_id = rule->conflicts_with[i];
+
+    for (size_t j = 0; j < catalog->player_active_count[player_id]; j++) {
+      if (catalog->player_active[player_id][j].rule_template.id ==
+          conflict_id) {
+        return false; // Has conflicting rule
+      }
+    }
+  }
+
+  return true;
 }
 
-rule_t rule_factory_instant_modifier(grid_cell_t source_cell,
-                                     rule_target_t target, float flat_bonus) {
-  rule_t rule = {0};
+bool rule_catalog_acquire_rule(rule_catalog_t *catalog, uint32_t player_id,
+                               uint32_t rule_id) {
+  if (!rule_catalog_can_acquire(catalog, player_id, rule_id))
+    return false;
 
-  rule.lifecycle = RULE_LIFECYCLE_INSTANT;
-  rule.phase = RULE_PHASE_CALCULATION; // Not used for instant rules
-  rule.scope = RULE_SCOPE_TILE;
-  rule.target = target;
+  // Find rule in catalog
+  player_rule_t *rule = NULL;
+  for (size_t i = 0; i < catalog->catalog_size; i++) {
+    if (catalog->rule_catalog[i].rule_template.id == rule_id) {
+      rule = &catalog->rule_catalog[i];
+      break;
+    }
+  }
 
-  rule.condition.type = RULE_CONDITION_ALWAYS;
+  if (!rule)
+    return false;
 
-  rule.effect.type = RULE_EFFECT_ADD_FLAT;
-  rule.effect.params.flat_value = flat_bonus;
+  // Deduct cost
+  catalog->player_rule_points[player_id] -= rule->cost_to_acquire;
 
-  rule.source_cell = source_cell;
-  rule.is_tile_source = true;
-  rule.priority = 0; // Instant rules execute immediately
+  // Add to player's active rules
+  // TODO: Implement dynamic array expansion for player rules
+  // For now, assume fixed maximum
 
-  return rule;
+  rule->current_instances++;
+
+  return true;
 }
 
-// --- Rule Evaluation Implementation ---
+// --- Rule Condition Checking ---
 
-bool rule_context_init(rule_context_t *context, const board_t *board) {
+static int count_neighbors_of_type(const tile_t *tile,
+                                   tile_type_t neighbor_type, int range,
+                                   const rule_context_t *context) {
+  if (!tile || !context)
+    return 0;
+
+  // TODO: Implement range-based neighbor counting
+  // For now, just check immediate neighbors
+  grid_cell_t *neighbors;
+  size_t neighbor_count;
+  hex_get_neighbors(tile->cell, &neighbors, &neighbor_count);
+
+  int count = 0;
+  for (size_t i = 0; i < neighbor_count; i++) {
+    const tile_t *neighbor =
+      tile_map_get(context->board->tile_map, neighbors[i]);
+    if (neighbor) {
+      tile_type_t perceived_type = neighbor->data.type;
+
+      // Check for perception overrides
+      if (context->perceived_types) {
+        // TODO: Implement perception lookup by cell
+      }
+
+      if (perceived_type == neighbor_type) {
+        count++;
+      }
+    }
+  }
+
+  free(neighbors);
+  return count;
+}
+
+bool rule_check_condition(const rule_condition_t *condition,
+                          const rule_context_t *context) {
+  if (!condition || !context)
+    return false;
+
+  switch (condition->type) {
+  case RULE_CONDITION_ALWAYS:
+    return true;
+
+  case RULE_CONDITION_SELF_TYPE: {
+    if (!context->current_tile)
+      return false;
+    tile_type_t perceived_type = context->current_tile->data.type;
+
+    // Check perception overrides
+    if (context->perceived_types) {
+      // TODO: Look up perceived type
+    }
+
+    return perceived_type == condition->params.self_type.tile_type;
+  }
+
+  case RULE_CONDITION_NEIGHBOR_COUNT: {
+    if (!context->current_tile)
+      return false;
+
+    int count = count_neighbors_of_type(
+      context->current_tile, condition->params.neighbor_count.neighbor_type,
+      condition->params.neighbor_count.range, context);
+
+    return count >= condition->params.neighbor_count.min_count &&
+           count <= condition->params.neighbor_count.max_count;
+  }
+
+  case RULE_CONDITION_NEIGHBOR_TYPE: {
+    if (!context->current_tile)
+      return false;
+
+    int count = count_neighbors_of_type(
+      context->current_tile, condition->params.neighbor_type.required_type,
+      condition->params.neighbor_type.range, context);
+
+    return count > 0;
+  }
+
+  case RULE_CONDITION_POOL_SIZE: {
+    if (!context->current_pool)
+      return false;
+
+    // TODO: Get actual pool size
+    int pool_size = 1; // Placeholder
+
+    return pool_size >= condition->params.pool_size.min_size &&
+           pool_size <= condition->params.pool_size.max_size;
+  }
+
+  case RULE_CONDITION_TOTAL_TILE_COUNT: {
+    // TODO: Count all tiles of type on board
+    return true; // Placeholder
+  }
+
+  case RULE_CONDITION_VALUE_THRESHOLD: {
+    if (!context->current_tile)
+      return false;
+
+    float value = tile_get_effective_production(context->current_tile);
+
+    if (condition->params.value_threshold.greater_than) {
+      return value > condition->params.value_threshold.threshold;
+    } else {
+      return value < condition->params.value_threshold.threshold;
+    }
+  }
+
+  case RULE_CONDITION_RULE_ACTIVE: {
+    // TODO: Check if specific rule is active
+    return true; // Placeholder
+  }
+
+  case RULE_CONDITION_AND: {
+    for (size_t i = 0; i < condition->params.logical.condition_count; i++) {
+      if (!rule_check_condition(&condition->params.logical.conditions[i],
+                                context)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  case RULE_CONDITION_OR: {
+    for (size_t i = 0; i < condition->params.logical.condition_count; i++) {
+      if (rule_check_condition(&condition->params.logical.conditions[i],
+                               context)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  case RULE_CONDITION_NOT: {
+    if (condition->params.logical.condition_count > 0) {
+      return !rule_check_condition(&condition->params.logical.conditions[0],
+                                   context);
+    }
+    return false;
+  }
+
+  default:
+    return false;
+  }
+}
+
+// --- Rule Effect Application ---
+
+void rule_apply_effect(const rule_effect_t *effect, rule_context_t *context) {
+  if (!effect || !context)
+    return;
+
+  switch (effect->type) {
+  case RULE_EFFECT_ADD_FLAT: {
+    // TODO: Apply flat bonus based on target
+    break;
+  }
+
+  case RULE_EFFECT_ADD_PERCENT: {
+    // TODO: Apply percentage bonus
+    break;
+  }
+
+  case RULE_EFFECT_MULTIPLY: {
+    // TODO: Apply multiplication
+    break;
+  }
+
+  case RULE_EFFECT_SET_VALUE: {
+    // TODO: Set value
+    break;
+  }
+
+  case RULE_EFFECT_SCALE_BY_COUNT: {
+    // TODO: Scale effect by count of something
+    break;
+  }
+
+  case RULE_EFFECT_OVERRIDE_TYPE: {
+    if (effect->target == RULE_TARGET_PERCEPTION && context->current_tile) {
+      // TODO: Update perception arrays
+    }
+    break;
+  }
+
+  case RULE_EFFECT_MODIFY_RANGE: {
+    if (effect->target == RULE_TARGET_RANGE && context->current_tile) {
+      // TODO: Modify tile range in perception state
+    }
+    break;
+  }
+
+  case RULE_EFFECT_CONDITIONAL: {
+    // TODO: Evaluate condition and apply appropriate effect
+    break;
+  }
+
+  default:
+    break;
+  }
+}
+
+// --- Rule Evaluation ---
+
+bool rule_context_init(rule_context_t *context, const board_t *board,
+                       size_t max_rules) {
   if (!context || !board)
     return false;
 
-  memset(context, 0, sizeof(rule_context_t));
+  memset(context, 0, sizeof(*context));
   context->board = board;
 
-  // Initialize perception arrays (allocate for max possible tiles)
-  context->perception_capacity = 10000; // TODO: Calculate based on board size
-  context->perceived_types =
-    calloc(context->perception_capacity, sizeof(tile_type_t));
-  context->perceived_values =
-    calloc(context->perception_capacity, sizeof(float));
+  // Allocate perception arrays
+  size_t max_cells = 1000; // TODO: Get actual board size
+  context->perceived_types = calloc(max_cells, sizeof(tile_type_t));
+  context->perceived_values = calloc(max_cells, sizeof(float));
+  context->perceived_ranges = calloc(max_cells, sizeof(int));
+  context->perception_capacity = max_cells;
 
-  if (!context->perceived_types || !context->perceived_values) {
+  // Allocate rule processing tracking
+  context->rules_processed = calloc(max_rules, sizeof(bool));
+  context->rules_processed_capacity = max_rules;
+
+  if (!context->perceived_types || !context->perceived_values ||
+      !context->perceived_ranges || !context->rules_processed) {
     rule_context_cleanup(context);
     return false;
   }
@@ -406,122 +681,57 @@ void rule_context_cleanup(rule_context_t *context) {
 
   free(context->perceived_types);
   free(context->perceived_values);
-  memset(context, 0, sizeof(rule_context_t));
+  free(context->perceived_ranges);
+  free(context->rules_processed);
+
+  memset(context, 0, sizeof(*context));
 }
 
-bool rule_check_condition(const rule_t *rule, const rule_context_t *context) {
-  if (!rule || !context)
-    return false;
-
-  switch (rule->condition.type) {
-  case RULE_CONDITION_ALWAYS:
-    return true;
-
-  case RULE_CONDITION_NEIGHBOR_TYPE: {
-    // TODO: Implement neighbor type checking
-    // This would require getting neighbors and checking their types
-    return true; // Placeholder
-  }
-
-  case RULE_CONDITION_NEIGHBOR_COUNT: {
-    // TODO: Implement neighbor counting
-    return true; // Placeholder
-  }
-
-  case RULE_CONDITION_POOL_SIZE: {
-    if (!context->current_pool)
-      return false;
-
-    // TODO: Get pool size from pool structure
-    int pool_size = 1; // Placeholder
-
-    return pool_size >= rule->condition.params.pool_size.min_size &&
-           pool_size <= rule->condition.params.pool_size.max_size;
-  }
-
-  case RULE_CONDITION_GEOMETRIC: {
-    // TODO: Implement geometric conditions
-    return true; // Placeholder
-  }
-
-  case RULE_CONDITION_VALUE_THRESHOLD: {
-    if (!context->current_tile)
-      return false;
-
-    float value = tile_get_effective_production(context->current_tile);
-    if (rule->condition.params.value_threshold.greater_than) {
-      return value > rule->condition.params.value_threshold.threshold;
-    } else {
-      return value < rule->condition.params.value_threshold.threshold;
-    }
-  }
-
-  default:
-    return false;
-  }
-}
-
-void rule_apply_effect(const rule_t *rule, rule_context_t *context) {
-  if (!rule || !context)
-    return;
-
-  switch (rule->effect.type) {
-  case RULE_EFFECT_ADD_FLAT: {
-    if (rule->target == RULE_TARGET_MODIFIER && context->current_tile) {
-      // For non-const modification, we'd need a different approach
-      // This is a placeholder showing the concept
-    }
-    break;
-  }
-
-  case RULE_EFFECT_ADD_PERCENT: {
-    // TODO: Implement percentage effects
-    break;
-  }
-
-  case RULE_EFFECT_MULTIPLY: {
-    // TODO: Implement multiplication effects
-    break;
-  }
-
-  case RULE_EFFECT_SET_VALUE: {
-    // TODO: Implement set value effects
-    break;
-  }
-
-  case RULE_EFFECT_OVERRIDE_TYPE: {
-    if (rule->target == RULE_TARGET_PERCEPTION) {
-      // TODO: Update perception arrays
-    }
-    break;
-  }
-
-  case RULE_EFFECT_EXTEND_RANGE: {
-    // TODO: Implement range extension
-    break;
-  }
-
-  default:
-    break;
-  }
-}
-
-void rule_evaluate_phase(const rule_registry_t *registry,
-                         rule_context_t *context, rule_phase_t phase) {
+void rule_evaluate_all(const rule_registry_t *registry,
+                       rule_context_t *context) {
   if (!registry || !context)
     return;
 
-  // Evaluate all persistent rules for the given phase
+  // Clear processing flags
+  memset(context->rules_processed, 0,
+         context->rules_processed_capacity * sizeof(bool));
+
+  // Sort all rules by priority
+  rule_t **sorted_rules = malloc(registry->rule_count * sizeof(rule_t *));
+  if (!sorted_rules)
+    return;
+
   for (size_t i = 0; i < registry->rule_count; i++) {
-    rule_t *rule = registry->all_rules[i];
+    sorted_rules[i] = registry->all_rules[i];
+  }
 
-    if (rule->lifecycle == RULE_LIFECYCLE_PERSISTENT && rule->phase == phase) {
+  qsort(sorted_rules, registry->rule_count, sizeof(rule_t *),
+        rule_priority_compare);
 
-      if (rule_check_condition(rule, context)) {
-        rule_apply_effect(rule, context);
+  // Evaluate rules in priority order
+  for (size_t i = 0; i < registry->rule_count; i++) {
+    rule_t *rule = sorted_rules[i];
+
+    if (!rule->is_active || (rule->id < context->rules_processed_capacity &&
+                             context->rules_processed[rule->id])) {
+      continue;
+    }
+
+    if (rule->lifecycle == RULE_LIFECYCLE_PERSISTENT) {
+      if (rule_check_condition(&rule->condition, context)) {
+        for (size_t j = 0; j < rule->effect_count; j++) {
+          rule_apply_effect(&rule->effects[j], context);
+        }
       }
     }
+
+    // Mark as processed
+    if (rule->id < context->rules_processed_capacity) {
+      context->rules_processed[rule->id] = true;
+    }
   }
+
+  free(sorted_rules);
 }
 
 void rule_execute_instant_rules(rule_registry_t *registry,
@@ -529,33 +739,37 @@ void rule_execute_instant_rules(rule_registry_t *registry,
   if (!registry || !context)
     return;
 
-  // Build list of instant rules to execute and remove
-  uint32_t *to_execute = malloc(registry->rule_count * sizeof(uint32_t));
-  size_t execute_count = 0;
-
+  // Find and execute instant rules
   for (size_t i = 0; i < registry->rule_count; i++) {
     rule_t *rule = registry->all_rules[i];
-    if (rule->lifecycle == RULE_LIFECYCLE_INSTANT && !rule->executed) {
-      if (rule_check_condition(rule, context)) {
-        rule_apply_effect(rule, context);
+
+    if (rule->lifecycle == RULE_LIFECYCLE_INSTANT && rule->is_active &&
+        !rule->executed) {
+
+      if (rule_check_condition(&rule->condition, context)) {
+        for (size_t j = 0; j < rule->effect_count; j++) {
+          rule_apply_effect(&rule->effects[j], context);
+        }
         rule->executed = true;
-        to_execute[execute_count++] = rule->id;
       }
     }
   }
 
   // Remove executed instant rules
-  for (size_t i = 0; i < execute_count; i++) {
-    rule_registry_remove(registry, to_execute[i]);
+  for (size_t i = 0; i < registry->rule_count;) {
+    if (registry->all_rules[i]->lifecycle == RULE_LIFECYCLE_INSTANT &&
+        registry->all_rules[i]->executed) {
+      rule_registry_remove(registry, registry->all_rules[i]->id);
+    } else {
+      i++;
+    }
   }
-
-  free(to_execute);
 }
 
-// --- Utility Implementation ---
+// --- Utility Functions ---
 
 uint32_t rule_hash_cell(grid_cell_t cell) {
-  // Simple hash combining q and r coordinates
+  // Simple hash function for hex coordinates
   uint32_t hash = 0;
   hash ^= (uint32_t)cell.coord.hex.q + 0x9e3779b9 + (hash << 6) + (hash >> 2);
   hash ^= (uint32_t)cell.coord.hex.r + 0x9e3779b9 + (hash << 6) + (hash >> 2);
@@ -566,46 +780,123 @@ void rule_print(const rule_t *rule) {
   if (!rule)
     return;
 
-  printf("Rule ID: %u\n", rule->id);
-  printf("  Lifecycle: %s\n",
-         rule->lifecycle == RULE_LIFECYCLE_INSTANT ? "Instant" : "Persistent");
-  printf("  Phase: %s\n",
-         rule->phase == RULE_PHASE_PERCEPTION ? "Perception" : "Calculation");
-  printf("  Source: (%d, %d) %s\n", rule->source_cell.coord.hex.q,
-         rule->source_cell.coord.hex.r,
-         rule->is_tile_source ? "[Tile]" : "[Pool]");
+  printf("Rule %u:\n", rule->id);
   printf("  Priority: %d\n", rule->priority);
-  printf("  Executed: %s\n", rule->executed ? "Yes" : "No");
+  printf("  Lifecycle: %s\n",
+         rule->lifecycle == RULE_LIFECYCLE_INSTANT ? "INSTANT" : "PERSISTENT");
+  printf("  Scope: %d\n", rule->scope);
+  printf("  Active: %s\n", rule->is_active ? "YES" : "NO");
+  printf("  Effects: %zu\n", rule->effect_count);
+}
+
+void player_rule_print(const player_rule_t *rule) {
+  if (!rule)
+    return;
+
+  printf("Player Rule: %s\n", rule->name);
+  printf("  Description: %s\n", rule->description);
+  printf("  Cost: %d\n", rule->cost_to_acquire);
+  printf("  Status: %d\n", rule->status);
+  printf("  Instances: %d/%d\n", rule->current_instances, rule->max_instances);
 }
 
 void rule_registry_print_stats(const rule_registry_t *registry) {
   if (!registry)
     return;
 
-  printf("Rule Registry Statistics:\n");
+  printf("Rule Registry Stats:\n");
   printf("  Total rules: %zu\n", registry->rule_count);
   printf("  Capacity: %zu\n", registry->rule_capacity);
   printf("  Next ID: %u\n", registry->next_rule_id);
 
-  size_t instant_count = 0, persistent_count = 0;
-  size_t perception_count = 0, calculation_count = 0;
-
+  int active_count = 0;
   for (size_t i = 0; i < registry->rule_count; i++) {
-    rule_t *rule = registry->all_rules[i];
-    if (rule->lifecycle == RULE_LIFECYCLE_INSTANT) {
-      instant_count++;
-    } else {
-      persistent_count++;
-      if (rule->phase == RULE_PHASE_PERCEPTION) {
-        perception_count++;
-      } else {
-        calculation_count++;
-      }
+    if (registry->all_rules[i]->is_active)
+      active_count++;
+  }
+  printf("  Active rules: %d\n", active_count);
+}
+
+void rule_catalog_print_stats(const rule_catalog_t *catalog) {
+  if (!catalog)
+    return;
+
+  printf("Rule Catalog Stats:\n");
+  printf("  Catalog size: %zu\n", catalog->catalog_size);
+  printf("  Players: %zu\n", catalog->player_count);
+
+  for (size_t i = 0; i < catalog->player_count; i++) {
+    printf("  Player %zu: %zu available, %zu active, %d points\n", i,
+           catalog->player_available_count[i], catalog->player_active_count[i],
+           catalog->player_rule_points[i]);
+  }
+}
+
+// --- Rule Factory Functions ---
+
+player_rule_t rule_factory_neighbor_bonus(const char *name,
+                                          tile_type_t neighbor_type,
+                                          float bonus_per_neighbor, int range) {
+  player_rule_t rule = {0};
+
+  strncpy(rule.name, name, MAX_RULE_NAME_LENGTH - 1);
+
+  rule.rule_template.lifecycle = RULE_LIFECYCLE_PERSISTENT;
+  rule.rule_template.priority = RULE_PRIORITY_NORMAL;
+  rule.rule_template.scope = RULE_SCOPE_SELF;
+
+  rule.rule_template.condition.type = RULE_CONDITION_ALWAYS;
+
+  // TODO: Set up effects for neighbor bonus
+  rule.rule_template.effects = malloc(sizeof(rule_effect_t));
+  rule.rule_template.effect_count = 1;
+
+  rule.status = RULE_STATUS_AVAILABLE;
+  rule.cost_to_acquire = 50;
+  rule.cost_to_remove = 10;
+  rule.max_instances = 1;
+
+  return rule;
+}
+
+bool rule_validate(const player_rule_t *rule) {
+  if (!rule)
+    return false;
+
+  // Check name
+  if (strlen(rule->name) == 0)
+    return false;
+
+  // Check costs
+  if (rule->cost_to_acquire < 0)
+    return false;
+
+  // Check effects exist
+  if (rule->rule_template.effect_count == 0 || !rule->rule_template.effects) {
+    return false;
+  }
+
+  return true;
+}
+
+bool rule_check_conflict(const player_rule_t *rule1,
+                         const player_rule_t *rule2) {
+  if (!rule1 || !rule2)
+    return false;
+
+  // Check if rule1 conflicts with rule2
+  for (size_t i = 0; i < rule1->conflict_count; i++) {
+    if (rule1->conflicts_with[i] == rule2->rule_template.id) {
+      return true;
     }
   }
 
-  printf("  Instant rules: %zu\n", instant_count);
-  printf("  Persistent rules: %zu\n", persistent_count);
-  printf("    Perception: %zu\n", perception_count);
-  printf("    Calculation: %zu\n", calculation_count);
+  // Check if rule2 conflicts with rule1
+  for (size_t i = 0; i < rule2->conflict_count; i++) {
+    if (rule2->conflicts_with[i] == rule1->rule_template.id) {
+      return true;
+    }
+  }
+
+  return false;
 }

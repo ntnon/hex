@@ -1,12 +1,13 @@
 /**************************************************************************//**
  * @file rule_manager.h
- * @brief High-level rule management integration for hexhex game
+ * @brief High-level rule management integration for hexhex game with player-driven rules
  *****************************************************************************/
 
 #ifndef RULE_MANAGER_H
 #define RULE_MANAGER_H
 
 #include "rule_system.h"
+#include "player_rule_manager.h"
 #include "game/board.h"
 #include "tile/tile.h"
 
@@ -14,30 +15,52 @@
 typedef struct game game_t;
 
 /**
- * @brief High-level rule manager that integrates with game systems
+ * @brief High-level rule manager that integrates player choices with game systems
  */
 typedef struct rule_manager {
-    rule_registry_t registry;      // Core rule registry
-    rule_context_t context;        // Evaluation context
+    rule_registry_t active_rules;      // Currently active rules affecting gameplay
+    rule_catalog_t rule_catalog;       // All possible rules and player ownership
+    rule_context_t evaluation_context; // Context for rule evaluation
     
-    // Integration state
-    bool initialized;
-    bool dirty;                    // True if rules need re-evaluation
+    // Player rule management
+    player_rule_context_t *player_contexts; // Per-player rule management contexts
+    size_t player_count;                     // Number of players
+    
+    // Game integration
+    const board_t *board;              // Board this manager operates on
+    bool initialized;                  // Manager initialization state
+    bool rules_dirty;                  // True if rules need re-evaluation
     
     // Performance tracking
-    uint32_t evaluations_this_frame;
+    uint32_t evaluations_this_turn;
     uint32_t total_evaluations;
+    uint32_t rules_applied_this_turn;
 } rule_manager_t;
+
+/**
+ * @brief Rule evaluation timing for game phases
+ */
+typedef enum {
+    RULE_TIMING_TILE_PLACED,          // After a tile is placed
+    RULE_TIMING_TILE_REMOVED,         // After a tile is removed  
+    RULE_TIMING_POOL_FORMED,          // After a pool is created/merged
+    RULE_TIMING_POOL_DESTROYED,       // After a pool is destroyed
+    RULE_TIMING_TURN_START,           // At the start of a player's turn
+    RULE_TIMING_TURN_END,             // At the end of a player's turn
+    RULE_TIMING_PRODUCTION_CALC,      // During production calculation
+    RULE_TIMING_MANUAL                // Manually triggered evaluation
+} rule_timing_t;
 
 // --- Rule Manager Lifecycle ---
 
 /**
  * @brief Initialize rule manager for a game
  * @param manager Rule manager to initialize
- * @param game Game instance to manage rules for
+ * @param board Game board to manage rules for
+ * @param player_count Number of players in the game
  * @return true on success, false on failure
  */
-bool rule_manager_init(rule_manager_t *manager, const game_t *game);
+bool rule_manager_init(rule_manager_t *manager, const board_t *board, size_t player_count);
 
 /**
  * @brief Cleanup rule manager and free resources
@@ -46,204 +69,274 @@ bool rule_manager_init(rule_manager_t *manager, const game_t *game);
 void rule_manager_cleanup(rule_manager_t *manager);
 
 /**
- * @brief Mark rule manager as needing re-evaluation
- * @param manager Rule manager to mark dirty
+ * @brief Load default rule catalog for the game
+ * @param manager Rule manager
+ * @return Number of rules loaded into catalog
  */
-void rule_manager_mark_dirty(rule_manager_t *manager);
-
-// --- Tile-Based Rule Creation ---
+size_t rule_manager_load_default_catalog(rule_manager_t *manager);
 
 /**
- * @brief Add rules when a tile is placed on the board
+ * @brief Reset all player rules (for new game)
+ * @param manager Rule manager
+ */
+void rule_manager_reset_player_rules(rule_manager_t *manager);
+
+// --- Player Rule Interface ---
+
+/**
+ * @brief Get available rules for a player
+ * @param manager Rule manager
+ * @param player_id Player to query
+ * @param out_rules Array to store available rules
+ * @param max_rules Maximum rules to return
+ * @return Number of rules returned
+ */
+size_t rule_manager_get_available_rules(const rule_manager_t *manager,
+                                       uint32_t player_id,
+                                       const player_rule_t **out_rules,
+                                       size_t max_rules);
+
+/**
+ * @brief Get active rules for a player
+ * @param manager Rule manager
+ * @param player_id Player to query
+ * @param out_rules Array to store active rules
+ * @param max_rules Maximum rules to return
+ * @return Number of rules returned
+ */
+size_t rule_manager_get_active_rules(const rule_manager_t *manager,
+                                    uint32_t player_id,
+                                    const player_rule_t **out_rules,
+                                    size_t max_rules);
+
+/**
+ * @brief Attempt to acquire a rule for a player
+ * @param manager Rule manager
+ * @param player_id Player acquiring the rule
+ * @param rule_id Rule to acquire
+ * @return true if acquisition successful
+ */
+bool rule_manager_acquire_rule(rule_manager_t *manager, uint32_t player_id, uint32_t rule_id);
+
+/**
+ * @brief Attempt to remove a rule from a player
+ * @param manager Rule manager
+ * @param player_id Player removing the rule
+ * @param rule_id Rule to remove
+ * @return true if removal successful
+ */
+bool rule_manager_remove_rule(rule_manager_t *manager, uint32_t player_id, uint32_t rule_id);
+
+/**
+ * @brief Get rule recommendations for a player
+ * @param manager Rule manager
+ * @param player_id Player to get recommendations for
+ * @param out_recommendations Array to store recommendations
+ * @param max_recommendations Maximum recommendations to return
+ * @return Number of recommendations returned
+ */
+size_t rule_manager_get_recommendations(const rule_manager_t *manager,
+                                       uint32_t player_id,
+                                       rule_recommendation_t *out_recommendations,
+                                       size_t max_recommendations);
+
+/**
+ * @brief Check if player can afford and acquire a specific rule
+ * @param manager Rule manager
+ * @param player_id Player to check
+ * @param rule_id Rule to check
+ * @param out_reason String explaining why rule can't be acquired (if false)
+ * @return true if rule can be acquired
+ */
+bool rule_manager_can_acquire_rule(const rule_manager_t *manager,
+                                  uint32_t player_id,
+                                  uint32_t rule_id,
+                                  char *out_reason);
+
+// --- Game Event Integration ---
+
+/**
+ * @brief Notify rule manager that a tile was placed
  * @param manager Rule manager
  * @param tile Tile that was placed
- * @param board Current board state
+ * @param player_id Player who placed the tile
  */
-void rule_manager_on_tile_placed(rule_manager_t *manager, 
-                                const tile_t *tile, 
-                                const board_t *board);
+void rule_manager_on_tile_placed(rule_manager_t *manager, const tile_t *tile, uint32_t player_id);
 
 /**
- * @brief Remove rules when a tile is removed from the board
+ * @brief Notify rule manager that a tile was removed
  * @param manager Rule manager
- * @param tile Tile that was removed
+ * @param cell Cell where tile was removed
+ * @param player_id Player who removed the tile
  */
-void rule_manager_on_tile_removed(rule_manager_t *manager, const tile_t *tile);
+void rule_manager_on_tile_removed(rule_manager_t *manager, grid_cell_t cell, uint32_t player_id);
 
 /**
- * @brief Add rules when a pool is formed or modified
+ * @brief Notify rule manager that a pool was formed or changed
  * @param manager Rule manager
- * @param pool Pool that was created/modified
- * @param board Current board state
+ * @param pool Pool that was formed/changed
+ * @param player_id Player who owns the pool
  */
-void rule_manager_on_pool_changed(rule_manager_t *manager, 
-                                 const pool_t *pool, 
-                                 const board_t *board);
+void rule_manager_on_pool_changed(rule_manager_t *manager, const pool_t *pool, uint32_t player_id);
 
 /**
- * @brief Remove rules when a pool is destroyed
+ * @brief Notify rule manager of turn start
  * @param manager Rule manager
- * @param pool Pool that was destroyed
+ * @param player_id Player whose turn is starting
  */
-void rule_manager_on_pool_destroyed(rule_manager_t *manager, const pool_t *pool);
-
-// --- Production Calculation Integration ---
+void rule_manager_on_turn_start(rule_manager_t *manager, uint32_t player_id);
 
 /**
- * @brief Calculate effective production for a tile with all rule effects
+ * @brief Notify rule manager of turn end
+ * @param manager Rule manager
+ * @param player_id Player whose turn is ending
+ */
+void rule_manager_on_turn_end(rule_manager_t *manager, uint32_t player_id);
+
+// --- Rule Evaluation ---
+
+/**
+ * @brief Evaluate all active rules at specific timing
+ * @param manager Rule manager
+ * @param timing When this evaluation is happening
+ */
+void rule_manager_evaluate_rules(rule_manager_t *manager, rule_timing_t timing);
+
+/**
+ * @brief Calculate effective production for a tile considering all active rules
  * @param manager Rule manager
  * @param tile Tile to calculate production for
- * @param board Current board state
- * @return Effective production value after applying all rules
+ * @return Effective production value
  */
-float rule_manager_calculate_tile_production(rule_manager_t *manager,
+float rule_manager_calculate_tile_production(const rule_manager_t *manager, const tile_t *tile);
+
+/**
+ * @brief Calculate effective range for a tile considering all active rules
+ * @param manager Rule manager
+ * @param tile Tile to calculate range for
+ * @return Effective range value
+ */
+int rule_manager_calculate_tile_range(const rule_manager_t *manager, const tile_t *tile);
+
+/**
+ * @brief Calculate effective pool multiplier considering all active rules
+ * @param manager Rule manager
+ * @param pool Pool to calculate multiplier for
+ * @return Effective multiplier value
+ */
+float rule_manager_calculate_pool_multiplier(const rule_manager_t *manager, const pool_t *pool);
+
+/**
+ * @brief Get perceived tile type (may be overridden by rules)
+ * @param manager Rule manager
+ * @param tile Tile to get perceived type for
+ * @param observer_cell Cell from which tile is being observed
+ * @return Perceived tile type
+ */
+tile_type_t rule_manager_get_perceived_type(const rule_manager_t *manager,
                                            const tile_t *tile,
-                                           const board_t *board);
+                                           grid_cell_t observer_cell);
+
+// --- Rule Creation and Management ---
 
 /**
- * @brief Calculate effective modifier for a pool with all rule effects
+ * @brief Create and add a custom rule to the catalog
  * @param manager Rule manager
- * @param pool Pool to calculate modifier for
- * @param board Current board state
- * @return Effective pool modifier after applying all rules
+ * @param rule Rule to add to catalog
+ * @return true if rule was added successfully
  */
-float rule_manager_calculate_pool_modifier(rule_manager_t *manager,
-                                         const pool_t *pool,
-                                         const board_t *board);
+bool rule_manager_add_catalog_rule(rule_manager_t *manager, const player_rule_t *rule);
 
 /**
- * @brief Update all production values based on current rules
+ * @brief Remove a rule from the catalog entirely
  * @param manager Rule manager
- * @param board Board to update production for
+ * @param rule_id Rule to remove from catalog
+ * @return true if rule was removed
  */
-void rule_manager_update_production(rule_manager_t *manager, board_t *board);
-
-// --- Specific Rule Factories ---
+bool rule_manager_remove_catalog_rule(rule_manager_t *manager, uint32_t rule_id);
 
 /**
- * @brief Create standard tile-based rules based on tile type
+ * @brief Update rule availability for all players based on current game state
  * @param manager Rule manager
- * @param tile Tile to create rules for
- * @param board Current board state
  */
-void rule_manager_create_tile_rules(rule_manager_t *manager,
-                                   const tile_t *tile,
-                                   const board_t *board);
+void rule_manager_update_rule_availability(rule_manager_t *manager);
+
+// --- Performance and Debugging ---
 
 /**
- * @brief Create standard pool-based rules
+ * @brief Get rule evaluation performance stats
  * @param manager Rule manager
- * @param pool Pool to create rules for
- * @param board Current board state
+ * @param out_active_rules Number of currently active rules
+ * @param out_evaluations_this_turn Evaluations performed this turn
+ * @param out_total_evaluations Total evaluations since init
  */
-void rule_manager_create_pool_rules(rule_manager_t *manager,
-                                   const pool_t *pool,
-                                   const board_t *board);
-
-// --- Example Rule Definitions ---
+void rule_manager_get_performance_stats(const rule_manager_t *manager,
+                                       size_t *out_active_rules,
+                                       uint32_t *out_evaluations_this_turn,
+                                       uint32_t *out_total_evaluations);
 
 /**
- * @brief Add a "neighbor bonus" rule for a tile
- * Example: "+1 production per same-color neighbor"
+ * @brief Print rule manager state for debugging
  * @param manager Rule manager
- * @param source_tile Tile creating the rule
- * @param bonus_per_neighbor Bonus amount per matching neighbor
  */
-void rule_manager_add_neighbor_bonus_rule(rule_manager_t *manager,
-                                         const tile_t *source_tile,
-                                         float bonus_per_neighbor);
+void rule_manager_debug_print(const rule_manager_t *manager);
 
 /**
- * @brief Add a "perception override" rule for a tile
- * Example: "All neighbors appear as red tiles"
+ * @brief Print all rules affecting a specific tile
  * @param manager Rule manager
- * @param source_tile Tile creating the rule
- * @param override_type Type to make neighbors appear as
+ * @param tile Tile to analyze
  */
-void rule_manager_add_perception_rule(rule_manager_t *manager,
-                                     const tile_t *source_tile,
-                                     tile_type_t override_type);
+void rule_manager_debug_print_tile_rules(const rule_manager_t *manager, const tile_t *tile);
 
 /**
- * @brief Add a "pool size bonus" rule
- * Example: "+20% production for pools of size 5+"
- * @param manager Rule manager
- * @param source_pool Pool creating the rule
- * @param min_size Minimum pool size for bonus
- * @param bonus_percentage Percentage bonus
+ * @brief Print player rule portfolio
+ * @param manager Rule manager  
+ * @param player_id Player to analyze
  */
-void rule_manager_add_pool_size_rule(rule_manager_t *manager,
-                                    const pool_t *source_pool,
-                                    int min_size,
-                                    float bonus_percentage);
+void rule_manager_debug_print_player_rules(const rule_manager_t *manager, uint32_t player_id);
+
+// --- Utility Functions ---
 
 /**
- * @brief Add an instant modifier rule
- * Example: "Permanently increase production by 2"
+ * @brief Check if rule manager needs re-evaluation
  * @param manager Rule manager
- * @param target_cell Cell to apply modifier to
- * @param target What to modify
- * @param amount Amount to add
- */
-void rule_manager_add_instant_modifier(rule_manager_t *manager,
-                                      grid_cell_t target_cell,
-                                      rule_target_t target,
-                                      float amount);
-
-// --- Query Functions ---
-
-/**
- * @brief Get all active rules affecting a specific cell
- * @param manager Rule manager
- * @param cell Cell to query
- * @param out_rules Array of rule pointers (caller should not free)
- * @param out_count Number of rules found
- */
-void rule_manager_get_rules_for_cell(const rule_manager_t *manager,
-                                    grid_cell_t cell,
-                                    rule_t ***out_rules,
-                                    size_t *out_count);
-
-/**
- * @brief Count total number of active rules
- * @param manager Rule manager
- * @return Number of active rules
- */
-size_t rule_manager_get_rule_count(const rule_manager_t *manager);
-
-/**
- * @brief Check if any rules are pending evaluation
- * @param manager Rule manager
- * @return true if rules need evaluation
+ * @return true if rules are dirty and need evaluation
  */
 bool rule_manager_needs_evaluation(const rule_manager_t *manager);
 
-// --- Debug Functions ---
-
 /**
- * @brief Print all active rules for debugging
+ * @brief Mark rule manager as needing re-evaluation
  * @param manager Rule manager
  */
-void rule_manager_print_all_rules(const rule_manager_t *manager);
+void rule_manager_mark_dirty(rule_manager_t *manager);
 
 /**
- * @brief Print rules affecting a specific cell
+ * @brief Clear dirty flag after evaluation
  * @param manager Rule manager
- * @param cell Cell to query
  */
-void rule_manager_print_rules_for_cell(const rule_manager_t *manager, 
-                                      grid_cell_t cell);
+void rule_manager_mark_clean(rule_manager_t *manager);
 
 /**
- * @brief Print performance statistics
+ * @brief Get total number of rules in catalog
  * @param manager Rule manager
+ * @return Number of rules in catalog
  */
-void rule_manager_print_stats(const rule_manager_t *manager);
+size_t rule_manager_get_catalog_size(const rule_manager_t *manager);
 
 /**
- * @brief Reset performance counters
+ * @brief Get total rule points for a player
  * @param manager Rule manager
+ * @param player_id Player to query
+ * @return Current rule points for player
  */
-void rule_manager_reset_stats(rule_manager_t *manager);
+int rule_manager_get_player_rule_points(const rule_manager_t *manager, uint32_t player_id);
+
+/**
+ * @brief Award rule points to a player
+ * @param manager Rule manager
+ * @param player_id Player to award points to
+ * @param points Points to award
+ */
+void rule_manager_award_rule_points(rule_manager_t *manager, uint32_t player_id, int points);
 
 #endif // RULE_MANAGER_H
