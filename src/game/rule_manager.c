@@ -1,496 +1,385 @@
 /**************************************************************************/ /**
                                                                               * @file rule_manager.c
-                                                                              * @brief Implementation of high-level rule management for hexhex game
+                                                                              * @brief High-level rule management integration for single-player hexhex game
                                                                               *****************************************************************************/
 
 #include "game/rule_manager.h"
-#include "game/game.h"
-#include "grid/hex_geometry.h"
-#include "tile/pool_map.h"
 #include "tile/tile_map.h"
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 // --- Helper Functions ---
 
-/**
- * @brief Get tile type specific rule behavior
- */
-static void get_tile_rule_config(tile_type_t type, float *neighbor_bonus,
-                                 tile_type_t *perception_override,
-                                 bool *has_perception) {
-  *neighbor_bonus = 0.0f;
-  *perception_override = TILE_UNDEFINED;
-  *has_perception = false;
-
-  switch (type) {
-  case TILE_MAGENTA:
-    *neighbor_bonus = 1.0f; // +1 per same-color neighbor
-    break;
-
-  case TILE_CYAN:
-    *perception_override = TILE_CYAN;
-    *has_perception = true; // Makes neighbors appear cyan
-    break;
-
-  case TILE_YELLOW:
-    *neighbor_bonus = 0.5f; // +0.5 per same-color neighbor
-    break;
-
-  case TILE_GREEN:
-    *neighbor_bonus = 2.0f; // +2 per same-color neighbor
-    break;
-
-  default:
-    break;
-  }
-}
-
-/**
- * @brief Count neighbors of a specific type around a tile
- */
-static int count_neighbors_of_type(const tile_t *tile, tile_type_t target_type,
-                                   const tile_map_t *tile_map,
-                                   const rule_context_t *context) {
-  grid_cell_t *neighbors;
-  size_t neighbor_count;
-
-  hex_get_neighbors(tile->cell, &neighbors, &neighbor_count);
-
-  int count = 0;
-  for (size_t i = 0; i < neighbor_count; i++) {
-    const tile_t *neighbor = tile_map_get(tile_map, neighbors[i]);
-    if (neighbor) {
-      tile_type_t perceived_type = neighbor->data.type;
-
-      // Check for perception overrides
-      if (context && context->perceived_types) {
-        // TODO: Implement perception lookup by cell
-        // For now, use actual type
-      }
-
-      if (perceived_type == target_type) {
-        count++;
-      }
-    }
-  }
-
-  free(neighbors);
-  return count;
+static tile_t *tile_map_get_tile(const tile_map_t *map, grid_cell_t cell) {
+  if (!map)
+    return NULL;
+  tile_map_entry_t *entry = tile_map_find(map, cell);
+  return entry ? entry->tile : NULL;
 }
 
 // --- Rule Manager Lifecycle ---
 
-bool rule_manager_init(rule_manager_t *manager, const game_t *game) {
-  if (!manager || !game)
-    return false;
-
-  memset(manager, 0, sizeof(rule_manager_t));
-
-  if (!rule_registry_init(&manager->registry)) {
+bool rule_manager_init(rule_manager_t *manager, const board_t *board,
+                       uint32_t max_tiles) {
+  if (!manager || !board) {
     return false;
   }
 
-  if (!rule_context_init(&manager->context, game->board)) {
+  memset(manager, 0, sizeof(*manager));
+  manager->board = board;
+
+  // Initialize rule registry
+  if (!rule_registry_init(&manager->registry, max_tiles)) {
+    return false;
+  }
+
+  // Initialize evaluation context
+  if (!rule_context_init(&manager->context, board, &manager->registry, 1000)) {
     rule_registry_cleanup(&manager->registry);
     return false;
   }
 
   manager->initialized = true;
-  manager->dirty = false;
-  manager->evaluations_this_frame = 0;
+  manager->rules_dirty = false;
+  manager->evaluations_this_turn = 0;
   manager->total_evaluations = 0;
+  manager->rules_applied_this_turn = 0;
 
   return true;
 }
 
 void rule_manager_cleanup(rule_manager_t *manager) {
-  if (!manager || !manager->initialized)
+  if (!manager) {
     return;
+  }
 
   rule_context_cleanup(&manager->context);
   rule_registry_cleanup(&manager->registry);
 
-  memset(manager, 0, sizeof(rule_manager_t));
+  memset(manager, 0, sizeof(*manager));
 }
 
-void rule_manager_mark_dirty(rule_manager_t *manager) {
-  if (manager) {
-    manager->dirty = true;
+// --- Rule Management ---
+
+uint32_t rule_manager_add_rule(rule_manager_t *manager, const rule_t *rule) {
+  if (!manager || !rule || !manager->initialized) {
+    return 0;
+  }
+
+  uint32_t rule_id = rule_registry_add_rule(&manager->registry, rule);
+  if (rule_id > 0) {
+    manager->rules_dirty = true;
+  }
+
+  return rule_id;
+}
+
+bool rule_manager_remove_rule(rule_manager_t *manager, uint32_t rule_id) {
+  if (!manager || !manager->initialized) {
+    return false;
+  }
+
+  bool removed = rule_registry_remove_rule(&manager->registry, rule_id);
+  if (removed) {
+    manager->rules_dirty = true;
+  }
+
+  return removed;
+}
+
+void rule_manager_remove_rules_by_source(rule_manager_t *manager,
+                                         grid_cell_t source_cell) {
+  if (!manager || !manager->initialized) {
+    return;
+  }
+
+  rule_registry_remove_by_source(&manager->registry, source_cell);
+  manager->rules_dirty = true;
+}
+
+// --- Game Event Integration ---
+
+void rule_manager_on_tile_placed(rule_manager_t *manager, const tile_t *tile) {
+  if (!manager || !tile || !manager->initialized) {
+    return;
+  }
+
+  // Create rules based on tile type (implement basic tile-based rules here)
+  switch (tile->data.type) {
+  case TILE_GREEN:
+    // Example: Green tiles get +1 production per green neighbor in range 2
+    rule_manager_add_neighbor_bonus(manager, tile, TILE_GREEN, 1.0f, 2);
+    break;
+  case TILE_MAGENTA:
+    // Example: Magenta tiles increase range of all tiles by 1
+    rule_manager_add_range_modifier(manager, tile, TILE_UNDEFINED, 1);
+    break;
+  case TILE_CYAN:
+    // Example: Cyan tiles make neighbors appear as cyan
+    rule_manager_add_type_override(manager, tile, TILE_CYAN, 1);
+    break;
+  case TILE_YELLOW:
+    // Example: Yellow tiles get scaling bonus based on pool size
+    {
+      rule_t pool_scaling = rule_create_pool_scaling(tile->cell, 1.0f, 0.1f);
+      rule_manager_add_rule(manager, &pool_scaling);
+    }
+    break;
+  default:
+    break;
+  }
+
+  manager->rules_dirty = true;
+}
+
+void rule_manager_on_tile_removed(rule_manager_t *manager, grid_cell_t cell) {
+  if (!manager || !manager->initialized) {
+    return;
+  }
+
+  rule_manager_remove_rules_by_source(manager, cell);
+}
+
+void rule_manager_on_pool_changed(rule_manager_t *manager, const pool_t *pool) {
+  if (!manager || !pool || !manager->initialized) {
+    return;
+  }
+
+  // Mark area around pool as dirty for recalculation
+  rule_registry_mark_area_dirty(&manager->registry, pool->center, 3);
+  manager->rules_dirty = true;
+}
+
+void rule_manager_on_turn_start(rule_manager_t *manager) {
+  if (!manager || !manager->initialized) {
+    return;
+  }
+
+  // Reset per-turn counters
+  manager->evaluations_this_turn = 0;
+  manager->rules_applied_this_turn = 0;
+}
+
+void rule_manager_on_turn_end(rule_manager_t *manager) {
+  if (!manager || !manager->initialized) {
+    return;
+  }
+
+  // Process any pending rule updates
+  if (manager->rules_dirty) {
+    rule_registry_process_dirty_tiles(&manager->registry, &manager->context);
+    manager->rules_dirty = false;
   }
 }
 
-// --- Tile-Based Rule Creation ---
+// --- Rule Evaluation ---
 
-void rule_manager_on_tile_placed(rule_manager_t *manager, const tile_t *tile,
-                                 const board_t *board) {
-  if (!manager || !tile || !board)
+void rule_manager_evaluate_rules(rule_manager_t *manager,
+                                 rule_timing_t timing) {
+  if (!manager || !manager->initialized) {
     return;
+  }
 
-  rule_manager_create_tile_rules(manager, tile, board);
-  rule_manager_mark_dirty(manager);
+  // Process dirty tiles if needed
+  if (manager->rules_dirty) {
+    rule_registry_process_dirty_tiles(&manager->registry, &manager->context);
+    manager->rules_dirty = false;
+  }
+
+  manager->total_evaluations++;
+  manager->evaluations_this_turn++;
 }
-
-void rule_manager_on_tile_removed(rule_manager_t *manager, const tile_t *tile) {
-  if (!manager || !tile)
-    return;
-
-  rule_registry_remove_by_source(&manager->registry, tile->cell, true);
-  rule_manager_mark_dirty(manager);
-}
-
-void rule_manager_on_pool_changed(rule_manager_t *manager, const pool_t *pool,
-                                  const board_t *board) {
-  if (!manager || !pool || !board)
-    return;
-
-  // Remove old pool rules first
-  rule_registry_remove_by_source(
-    &manager->registry, (grid_cell_t){pool->id, 0}, // Use pool ID as coordinate
-    false);
-
-  rule_manager_create_pool_rules(manager, pool, board);
-  rule_manager_mark_dirty(manager);
-}
-
-void rule_manager_on_pool_destroyed(rule_manager_t *manager,
-                                    const pool_t *pool) {
-  if (!manager || !pool)
-    return;
-
-  rule_registry_remove_by_source(&manager->registry, (grid_cell_t){pool->id, 0},
-                                 false);
-  rule_manager_mark_dirty(manager);
-}
-
-// --- Production Calculation Integration ---
 
 float rule_manager_calculate_tile_production(rule_manager_t *manager,
-                                             const tile_t *tile,
-                                             const board_t *board) {
-  if (!manager || !tile || !board)
-    return tile_get_effective_production(tile);
-
-  float base_production = tile_get_effective_production(tile);
-  float rule_bonus = 0.0f;
-
-  // Set context for this tile
-  manager->context.current_tile = tile;
-  manager->context.current_cell = tile->cell;
-  manager->context.board = board;
-
-  // Get rules affecting this tile
-  rule_t **rules;
-  size_t rule_count;
-  rule_registry_get_rules_for_cell(&manager->registry, tile->cell, &rules,
-                                   &rule_count);
-
-  // Apply calculation phase rules
-  for (size_t i = 0; i < rule_count; i++) {
-    rule_t *rule = rules[i];
-    if (rule->lifecycle == RULE_LIFECYCLE_PERSISTENT &&
-        rule->phase == RULE_PHASE_CALCULATION &&
-        rule_check_condition(rule, &manager->context)) {
-
-      // Calculate rule bonus based on type
-      switch (rule->effect.type) {
-      case RULE_EFFECT_ADD_FLAT:
-        if (rule->condition.type == RULE_CONDITION_NEIGHBOR_TYPE) {
-          // Count neighbors and multiply by bonus
-          int neighbor_count = count_neighbors_of_type(
-            tile, rule->condition.params.neighbor_type.required_type,
-            board->tiles, &manager->context);
-          rule_bonus += rule->effect.params.flat_value * neighbor_count;
-        } else {
-          rule_bonus += rule->effect.params.flat_value;
-        }
-        break;
-
-      case RULE_EFFECT_ADD_PERCENT:
-        rule_bonus +=
-          base_production * (rule->effect.params.percentage / 100.0f);
-        break;
-
-      case RULE_EFFECT_MULTIPLY:
-        rule_bonus += base_production * (rule->effect.params.multiplier - 1.0f);
-        break;
-
-      default:
-        break;
-      }
-    }
+                                             const tile_t *tile) {
+  if (!manager || !tile || !manager->initialized) {
+    return 0.0f;
   }
 
-  free(rules);
-  manager->evaluations_this_frame++;
-  manager->total_evaluations++;
+  float production =
+    rule_calculate_tile_production(&manager->registry, &manager->context, tile);
+  manager->evaluations_this_turn++;
 
-  return base_production + rule_bonus;
+  return production;
 }
 
-float rule_manager_calculate_pool_modifier(rule_manager_t *manager,
-                                           const pool_t *pool,
-                                           const board_t *board) {
-  if (!manager || !pool || !board)
-    return pool_get_modifier(pool);
-
-  float base_modifier = pool_get_modifier(pool);
-  float rule_bonus = 0.0f;
-
-  // Set context for this pool
-  manager->context.current_pool = pool;
-  manager->context.current_cell = (grid_cell_t){pool->id, 0};
-  manager->context.board = board;
-
-  // Get rules affecting this pool (using pool ID as coordinate)
-  rule_t **rules;
-  size_t rule_count;
-  rule_registry_get_rules_for_cell(
-    &manager->registry, (grid_cell_t){pool->id, 0}, &rules, &rule_count);
-
-  // Apply calculation phase rules
-  for (size_t i = 0; i < rule_count; i++) {
-    rule_t *rule = rules[i];
-    if (rule->lifecycle == RULE_LIFECYCLE_PERSISTENT &&
-        rule->phase == RULE_PHASE_CALCULATION &&
-        rule_check_condition(rule, &manager->context)) {
-
-      switch (rule->effect.type) {
-      case RULE_EFFECT_ADD_FLAT:
-        rule_bonus += rule->effect.params.flat_value;
-        break;
-
-      case RULE_EFFECT_ADD_PERCENT:
-        rule_bonus += base_modifier * (rule->effect.params.percentage / 100.0f);
-        break;
-
-      case RULE_EFFECT_MULTIPLY:
-        rule_bonus += base_modifier * (rule->effect.params.multiplier - 1.0f);
-        break;
-
-      default:
-        break;
-      }
-    }
+uint8_t rule_manager_calculate_tile_range(rule_manager_t *manager,
+                                          const tile_t *tile) {
+  if (!manager || !tile || !manager->initialized) {
+    return tile_get_range(tile);
   }
 
-  free(rules);
-  manager->evaluations_this_frame++;
-  manager->total_evaluations++;
+  uint8_t range =
+    rule_calculate_tile_range(&manager->registry, &manager->context, tile);
+  manager->evaluations_this_turn++;
 
-  return base_modifier + rule_bonus;
+  return range;
 }
 
-void rule_manager_update_production(rule_manager_t *manager, board_t *board) {
-  if (!manager || !board)
+float rule_manager_calculate_pool_multiplier(rule_manager_t *manager,
+                                             const pool_t *pool) {
+  if (!manager || !pool || !manager->initialized) {
+    return 1.0f;
+  }
+
+  // TODO: Implement pool-specific rule evaluation
+  // For now, return base multiplier
+  return 1.0f;
+}
+
+tile_type_t rule_manager_get_perceived_type(rule_manager_t *manager,
+                                            const tile_t *tile,
+                                            grid_cell_t observer_cell) {
+  if (!manager || !tile || !manager->initialized) {
+    return tile->data.type;
+  }
+
+  tile_type_t perceived = rule_calculate_perceived_type(
+    &manager->registry, &manager->context, tile, observer_cell);
+  manager->evaluations_this_turn++;
+
+  return perceived;
+}
+
+// --- Rule Creation Helpers ---
+
+void rule_manager_add_neighbor_bonus(rule_manager_t *manager,
+                                     const tile_t *source_tile,
+                                     tile_type_t neighbor_type,
+                                     float bonus_per_neighbor, uint8_t range) {
+  if (!manager || !source_tile || !manager->initialized) {
     return;
-
-  // Reset frame counter
-  manager->evaluations_this_frame = 0;
-
-  // Execute any pending instant rules first
-  rule_execute_instant_rules(&manager->registry, &manager->context);
-
-  // Apply perception phase rules
-  rule_evaluate_phase(&manager->registry, &manager->context,
-                      RULE_PHASE_PERCEPTION);
-
-  // Apply calculation phase rules (done per-tile in calculate functions)
-
-  manager->dirty = false;
-}
-
-// --- Specific Rule Factories ---
-
-void rule_manager_create_tile_rules(rule_manager_t *manager, const tile_t *tile,
-                                    const board_t *board) {
-  if (!manager || !tile || !board)
-    return;
-
-  float neighbor_bonus;
-  tile_type_t perception_override;
-  bool has_perception;
-
-  get_tile_rule_config(tile->data.type, &neighbor_bonus, &perception_override,
-                       &has_perception);
-
-  // Add neighbor bonus rule if applicable
-  if (neighbor_bonus > 0.0f) {
-    rule_t rule =
-      rule_factory_neighbor_bonus(tile->cell, tile->data.type, neighbor_bonus);
-    rule_registry_add(&manager->registry, &rule);
   }
 
-  // Add perception rule if applicable
-  if (has_perception) {
-    rule_t rule =
-      rule_factory_perception_override(tile->cell, perception_override,
-                                       1); // Range of 1
-    rule_registry_add(&manager->registry, &rule);
-  }
+  rule_t rule = rule_create_neighbor_bonus(source_tile->cell, neighbor_type,
+                                           bonus_per_neighbor, range);
+  rule_manager_add_rule(manager, &rule);
 }
 
-void rule_manager_create_pool_rules(rule_manager_t *manager, const pool_t *pool,
-                                    const board_t *board) {
-  if (!manager || !pool || !board)
+void rule_manager_add_range_modifier(rule_manager_t *manager,
+                                     const tile_t *source_tile,
+                                     tile_type_t target_type,
+                                     int8_t range_delta) {
+  if (!manager || !source_tile || !manager->initialized) {
     return;
-
-  // Get pool size from tile count
-  size_t pool_size = tile_map_size(pool->tiles);
-
-  // Add pool size bonus for larger pools
-  if (pool_size >= 5) {
-    rule_t rule = rule_factory_pool_size_bonus((grid_cell_t){pool->id, 0},
-                                               5,      // Min size
-                                               20.0f); // 20% bonus
-    rule_registry_add(&manager->registry, &rule);
   }
-
-  // Add compactness bonus for well-formed pools
-  if (pool->compactness_score > 0.8f) {
-    rule_t rule = rule_factory_instant_modifier((grid_cell_t){pool->id, 0},
-                                                RULE_TARGET_MODIFIER,
-                                                0.5f); // +0.5 modifier
-    rule_registry_add(&manager->registry, &rule);
-  }
-}
-
-// --- Example Rule Definitions ---
-
-void rule_manager_add_neighbor_bonus_rule(rule_manager_t *manager,
-                                          const tile_t *source_tile,
-                                          float bonus_per_neighbor) {
-  if (!manager || !source_tile)
-    return;
-
-  rule_t rule = rule_factory_neighbor_bonus(
-    source_tile->cell, source_tile->data.type, bonus_per_neighbor);
-  rule_registry_add(&manager->registry, &rule);
-  rule_manager_mark_dirty(manager);
-}
-
-void rule_manager_add_perception_rule(rule_manager_t *manager,
-                                      const tile_t *source_tile,
-                                      tile_type_t override_type) {
-  if (!manager || !source_tile)
-    return;
 
   rule_t rule =
-    rule_factory_perception_override(source_tile->cell, override_type,
-                                     1); // Range of 1
-  rule_registry_add(&manager->registry, &rule);
-  rule_manager_mark_dirty(manager);
+    rule_create_range_modifier(source_tile->cell, target_type, range_delta);
+  rule_manager_add_rule(manager, &rule);
 }
 
-void rule_manager_add_pool_size_rule(rule_manager_t *manager,
-                                     const pool_t *source_pool, int min_size,
-                                     float bonus_percentage) {
-  if (!manager || !source_pool)
-    return;
-
-  rule_t rule = rule_factory_pool_size_bonus((grid_cell_t){source_pool->id, 0},
-                                             min_size, bonus_percentage);
-  rule_registry_add(&manager->registry, &rule);
-  rule_manager_mark_dirty(manager);
-}
-
-void rule_manager_add_instant_modifier(rule_manager_t *manager,
-                                       grid_cell_t target_cell,
-                                       rule_target_t target, float amount) {
-  if (!manager)
-    return;
-
-  rule_t rule = rule_factory_instant_modifier(target_cell, target, amount);
-  rule_registry_add(&manager->registry, &rule);
-  rule_manager_mark_dirty(manager);
-}
-
-// --- Query Functions ---
-
-void rule_manager_get_rules_for_cell(const rule_manager_t *manager,
-                                     grid_cell_t cell, rule_t ***out_rules,
-                                     size_t *out_count) {
-  if (!manager || !out_rules || !out_count) {
-    if (out_rules)
-      *out_rules = NULL;
-    if (out_count)
-      *out_count = 0;
+void rule_manager_add_type_override(rule_manager_t *manager,
+                                    const tile_t *source_tile,
+                                    tile_type_t override_type, uint8_t range) {
+  if (!manager || !source_tile || !manager->initialized) {
     return;
   }
 
-  rule_registry_get_rules_for_cell(&manager->registry, cell, out_rules,
-                                   out_count);
+  rule_t rule =
+    rule_create_type_override(source_tile->cell, override_type, range);
+  rule_manager_add_rule(manager, &rule);
 }
 
-size_t rule_manager_get_rule_count(const rule_manager_t *manager) {
-  if (!manager)
-    return 0;
+// --- Performance and Debugging ---
 
-  return manager->registry.rule_count;
-}
-
-bool rule_manager_needs_evaluation(const rule_manager_t *manager) {
-  if (!manager)
-    return false;
-
-  return manager->dirty;
-}
-
-// --- Debug Functions ---
-
-void rule_manager_print_all_rules(const rule_manager_t *manager) {
+void rule_manager_get_performance_stats(const rule_manager_t *manager,
+                                        uint32_t *out_active_rules,
+                                        uint32_t *out_evaluations_this_turn,
+                                        uint32_t *out_total_evaluations) {
   if (!manager) {
-    printf("Rule manager is NULL\n");
+    if (out_active_rules)
+      *out_active_rules = 0;
+    if (out_evaluations_this_turn)
+      *out_evaluations_this_turn = 0;
+    if (out_total_evaluations)
+      *out_total_evaluations = 0;
     return;
   }
 
-  printf("=== All Rules ===\n");
-  for (size_t i = 0; i < manager->registry.rule_count; i++) {
-    rule_print(manager->registry.all_rules[i]);
-    printf("\n");
-  }
+  if (out_active_rules)
+    *out_active_rules = manager->registry.rule_count;
+  if (out_evaluations_this_turn)
+    *out_evaluations_this_turn = manager->evaluations_this_turn;
+  if (out_total_evaluations)
+    *out_total_evaluations = manager->total_evaluations;
 }
 
-void rule_manager_print_rules_for_cell(const rule_manager_t *manager,
-                                       grid_cell_t cell) {
-  if (!manager)
-    return;
-
-  rule_t **rules;
-  size_t rule_count;
-  rule_manager_get_rules_for_cell(manager, cell, &rules, &rule_count);
-
-  printf("=== Rules for Cell (%d, %d) ===\n", cell.q, cell.r);
-  printf("Found %zu rules:\n", rule_count);
-
-  for (size_t i = 0; i < rule_count; i++) {
-    rule_print(rules[i]);
-    printf("\n");
-  }
-
-  free(rules);
-}
-
-void rule_manager_print_stats(const rule_manager_t *manager) {
+void rule_manager_debug_print(const rule_manager_t *manager) {
   if (!manager) {
-    printf("Rule manager is NULL\n");
     return;
   }
 
-  printf("=== Rule Manager Statistics ===\n");
-  printf("Initialized: %s\n", manager->initialized ? "Yes" : "No");
-  printf("Dirty: %s\n", manager->dirty ? "Yes" : "No");
-  printf("Evaluations this frame: %u\n", manager->evaluations_this_frame);
+  printf("=== Rule Manager Debug Info ===\n");
+  printf("Initialized: %s\n", manager->initialized ? "YES" : "NO");
+  printf("Rules dirty: %s\n", manager->rules_dirty ? "YES" : "NO");
+  printf("Evaluations this turn: %u\n", manager->evaluations_this_turn);
   printf("Total evaluations: %u\n", manager->total_evaluations);
-  printf("\n");
+  printf("Rules applied this turn: %u\n", manager->rules_applied_this_turn);
 
   rule_registry_print_stats(&manager->registry);
 }
 
-void rule_manager_reset_stats(rule_manager_t *manager) {
-  if (!manager)
+void rule_manager_debug_print_tile_rules(const rule_manager_t *manager,
+                                         const tile_t *tile) {
+  if (!manager || !tile) {
     return;
+  }
 
-  manager->evaluations_this_frame = 0;
-  manager->total_evaluations = 0;
+  uint32_t tile_index = (tile->cell.coord.hex.r * 100 +
+                         tile->cell.coord.hex.q); // TODO: proper indexing
+  rule_registry_print_tile_rules(&manager->registry, tile_index);
+}
+
+// --- Utility Functions ---
+
+bool rule_manager_needs_evaluation(const rule_manager_t *manager) {
+  if (!manager) {
+    return false;
+  }
+
+  return manager->rules_dirty;
+}
+
+void rule_manager_mark_dirty(rule_manager_t *manager) {
+  if (!manager) {
+    return;
+  }
+
+  manager->rules_dirty = true;
+}
+
+void rule_manager_mark_clean(rule_manager_t *manager) {
+  if (!manager) {
+    return;
+  }
+
+  manager->rules_dirty = false;
+}
+
+uint32_t rule_manager_get_rule_count(const rule_manager_t *manager) {
+  if (!manager) {
+    return 0;
+  }
+
+  return manager->registry.rule_count;
+}
+
+void rule_manager_set_batch_mode(rule_manager_t *manager, bool enabled) {
+  if (!manager) {
+    return;
+  }
+
+  rule_registry_set_batch_mode(&manager->registry, enabled);
+}
+
+void rule_manager_process_batch_updates(rule_manager_t *manager) {
+  if (!manager) {
+    return;
+  }
+
+  rule_registry_process_dirty_tiles(&manager->registry, &manager->context);
+  manager->rules_dirty = false;
 }

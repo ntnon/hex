@@ -4,7 +4,8 @@
                                                                               *****************************************************************************/
 
 #include "game/rule_system.h"
-#include "grid/hex_geometry.h"
+#include "game/board.h"
+#include "grid/grid_geometry.h"
 #include "tile/tile_map.h"
 #include <assert.h>
 #include <stdio.h>
@@ -12,6 +13,13 @@
 #include <string.h>
 
 // --- Internal Helper Functions ---
+
+static tile_t *tile_map_get_tile(const tile_map_t *map, grid_cell_t cell) {
+  if (!map)
+    return NULL;
+  tile_map_entry_t *entry = tile_map_find(map, cell);
+  return entry ? entry->tile : NULL;
+}
 
 static inline uint32_t cell_to_tile_index(grid_cell_t cell,
                                           uint32_t board_width) {
@@ -66,15 +74,18 @@ static void spatial_cache_build_range(spatial_cache_t *cache,
     cache->cells[range][0] = center;
     cache->counts[range] = 1;
   } else {
-    // Use hex geometry to get cells at exact range
+    // Use existing grid geometry function for cells at exact range
+    // For now, get all cells in range (we'll filter later if needed)
     grid_cell_t *temp_cells;
     size_t temp_count;
-    hex_get_cells_at_range(center, range, &temp_cells, &temp_count);
+    grid_get_cells_in_range(NULL, center, range, &temp_cells, &temp_count);
 
     // Copy to cache
     uint16_t copy_count = (temp_count > 6 * range) ? 6 * range : temp_count;
-    memcpy(cache->cells[range], temp_cells, copy_count * sizeof(grid_cell_t));
-    cache->counts[range] = copy_count;
+    if (temp_cells && copy_count > 0) {
+      memcpy(cache->cells[range], temp_cells, copy_count * sizeof(grid_cell_t));
+      cache->counts[range] = copy_count;
+    }
 
     free(temp_cells);
   }
@@ -544,7 +555,8 @@ float rule_calculate_tile_production(rule_registry_t *registry,
     rule_t *rule = &registry->rules[registry->range_rules[i]];
     if (rule->is_active && rule->target == RULE_TARGET_PRODUCTION) {
       // Check if this tile is in range of the rule source
-      if (hex_distance(tile->cell, rule->source_cell) <= rule->affected_range &&
+      if (grid_distance(tile->cell, rule->source_cell) <=
+            rule->affected_range &&
           rule_check_condition(rule, context)) {
         production = rule_apply_effect(rule, context, production);
       }
@@ -651,7 +663,7 @@ tile_type_t rule_calculate_perceived_type(rule_registry_t *registry,
     rule_t *rule = &registry->rules[registry->range_rules[i]];
     if (rule->is_active && rule->target == RULE_TARGET_TYPE_OVERRIDE) {
       // Check if observer is within range of the rule source
-      if (hex_distance(observer_cell, rule->source_cell) <=
+      if (grid_distance(observer_cell, rule->source_cell) <=
           rule->affected_range) {
         perceived_type = rule->effect_params.override_type;
         break; // First override wins
@@ -696,7 +708,7 @@ void rule_registry_mark_area_dirty(rule_registry_t *registry, grid_cell_t cell,
   grid_cell_t *cells_in_area;
   size_t cell_count;
 
-  hex_get_cells_in_range(cell, radius, &cells_in_area, &cell_count);
+  grid_get_cells_in_range(NULL, cell, radius, &cells_in_area, &cell_count);
 
   for (size_t i = 0; i < cell_count; i++) {
     uint32_t tile_index =
@@ -759,11 +771,11 @@ uint32_t rule_get_tiles_in_range(rule_registry_t *registry,
   // Get cells in range
   grid_cell_t *cells;
   size_t cell_count;
-  hex_get_cells_in_range(center_cell, range, &cells, &cell_count);
+  grid_get_cells_in_range(NULL, center_cell, range, &cells, &cell_count);
 
   // Check each cell for matching tiles
   for (size_t i = 0; i < cell_count && found_count < max_tiles; i++) {
-    tile_t *tile = tile_map_get(context->board->tile_map, cells[i]);
+    tile_t *tile = tile_map_get_tile(context->board->tiles, cells[i]);
     if (tile && tile->data.type == tile_type) {
       out_tiles[found_count++] = tile;
     }
@@ -792,7 +804,7 @@ uint32_t rule_count_tiles_in_range(rule_registry_t *registry,
     uint32_t count = 0;
     for (uint16_t i = 0; i < cache->counts[range]; i++) {
       tile_t *tile =
-        tile_map_get(context->board->tile_map, cache->cells[range][i]);
+        tile_map_get_tile(context->board->tiles, cache->cells[range][i]);
       if (tile && tile->data.type == tile_type) {
         count++;
       }
@@ -804,10 +816,10 @@ uint32_t rule_count_tiles_in_range(rule_registry_t *registry,
   uint32_t count = 0;
   grid_cell_t *cells;
   size_t cell_count;
-  hex_get_cells_in_range(center_cell, range, &cells, &cell_count);
+  grid_get_cells_in_range(NULL, center_cell, range, &cells, &cell_count);
 
   for (size_t i = 0; i < cell_count; i++) {
-    tile_t *tile = tile_map_get(context->board->tile_map, cells[i]);
+    tile_t *tile = tile_map_get_tile(context->board->tiles, cells[i]);
     if (tile && tile->data.type == tile_type) {
       count++;
     }

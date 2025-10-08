@@ -11,10 +11,10 @@
 #include <stdlib.h>
 #include "grid/grid_types.h"
 #include "tile/tile.h"
+#include "game/board.h"
 
 // Forward declarations
 typedef struct tile_pool pool_t;
-typedef struct board board_t;
 
 // --- Performance Constants ---
 #define MAX_RULE_RANGE 9
@@ -314,7 +314,7 @@ void rule_registry_remove_by_source(rule_registry_t *registry, grid_cell_t sourc
  * @param temp_buffer_size Size of temporary buffers for batch operations
  * @return true on success
  */
-bool rule_context_init(rule_context_t *context, const board_t *board, 
+bool rule_context_init(rule_context_t *context, const board_t *board,
                       const rule_registry_t *registry, uint32_t temp_buffer_size);
 
 /**
