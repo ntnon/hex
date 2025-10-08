@@ -1,6 +1,6 @@
 /**************************************************************************//**
  * @file rule_system.h
- * @brief Player-driven rule system with flexible rule management and priority-based evaluation
+ * @brief High-performance rule system optimized for single-player games with large boards
  *****************************************************************************/
 
 #ifndef RULE_SYSTEM_H
@@ -15,532 +15,508 @@
 // Forward declarations
 typedef struct tile_pool pool_t;
 typedef struct board board_t;
-typedef struct player player_t;
 
-// --- Rule System Constants ---
-#define MAX_RULE_NAME_LENGTH 64
-#define MAX_RULE_DESCRIPTION_LENGTH 256
-#define MAX_RULE_HINT_LENGTH 128
-#define MAX_RULE_CONDITIONS 8
-#define MAX_RULE_EFFECTS 4
-#define MAX_RULE_CONFLICTS 16
-#define MAX_RULE_SYNERGIES 8
-#define MAX_RULE_PREREQUISITES 4
+// --- Performance Constants ---
+#define MAX_RULE_RANGE 9
+#define MAX_RULES_PER_TILE 32
+#define SPATIAL_CACHE_MAX_RANGE 9
+#define RULE_BATCH_SIZE 256
+#define RULE_CACHE_SIZE 4096
 
-// --- Rule System Enums ---
+// --- Rule System Types ---
 
 /**
- * @brief Defines rule lifecycle behavior
+ * @brief Rule evaluation priority for deterministic ordering
  */
 typedef enum {
-    RULE_LIFECYCLE_INSTANT,     // Execute once, modify base values, then self-destruct
-    RULE_LIFECYCLE_PERSISTENT   // Stay active, evaluated during each calculation cycle
-} rule_lifecycle_t;
-
-/**
- * @brief Rule evaluation priority (lower numbers = earlier evaluation)
- */
-typedef enum {
-    RULE_PRIORITY_CRITICAL = 0,     // Range modifications, perception overrides
-    RULE_PRIORITY_HIGH = 10,        // Base value modifications
-    RULE_PRIORITY_NORMAL = 50,      // Most production bonuses
-    RULE_PRIORITY_LOW = 100,        // Secondary effects
-    RULE_PRIORITY_COSMETIC = 200    // Visual/UI effects only
+    RULE_PRIORITY_RANGE_MODIFY = 0,     // Range modifications (highest priority)
+    RULE_PRIORITY_PERCEPTION = 10,      // Color/type overrides
+    RULE_PRIORITY_PRODUCTION = 50,      // Production bonuses (most common)
+    RULE_PRIORITY_EFFECTS = 100,        // Secondary effects
+    RULE_PRIORITY_VISUAL = 200          // Visual-only effects (lowest priority)
 } rule_priority_t;
 
 /**
- * @brief Defines what the rule affects
+ * @brief Rule scope determines evaluation strategy
  */
 typedef enum {
-    RULE_SCOPE_SELF,           // Rule affects only the source tile/pool
-    RULE_SCOPE_NEIGHBORS,      // Rule affects neighboring tiles/pools
-    RULE_SCOPE_POOL,           // Rule affects entire pool containing source
-    RULE_SCOPE_TYPE_GLOBAL,    // Rule affects all tiles/pools of specific type globally
-    RULE_SCOPE_GLOBAL          // Rule affects entire board
+    RULE_SCOPE_SELF,            // Only affects source tile (cheapest)
+    RULE_SCOPE_NEIGHBORS,       // Affects immediate neighbors
+    RULE_SCOPE_RANGE,           // Affects tiles within range
+    RULE_SCOPE_POOL,            // Affects entire pool
+    RULE_SCOPE_TYPE_GLOBAL,     // Affects all tiles of specific type
+    RULE_SCOPE_BOARD_GLOBAL     // Affects entire board (most expensive)
 } rule_scope_t;
 
 /**
- * @brief Defines what aspect of the target is modified
+ * @brief Rule target determines what gets modified
  */
 typedef enum {
     RULE_TARGET_PRODUCTION,     // Tile production value
     RULE_TARGET_RANGE,          // Tile interaction range
     RULE_TARGET_POOL_MODIFIER,  // Pool production multiplier
-    RULE_TARGET_PERCEPTION,     // How tiles appear to other rules (color override)
-    RULE_TARGET_PLACEMENT,      // Tile placement rules/costs
-    RULE_TARGET_MOVEMENT        // Tile movement/repositioning
+    RULE_TARGET_TYPE_OVERRIDE,  // Perceived tile type
+    RULE_TARGET_PLACEMENT_COST, // Tile placement cost
+    RULE_TARGET_MOVEMENT_RANGE  // Tile movement range
 } rule_target_t;
 
 /**
- * @brief Defines different types of rule conditions (can be combined with AND/OR)
+ * @brief Optimized rule condition types
  */
 typedef enum {
-    RULE_CONDITION_ALWAYS,              // Rule always applies
-    RULE_CONDITION_SELF_TYPE,           // Based on source tile/pool type
-    RULE_CONDITION_NEIGHBOR_COUNT,      // Based on number of specific neighbors
-    RULE_CONDITION_NEIGHBOR_TYPE,       // Based on neighbor tile types
-    RULE_CONDITION_POOL_SIZE,           // Based on pool size
-    RULE_CONDITION_TOTAL_TILE_COUNT,    // Based on total tiles of type on board
-    RULE_CONDITION_GEOMETRIC,           // Based on geometric properties
-    RULE_CONDITION_VALUE_THRESHOLD,     // Based on value thresholds
-    RULE_CONDITION_RULE_ACTIVE,         // Based on other active rules
-    RULE_CONDITION_AND,                 // Logical AND of sub-conditions
-    RULE_CONDITION_OR,                  // Logical OR of sub-conditions
-    RULE_CONDITION_NOT                  // Logical NOT of sub-condition
+    RULE_CONDITION_ALWAYS,              // Always applies (fastest)
+    RULE_CONDITION_SELF_TYPE,           // Check own type
+    RULE_CONDITION_NEIGHBOR_COUNT,      // Count specific neighbors in range
+    RULE_CONDITION_POOL_SIZE,           // Check pool size
+    RULE_CONDITION_BOARD_COUNT,         // Count tiles of type on board
+    RULE_CONDITION_PRODUCTION_THRESHOLD // Check production level
 } rule_condition_type_t;
 
 /**
- * @brief Defines different types of rule effects
+ * @brief Optimized rule effect types
  */
 typedef enum {
-    RULE_EFFECT_ADD_FLAT,       // Add fixed amount
-    RULE_EFFECT_ADD_PERCENT,    // Add percentage of base value
+    RULE_EFFECT_ADD_FLAT,       // Add fixed value
+    RULE_EFFECT_ADD_SCALED,     // Add value * scale_factor
     RULE_EFFECT_MULTIPLY,       // Multiply by factor
     RULE_EFFECT_SET_VALUE,      // Set to specific value
-    RULE_EFFECT_SCALE_BY_COUNT, // Scale effect by count of something
-    RULE_EFFECT_OVERRIDE_TYPE,  // Change perceived type
-    RULE_EFFECT_MODIFY_RANGE,   // Modify tile range
-    RULE_EFFECT_CONDITIONAL     // Apply different effects based on conditions
+    RULE_EFFECT_OVERRIDE_TYPE,  // Override perceived type
+    RULE_EFFECT_MODIFY_RANGE    // Modify range
 } rule_effect_type_t;
 
-/**
- * @brief Rule availability and player choice status
- */
-typedef enum {
-    RULE_STATUS_LOCKED,         // Not yet available to player
-    RULE_STATUS_AVAILABLE,      // Can be acquired by player
-    RULE_STATUS_ACTIVE,         // Currently active and affecting gameplay
-    RULE_STATUS_DISABLED,       // Temporarily disabled (e.g., due to conflicts)
-    RULE_STATUS_EXHAUSTED       // One-time rule that has been used
-} rule_status_t;
-
-// --- Rule System Structures ---
+// --- Optimized Data Structures ---
 
 /**
- * @brief Forward declaration for recursive condition structures
- */
-typedef struct rule_condition rule_condition_t;
-
-/**
- * @brief Union for different condition parameters
+ * @brief Compact rule condition parameters
  */
 typedef union {
-    struct {
-        tile_type_t tile_type;
-    } self_type;
+    tile_type_t tile_type;
     
     struct {
-        int min_count;
-        int max_count;
         tile_type_t neighbor_type;
-        int range;              // Range to search for neighbors
+        uint8_t min_count;
+        uint8_t max_count;
+        uint8_t range;
     } neighbor_count;
     
     struct {
-        tile_type_t required_type;
-        int range;              // Range to search
-    } neighbor_type;
-    
-    struct {
-        int min_size;
-        int max_size;
+        uint16_t min_size;
+        uint16_t max_size;
     } pool_size;
     
     struct {
-        tile_type_t tile_type;
-        int min_count;
-        int max_count;
-    } total_tile_count;
-    
-    struct {
-        float min_compactness;
-        int min_diameter;
-        int max_diameter;
-    } geometric;
+        tile_type_t target_type;
+        uint16_t min_count;
+        uint16_t max_count;
+    } board_count;
     
     struct {
         float threshold;
         bool greater_than;
-        rule_target_t value_source;  // What value to check
-    } value_threshold;
-    
-    struct {
-        uint32_t required_rule_id;
-    } rule_active;
-    
-    struct {
-        rule_condition_t *conditions;
-        size_t condition_count;
-    } logical;
+    } production_threshold;
 } rule_condition_params_t;
 
 /**
- * @brief Condition structure for rules
- */
-struct rule_condition {
-    rule_condition_type_t type;
-    rule_condition_params_t params;
-};
-
-/**
- * @brief Union for different effect parameters
+ * @brief Compact rule effect parameters
  */
 typedef union {
-    float flat_value;
-    float percentage;
-    float multiplier;
-    float set_value;
+    float value;                // For ADD_FLAT, MULTIPLY, SET_VALUE
+    tile_type_t override_type;  // For OVERRIDE_TYPE
+    int8_t range_delta;         // For MODIFY_RANGE
     
     struct {
         float base_value;
         float scale_factor;
-        rule_condition_type_t count_source;  // What to count for scaling
-        rule_condition_params_t count_params;
-    } scale_by_count;
-    
-    tile_type_t override_type;
-    
-    struct {
-        int range_delta;
-        int min_range;
-        int max_range;
-    } range_modification;
-    
-    struct {
-        rule_condition_t condition;
-        struct rule_effect *true_effect;
-        struct rule_effect *false_effect;
-    } conditional;
+        rule_condition_type_t scale_source;
+        rule_condition_params_t scale_params;
+    } scaled;
 } rule_effect_params_t;
 
 /**
- * @brief Effect structure for rules
- */
-typedef struct rule_effect {
-    rule_effect_type_t type;
-    rule_target_t target;
-    rule_effect_params_t params;
-    float multiplier;           // Global multiplier for this effect (for synergies)
-} rule_effect_t;
-
-/**
- * @brief Core rule structure (internal game logic)
+ * @brief High-performance rule structure
  */
 typedef struct rule {
-    uint32_t id;                    // Unique rule identifier
-    rule_lifecycle_t lifecycle;    // Instant or persistent
-    int priority;                   // Evaluation priority (lower = earlier)
-    rule_scope_t scope;            // What the rule affects
+    uint32_t id;                        // Unique identifier
+    uint16_t priority;                  // Evaluation priority
+    uint8_t scope;                      // rule_scope_t
+    uint8_t target;                     // rule_target_t
     
-    rule_condition_t condition;    // When rule applies
-    rule_effect_t *effects;        // What the rule does (array)
-    size_t effect_count;          // Number of effects
+    // Condition
+    uint8_t condition_type;             // rule_condition_type_t
+    rule_condition_params_t condition_params;
     
-    // Source information
-    grid_cell_t source_cell;       // Cell that created this rule
-    bool is_tile_source;           // True if source is tile, false if pool
-    uint32_t player_id;            // Player who owns this rule
+    // Effect  
+    uint8_t effect_type;                // rule_effect_type_t
+    rule_effect_params_t effect_params;
     
-    // Spatial data for efficient queries
-    grid_cell_t *affected_cells;   // Cells this rule affects (for spatial indexing)
-    size_t affected_count;         // Number of affected cells
+    // Source and spatial data
+    grid_cell_t source_cell;            // Cell that created this rule
+    uint8_t affected_range;             // Maximum range this rule affects
     
-    // Execution state
-    bool executed;                 // For instant rules
-    bool is_active;               // Can be temporarily disabled
+    // Performance optimization flags
+    bool is_active;                     // Can be temporarily disabled
+    bool needs_recalc;                  // Marked for recalculation
+    bool cache_friendly;                // Result can be cached
     
-    struct rule *next;             // For linked list in hash buckets
 } rule_t;
 
 /**
- * @brief Player-facing rule definition with metadata and costs
+ * @brief Spatial cache for range-based lookups
  */
-typedef struct player_rule {
-    // Core rule logic
-    rule_t rule_template;          // Template for creating active rules
-    
-    // Player choice metadata
-    char name[MAX_RULE_NAME_LENGTH];
-    char description[MAX_RULE_DESCRIPTION_LENGTH];
-    char strategic_hint[MAX_RULE_HINT_LENGTH];
-    
-    // Rule management
-    rule_status_t status;          // Current availability status
-    int cost_to_acquire;          // Resource cost to add this rule
-    int cost_to_remove;           // Resource cost to remove (-1 if permanent)
-    int max_instances;            // How many copies can player have (0 = unlimited)
-    int current_instances;        // How many copies player currently has
-    
-    // Rule relationships
-    uint32_t conflicts_with[MAX_RULE_CONFLICTS];     // Rule IDs that can't coexist
-    size_t conflict_count;
-    
-    uint32_t synergizes_with[MAX_RULE_SYNERGIES];    // Rules that enhance this one
-    float synergy_multipliers[MAX_RULE_SYNERGIES];   // Multiplier for each synergy
-    size_t synergy_count;
-    
-    uint32_t prerequisites[MAX_RULE_PREREQUISITES];   // Rules required before this one
-    size_t prerequisite_count;
-    
-    // Unlock conditions
-    rule_condition_t unlock_condition;  // Condition to make this rule available
-    
-    // Visual/UI
-    uint32_t icon_id;             // Icon for UI display
-    uint32_t category_id;         // Category for organization
-} player_rule_t;
+typedef struct {
+    grid_cell_t *cells[MAX_RULE_RANGE + 1];    // cells[r] = all cells at range r
+    uint16_t counts[MAX_RULE_RANGE + 1];       // counts[r] = number of cells at range r
+    bool dirty[MAX_RULE_RANGE + 1];            // dirty[r] = needs recalculation
+} spatial_cache_t;
 
 /**
- * @brief Spatial hash map for efficient rule lookup
+ * @brief Cached rule evaluation result
  */
-#define RULE_HASH_SIZE 1024
-
 typedef struct {
-    rule_t *buckets[RULE_HASH_SIZE];  // Hash buckets for rules by cell
-    rule_t **all_rules;               // Array of all rules for iteration
-    size_t rule_count;                // Number of active rules
-    size_t rule_capacity;             // Capacity of all_rules array
-    uint32_t next_rule_id;            // Next available rule ID
+    uint32_t rule_id;
+    grid_cell_t cell;
+    float result;
+    uint32_t cache_generation;          // For cache invalidation
+    bool valid;
+} rule_cache_entry_t;
+
+/**
+ * @brief Per-tile rule tracking for fast updates
+ */
+typedef struct {
+    rule_t *affecting_rules[MAX_RULES_PER_TILE]; // Rules that affect this tile
+    uint8_t rule_count;                          // Number of affecting rules
+    
+    // Cached calculations
+    float cached_production;            // Last calculated production
+    uint8_t cached_range;              // Last calculated range  
+    tile_type_t cached_type;           // Last calculated perceived type
+    
+    // Cache validity
+    uint32_t cache_generation;
+    bool production_dirty;
+    bool range_dirty;
+    bool type_dirty;
+    
+    // Spatial cache for this tile
+    spatial_cache_t spatial_cache;
+    
+} tile_rule_data_t;
+
+/**
+ * @brief High-performance rule registry
+ */
+typedef struct {
+    // Rule storage
+    rule_t *rules;                      // Flat array of all rules
+    uint32_t rule_count;
+    uint32_t rule_capacity;
+    uint32_t next_rule_id;
+    
+    // Spatial indexing for O(1) tile->rules lookup
+    tile_rule_data_t *tile_data;        // tile_data[tile_index] 
+    uint32_t tile_data_capacity;
+    
+    // Fast lookups by scope
+    uint32_t *self_rules;               // Rules with SCOPE_SELF
+    uint32_t *neighbor_rules;           // Rules with SCOPE_NEIGHBORS  
+    uint32_t *range_rules;              // Rules with SCOPE_RANGE
+    uint32_t *pool_rules;               // Rules with SCOPE_POOL
+    uint32_t *global_rules;             // Rules with global scope
+    uint16_t self_count, neighbor_count, range_count, pool_count, global_count;
+    
+    // Rule result cache
+    rule_cache_entry_t rule_cache[RULE_CACHE_SIZE];
+    uint32_t cache_generation;          // Incremented when cache invalidated
+    
+    // Batch processing for performance
+    uint32_t *dirty_tiles;              // Tiles needing rule recalculation
+    uint32_t dirty_tile_count;
+    bool batch_mode;                    // Defer updates until batch_process()
+    
+    // Performance tracking
+    uint64_t evaluations_total;
+    uint64_t cache_hits;
+    uint64_t cache_misses;
+    
 } rule_registry_t;
 
 /**
- * @brief Player rule catalog and management
- */
-typedef struct {
-    player_rule_t *rule_catalog;      // All possible rules in the game
-    size_t catalog_size;              // Number of rules in catalog
-    
-    player_rule_t **player_available; // Rules available per player
-    player_rule_t **player_active;    // Rules active per player  
-    size_t *player_available_count;   // Count per player
-    size_t *player_active_count;      // Count per player
-    
-    int *player_rule_points;          // Currency for buying rules per player
-    size_t player_count;              // Number of players
-} rule_catalog_t;
-
-/**
- * @brief Context for rule evaluation
+ * @brief Optimized rule evaluation context
  */
 typedef struct {
     const board_t *board;
+    const rule_registry_t *registry;
+    
+    // Current evaluation state
     const tile_t *current_tile;
-    const pool_t *current_pool;
     grid_cell_t current_cell;
-    uint32_t current_player_id;
+    uint32_t current_tile_index;
     
-    // Perception state (modified during high-priority rules)
-    tile_type_t *perceived_types;   // Override tile types
-    float *perceived_values;        // Override tile values
-    int *perceived_ranges;          // Override tile ranges
-    size_t perception_capacity;     // Size of perception arrays
+    // Batch processing arrays (reused to avoid allocations)
+    grid_cell_t *temp_cells;            // For range calculations
+    tile_t **temp_tiles;                // For neighbor lookups
+    float *temp_values;                 // For calculations
+    uint32_t temp_capacity;
     
-    // Evaluation state
-    bool *rules_processed;          // Track which rules have been processed this cycle
-    size_t rules_processed_capacity;
+    // Performance optimization
+    bool skip_cache;                    // Force recalculation
+    uint32_t evaluation_id;             // Unique ID for this evaluation cycle
+    
 } rule_context_t;
 
-// --- Rule Registry Functions ---
+// --- Core API ---
 
 /**
- * @brief Initialize a rule registry
+ * @brief Initialize high-performance rule registry
+ * @param registry Registry to initialize
+ * @param max_tiles Expected maximum number of tiles on board
+ * @return true on success
  */
-bool rule_registry_init(rule_registry_t *registry);
+bool rule_registry_init(rule_registry_t *registry, uint32_t max_tiles);
 
 /**
- * @brief Cleanup and free rule registry
+ * @brief Cleanup rule registry and free all memory
+ * @param registry Registry to cleanup
  */
 void rule_registry_cleanup(rule_registry_t *registry);
 
 /**
- * @brief Add a rule to the registry
+ * @brief Add rule to registry with automatic optimization
+ * @param registry Rule registry
+ * @param rule Rule to add (will be copied and optimized)
+ * @return Rule ID, or 0 on failure
  */
-uint32_t rule_registry_add(rule_registry_t *registry, const rule_t *rule);
+uint32_t rule_registry_add_rule(rule_registry_t *registry, const rule_t *rule);
 
 /**
- * @brief Remove a rule from the registry
+ * @brief Remove rule from registry
+ * @param registry Rule registry
+ * @param rule_id Rule to remove
+ * @return true if removed successfully
  */
-bool rule_registry_remove(rule_registry_t *registry, uint32_t rule_id);
+bool rule_registry_remove_rule(rule_registry_t *registry, uint32_t rule_id);
 
 /**
- * @brief Get all rules affecting a specific cell
+ * @brief Remove all rules created by specific tile
+ * @param registry Rule registry
+ * @param source_cell Cell that created the rules
  */
-void rule_registry_get_rules_for_cell(const rule_registry_t *registry, 
-                                     grid_cell_t cell,
-                                     rule_t ***out_rules, 
-                                     size_t *out_count);
+void rule_registry_remove_by_source(rule_registry_t *registry, grid_cell_t source_cell);
 
-/**
- * @brief Remove all rules created by a specific source
- */
-void rule_registry_remove_by_source(rule_registry_t *registry, 
-                                   grid_cell_t source_cell, 
-                                   bool is_tile_source);
-
-// --- Rule Catalog Functions ---
-
-/**
- * @brief Initialize rule catalog for all players
- */
-bool rule_catalog_init(rule_catalog_t *catalog, size_t player_count);
-
-/**
- * @brief Cleanup rule catalog
- */
-void rule_catalog_cleanup(rule_catalog_t *catalog);
-
-/**
- * @brief Add a rule definition to the catalog
- */
-bool rule_catalog_add_rule(rule_catalog_t *catalog, const player_rule_t *rule);
-
-/**
- * @brief Check if player can acquire a rule
- */
-bool rule_catalog_can_acquire(const rule_catalog_t *catalog, uint32_t player_id, 
-                             uint32_t rule_id);
-
-/**
- * @brief Attempt to acquire a rule for a player
- */
-bool rule_catalog_acquire_rule(rule_catalog_t *catalog, uint32_t player_id, 
-                              uint32_t rule_id);
-
-/**
- * @brief Remove a rule from a player
- */
-bool rule_catalog_remove_rule(rule_catalog_t *catalog, uint32_t player_id, 
-                             uint32_t rule_id);
-
-/**
- * @brief Get all available rules for a player
- */
-void rule_catalog_get_available(const rule_catalog_t *catalog, uint32_t player_id,
-                               player_rule_t ***out_rules, size_t *out_count);
-
-/**
- * @brief Get all active rules for a player
- */
-void rule_catalog_get_active(const rule_catalog_t *catalog, uint32_t player_id,
-                            player_rule_t ***out_rules, size_t *out_count);
-
-/**
- * @brief Update rule availability based on unlock conditions
- */
-void rule_catalog_update_availability(rule_catalog_t *catalog, uint32_t player_id,
-                                     const rule_context_t *context);
-
-/**
- * @brief Calculate synergy multipliers for a player's active rules
- */
-void rule_catalog_calculate_synergies(rule_catalog_t *catalog, uint32_t player_id);
-
-// --- Rule Factory Functions ---
-
-/**
- * @brief Create a neighbor-based production bonus rule
- */
-player_rule_t rule_factory_neighbor_bonus(const char *name, 
-                                         tile_type_t neighbor_type,
-                                         float bonus_per_neighbor,
-                                         int range);
-
-/**
- * @brief Create a perception override rule
- */
-player_rule_t rule_factory_perception_override(const char *name,
-                                              tile_type_t override_type,
-                                              int range);
-
-/**
- * @brief Create a pool size scaling rule
- */
-player_rule_t rule_factory_pool_scaling(const char *name,
-                                       int min_size,
-                                       float bonus_percentage);
-
-/**
- * @brief Create a type-based range modifier rule
- */
-player_rule_t rule_factory_type_range_modifier(const char *name,
-                                              tile_type_t target_type,
-                                              int range_delta);
-
-/**
- * @brief Create a conditional scaling rule
- */
-player_rule_t rule_factory_conditional_scaling(const char *name,
-                                              rule_condition_t condition,
-                                              float scale_factor,
-                                              rule_condition_type_t count_source);
-
-// --- Rule Evaluation Functions ---
+// --- High-Performance Evaluation ---
 
 /**
  * @brief Initialize rule evaluation context
+ * @param context Context to initialize
+ * @param board Game board
+ * @param registry Rule registry
+ * @param temp_buffer_size Size of temporary buffers for batch operations
+ * @return true on success
  */
-bool rule_context_init(rule_context_t *context, const board_t *board, size_t max_rules);
+bool rule_context_init(rule_context_t *context, const board_t *board, 
+                      const rule_registry_t *registry, uint32_t temp_buffer_size);
 
 /**
  * @brief Cleanup rule evaluation context
+ * @param context Context to cleanup
  */
 void rule_context_cleanup(rule_context_t *context);
 
 /**
- * @brief Evaluate all rules in priority order
+ * @brief Calculate effective production for a tile (with caching)
+ * @param registry Rule registry
+ * @param context Evaluation context
+ * @param tile Tile to calculate production for
+ * @return Effective production value
  */
-void rule_evaluate_all(const rule_registry_t *registry, rule_context_t *context);
+float rule_calculate_tile_production(rule_registry_t *registry, rule_context_t *context, 
+                                    const tile_t *tile);
 
 /**
- * @brief Check if a rule condition is met
+ * @brief Calculate effective range for a tile (with caching)
+ * @param registry Rule registry  
+ * @param context Evaluation context
+ * @param tile Tile to calculate range for
+ * @return Effective range value
  */
-bool rule_check_condition(const rule_condition_t *condition, const rule_context_t *context);
+uint8_t rule_calculate_tile_range(rule_registry_t *registry, rule_context_t *context,
+                                 const tile_t *tile);
 
 /**
- * @brief Apply a rule effect
+ * @brief Get perceived tile type (with caching)
+ * @param registry Rule registry
+ * @param context Evaluation context  
+ * @param tile Tile to get perceived type for
+ * @param observer_cell Cell observing the tile
+ * @return Perceived tile type
  */
-void rule_apply_effect(const rule_effect_t *effect, rule_context_t *context);
+tile_type_t rule_calculate_perceived_type(rule_registry_t *registry, rule_context_t *context,
+                                         const tile_t *tile, grid_cell_t observer_cell);
+
+// --- Incremental Updates ---
 
 /**
- * @brief Execute all instant rules and remove them
+ * @brief Mark tile as needing rule recalculation
+ * @param registry Rule registry
+ * @param tile_index Index of tile that changed
  */
-void rule_execute_instant_rules(rule_registry_t *registry, rule_context_t *context);
-
-// --- Utility Functions ---
+void rule_registry_mark_tile_dirty(rule_registry_t *registry, uint32_t tile_index);
 
 /**
- * @brief Calculate hash for spatial indexing
+ * @brief Mark area around cell as needing recalculation
+ * @param registry Rule registry  
+ * @param cell Center of area that changed
+ * @param radius Radius of area to mark dirty
  */
-uint32_t rule_hash_cell(grid_cell_t cell);
+void rule_registry_mark_area_dirty(rule_registry_t *registry, grid_cell_t cell, uint8_t radius);
 
 /**
- * @brief Print rule information for debugging
+ * @brief Process all dirty tiles in batch for maximum performance
+ * @param registry Rule registry
+ * @param context Evaluation context
  */
-void rule_print(const rule_t *rule);
+void rule_registry_process_dirty_tiles(rule_registry_t *registry, rule_context_t *context);
 
 /**
- * @brief Print player rule information for debugging
+ * @brief Enable/disable batch mode for bulk operations
+ * @param registry Rule registry
+ * @param enabled true to defer updates until batch_process
  */
-void player_rule_print(const player_rule_t *rule);
+void rule_registry_set_batch_mode(rule_registry_t *registry, bool enabled);
+
+// --- Spatial Query Optimization ---
 
 /**
- * @brief Print registry statistics for debugging
+ * @brief Get all tiles of specific type within range (cached)
+ * @param registry Rule registry
+ * @param context Evaluation context
+ * @param center_cell Center of search
+ * @param tile_type Type of tiles to find
+ * @param range Search radius
+ * @param out_tiles Array to store found tiles
+ * @param max_tiles Maximum tiles to return
+ * @return Number of tiles found
+ */
+uint32_t rule_get_tiles_in_range(rule_registry_t *registry, rule_context_t *context,
+                                grid_cell_t center_cell, tile_type_t tile_type, 
+                                uint8_t range, tile_t **out_tiles, uint32_t max_tiles);
+
+/**
+ * @brief Count tiles of specific type within range (cached)
+ * @param registry Rule registry
+ * @param context Evaluation context  
+ * @param center_cell Center of search
+ * @param tile_type Type of tiles to count
+ * @param range Search radius
+ * @return Number of tiles found
+ */
+uint32_t rule_count_tiles_in_range(rule_registry_t *registry, rule_context_t *context,
+                                  grid_cell_t center_cell, tile_type_t tile_type, uint8_t range);
+
+// --- Rule Factory Functions ---
+
+/**
+ * @brief Create neighbor-based production bonus rule
+ * @param source_cell Cell creating the rule
+ * @param neighbor_type Type of neighbors to count
+ * @param bonus_per_neighbor Bonus per matching neighbor
+ * @param range Range to search for neighbors
+ * @return Created rule
+ */
+rule_t rule_create_neighbor_bonus(grid_cell_t source_cell, tile_type_t neighbor_type,
+                                 float bonus_per_neighbor, uint8_t range);
+
+/**
+ * @brief Create range modification rule
+ * @param source_cell Cell creating the rule
+ * @param target_type Type of tiles to affect (TILE_UNDEFINED for self)
+ * @param range_delta Change in range (+/-)
+ * @return Created rule
+ */
+rule_t rule_create_range_modifier(grid_cell_t source_cell, tile_type_t target_type, 
+                                 int8_t range_delta);
+
+/**
+ * @brief Create type perception override rule
+ * @param source_cell Cell creating the rule
+ * @param override_type Type to make neighbors appear as
+ * @param range Range of override effect
+ * @return Created rule  
+ */
+rule_t rule_create_type_override(grid_cell_t source_cell, tile_type_t override_type, 
+                                uint8_t range);
+
+/**
+ * @brief Create pool size scaling rule
+ * @param source_cell Cell creating the rule
+ * @param base_bonus Base production bonus
+ * @param scale_factor Bonus multiplier per tile in pool
+ * @return Created rule
+ */
+rule_t rule_create_pool_scaling(grid_cell_t source_cell, float base_bonus, float scale_factor);
+
+/**
+ * @brief Create board-wide type modifier rule
+ * @param source_cell Cell creating the rule
+ * @param target_type Type of tiles to affect
+ * @param modifier Flat modifier to apply
+ * @return Created rule
+ */
+rule_t rule_create_global_modifier(grid_cell_t source_cell, tile_type_t target_type, 
+                                  float modifier);
+
+// --- Cache Management ---
+
+/**
+ * @brief Invalidate all cached rule results
+ * @param registry Rule registry
+ */
+void rule_registry_invalidate_cache(rule_registry_t *registry);
+
+/**
+ * @brief Warm up caches by pre-calculating common patterns
+ * @param registry Rule registry
+ * @param context Evaluation context
+ */
+void rule_registry_warm_cache(rule_registry_t *registry, rule_context_t *context);
+
+/**
+ * @brief Get cache performance statistics
+ * @param registry Rule registry
+ * @param out_hit_rate Cache hit rate (0.0 to 1.0)
+ * @param out_total_evaluations Total rule evaluations
+ * @param out_cache_size Current cache usage
+ */
+void rule_registry_get_cache_stats(const rule_registry_t *registry, float *out_hit_rate,
+                                  uint64_t *out_total_evaluations, uint32_t *out_cache_size);
+
+// --- Debugging and Profiling ---
+
+/**
+ * @brief Print detailed rule registry statistics  
+ * @param registry Rule registry
  */
 void rule_registry_print_stats(const rule_registry_t *registry);
 
 /**
- * @brief Print catalog statistics for debugging
+ * @brief Print performance profile for rule evaluation
+ * @param registry Rule registry
  */
-void rule_catalog_print_stats(const rule_catalog_t *catalog);
+void rule_registry_print_performance(const rule_registry_t *registry);
 
 /**
- * @brief Validate rule for logical consistency
+ * @brief Print all rules affecting a specific tile
+ * @param registry Rule registry
+ * @param tile_index Index of tile to analyze
  */
-bool rule_validate(const player_rule_t *rule);
+void rule_registry_print_tile_rules(const rule_registry_t *registry, uint32_t tile_index);
 
 /**
- * @brief Check for conflicts between two rules
+ * @brief Validate rule registry internal consistency
+ * @param registry Rule registry
+ * @return true if registry is valid
  */
-bool rule_check_conflict(const player_rule_t *rule1, const player_rule_t *rule2);
+bool rule_registry_validate(const rule_registry_t *registry);
 
 #endif // RULE_SYSTEM_H
