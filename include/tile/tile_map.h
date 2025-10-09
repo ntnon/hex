@@ -1,8 +1,11 @@
 #ifndef TILE_MAP_H
 #define TILE_MAP_H
 
-#include "third_party/uthash.h"
-#include "grid/grid_types.h"
+#include <stdint.h>
+#include <stddef.h>
+#include <stdbool.h>
+#include "../third_party/uthash.h"
+#include "../grid/grid_types.h"
 #include "tile.h"
 
 /**

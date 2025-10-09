@@ -1,8 +1,10 @@
 #include "game/game.h"
 #include "game/board.h"
+#include "game/reward_state.h"
 #include "grid/grid_geometry.h"
 #include "raylib.h"
 #include "stdio.h"
+#include <time.h>
 
 void game_init(game_t *game) {
   game->board = board_create(GRID_TYPE_HEXAGON, 50, BOARD_TYPE_MAIN);
@@ -12,12 +14,24 @@ void game_init(game_t *game) {
   // Initialize rule manager
   game->rule_manager = malloc(sizeof(rule_manager_t));
   if (game->rule_manager) {
-    if (!rule_manager_init(game->rule_manager, game)) {
+    if (!rule_manager_init(game->rule_manager, game->board, 1000)) {
       free(game->rule_manager);
       game->rule_manager = NULL;
       printf("Failed to initialize rule manager\n");
     } else {
       printf("Rule manager initialized successfully\n");
+    }
+  }
+
+  // Initialize reward state
+  game->reward_state = malloc(sizeof(reward_state_t));
+  if (game->reward_state) {
+    if (!reward_state_init(game->reward_state, (uint32_t)time(NULL))) {
+      free(game->reward_state);
+      game->reward_state = NULL;
+      printf("Failed to initialize reward state\n");
+    } else {
+      printf("Reward state initialized successfully\n");
     }
   }
 
@@ -52,6 +66,10 @@ void free_game(game_t *game) {
       rule_manager_cleanup(game->rule_manager);
       free(game->rule_manager);
     }
+    if (game->reward_state) {
+      reward_state_cleanup(game->reward_state);
+      free(game->reward_state);
+    }
     // Clear preview (no memory to free in simplified system)
     game_clear_preview(game);
     free(game);
@@ -82,6 +100,12 @@ void update_board_preview(game_t *game) {
 }
 
 void update_game(game_t *game, const input_state_t *input) {
+  // Update reward state if active
+  if (game->reward_state && reward_state_is_active(game->reward_state)) {
+    reward_state_update(game->reward_state, game, GetFrameTime());
+    return; // Don't update game logic while in reward state
+  }
+
   // Transform mouse coordinates from screen space to world space
   Vector2 world_mouse = GetScreenToWorld2D(
     (Vector2){input->mouse.x, input->mouse.y}, game->board->camera);
@@ -166,4 +190,53 @@ bool game_get_preview_conflicts(const game_t *game, grid_cell_t **out_conflicts,
 
 void game_state_cycle(game_t *game) {
   game->state = (game->state + 1) % GAME_STATE_COUNT;
+}
+
+// Reward system functions
+bool game_trigger_reward_selection(game_t *game, int trigger) {
+  if (!game || !game->reward_state) {
+    return false;
+  }
+
+  // Don't trigger if already in reward state
+  if (reward_state_is_active(game->reward_state)) {
+    return false;
+  }
+
+  // Check if this trigger should actually offer rewards
+  if (!reward_state_should_trigger_reward(game, (reward_trigger_t)trigger)) {
+    return false;
+  }
+
+  // Enter reward state
+  return reward_state_enter(game->reward_state, game,
+                            (reward_trigger_t)trigger);
+}
+
+bool game_handle_reward_input(game_t *game, const input_state_t *input) {
+  if (!game || !game->reward_state || !input) {
+    return false;
+  }
+
+  if (!reward_state_is_active(game->reward_state)) {
+    return false;
+  }
+
+  // Handle mouse input
+  bool handled =
+    reward_state_handle_mouse_input(game->reward_state, input->mouse.x,
+                                    input->mouse.y, input->mouse_left_clicked);
+
+  // Handle keyboard input (simplified - would need proper key event handling)
+  // This would need to be integrated with the actual input system
+
+  return handled;
+}
+
+bool game_is_in_reward_state(const game_t *game) {
+  if (!game || !game->reward_state) {
+    return false;
+  }
+
+  return reward_state_is_active(game->reward_state);
 }

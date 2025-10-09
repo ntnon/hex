@@ -2,6 +2,7 @@
 #include "game/camera.h"
 #include "game/game.h"
 #include "game/inventory.h"
+#include "game/reward_state.h"
 #include "ui_types.h"
 #include "utility/geometry.h"
 #include <stdio.h>
@@ -21,6 +22,12 @@ void input_handler_update(input_handler_t *handler, input_state_t *input,
 
 void input_handler_process_keyboard(input_handler_t *handler,
                                     input_state_t *input) {
+  // If in reward state, handle reward input
+  if (game_is_in_reward_state(handler->game)) {
+    game_handle_reward_input(handler->game, input);
+    return; // Don't process other keyboard input while in reward state
+  }
+
   // Handle rotation of currently selected/held inventory item
   if (input->key_r_pressed) {
     if (inventory_rotate_selected(handler->game->inventory, 1)) {
@@ -32,6 +39,15 @@ void input_handler_process_keyboard(input_handler_t *handler,
   if (input->key_m_pressed) {
     printf("Cycling game state\n");
     game_state_cycle(handler->game);
+  }
+
+  // Handle reward trigger (for testing/debugging)
+  if (input->key_space_pressed) {
+    if (game_trigger_reward_selection(handler->game, REWARD_TRIGGER_MANUAL)) {
+      printf("Triggered reward selection\n");
+    } else {
+      printf("Failed to trigger reward selection\n");
+    }
   }
 }
 

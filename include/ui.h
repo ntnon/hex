@@ -7,6 +7,7 @@
 #include "controller/game_controller.h"
 #include "game/game.h"
 #include "ui_types.h"
+#include "ui/rule_info_card.h"
 #include <stdint.h>
 
 /* ============================================================================

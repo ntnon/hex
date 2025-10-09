@@ -6,8 +6,11 @@
 #ifndef TILE_H
 #define TILE_H
 
-#include "grid/grid_types.h"
-#include "third_party/clay.h"
+#include <stdint.h>
+#include <stddef.h>
+#include <stdbool.h>
+#include "../grid/grid_types.h"
+#include "../third_party/clay.h"
 
 // Forward declarations
 typedef struct tile_map tile_map_t;

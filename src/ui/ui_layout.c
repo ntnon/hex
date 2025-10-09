@@ -1,6 +1,9 @@
 #include "game/inventory.h"
+#include "game/reward_state.h"
+#include "game/reward_system.h"
 #include "raylib.h"
 #include "stdio.h"
+#include "string.h"
 #include "tile/tile.h"
 #include "ui.h"
 #include "ui_types.h"
@@ -13,6 +16,10 @@ bool is_id_valid(const Clay_ElementId id) { return id.id != UI_ID_NONE.id; }
 static void ui_build_add_inventory_button(game_controller_t *controller);
 static void ui_build_reward_area(game_controller_t *controller);
 static void ui_build_reward(game_controller_t *controller);
+static void ui_build_reward_header(const reward_state_t *reward_state);
+static void ui_build_reward_option(const reward_option_t *option, uint8_t index,
+                                   const reward_state_t *reward_state);
+static void ui_build_reward_buttons(game_controller_t *controller);
 
 static void ui_build_game_area(game_controller_t *controller) {
   CLAY({.id = UI_ID_GAME,
@@ -94,19 +101,175 @@ static void ui_build_reward_area(game_controller_t *controller) {
 }
 
 static void ui_build_reward(game_controller_t *controller) {
-  for (int i = 0; i < controller->game->reward_count; i++) {
-    CLAY({.id = CLAY_IDI(UI_ID_REWARD_BASE_STRING, i),
-          .backgroundColor = M_BEIGE,
-          .aspectRatio = 1.0,
-          .layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT,
-                     .sizing = (Clay_Sizing){.width = CLAY_SIZING_GROW(),
-                                             .height = CLAY_SIZING_GROW()},
-                     .childGap = 5,
-                     .padding = CLAY_PADDING_ALL(8)}}) {
-      // Reward content would go here
+  if (!controller || !controller->game || !controller->game->reward_state) {
+    return;
+  }
+
+  const reward_state_t *reward_state = controller->game->reward_state;
+
+  // Get reward options
+  const reward_option_t *options;
+  uint8_t option_count;
+  if (!reward_state_get_options(reward_state, &options, &option_count)) {
+    CLAY({.id = CLAY_ID("no_rewards"),
+          .backgroundColor = M_GRAY,
+          .layout = {.padding = CLAY_PADDING_ALL(20)}}) {
+      CLAY_TEXT(CLAY_STRING("No rewards available"), &TEXT_CONFIG_MEDIUM);
+    }
+    return;
+  }
+
+  // Build header
+  ui_build_reward_header(reward_state);
+
+  // Build reward options
+  CLAY({.id = CLAY_ID("reward_options"),
+        .layout = {
+          .layoutDirection = CLAY_LEFT_TO_RIGHT,
+          .sizing = {.width = CLAY_SIZING_GROW(), .height = CLAY_SIZING_FIT()},
+          .childGap = 20,
+          .padding = CLAY_PADDING_ALL(20)}}) {
+
+    for (uint8_t i = 0; i < option_count; i++) {
+      ui_build_reward_option(&options[i], i, reward_state);
     }
   }
+
+  // Build buttons (confirm, skip, etc.)
+  ui_build_reward_buttons(controller);
 };
+
+static void ui_build_reward_header(const reward_state_t *reward_state) {
+  if (!reward_state) {
+    return;
+  }
+
+  const char *phase_name = "Presenting"; // Simplified for now
+  const char *trigger_name = "Manual";   // Simplified for now
+
+  CLAY({.id = CLAY_ID("reward_header"),
+        .backgroundColor = M_DARKGRAY,
+        .layout = {
+          .sizing = {.width = CLAY_SIZING_GROW(), .height = CLAY_SIZING_FIT()},
+          .padding = CLAY_PADDING_ALL(20),
+          .childGap = 10,
+          .layoutDirection = CLAY_TOP_TO_BOTTOM}}) {
+
+    CLAY_TEXT(CLAY_STRING("Choose Your Reward"), &TEXT_CONFIG_LARGE);
+
+    static char subtitle[128];
+    snprintf(subtitle, sizeof(subtitle), "Triggered by: %s | Phase: %s",
+             trigger_name, phase_name);
+    CLAY_TEXT(CLAY_STRING(subtitle), &TEXT_CONFIG_MEDIUM);
+  }
+}
+
+static void ui_build_reward_option(const reward_option_t *option, uint8_t index,
+                                   const reward_state_t *reward_state) {
+  if (!option || !reward_state) {
+    return;
+  }
+
+  // Simplified display information
+  bool is_selected = false; // TODO: implement selection tracking
+  bool is_hovered = false;  // TODO: implement hover tracking
+
+  // Calculate colors based on state
+  Clay_Color bg_color =
+    is_selected ? M_GREEN : (is_hovered ? M_LIGHTGRAY : M_BEIGE);
+  Clay_Color border_color = {.r = 100, .g = 100, .b = 100, .a = 255};
+
+  CLAY({.id = CLAY_IDI(UI_ID_REWARD_BASE_STRING, index),
+        .backgroundColor = bg_color,
+        .border = {.color = border_color, .width = is_selected ? 3 : 1},
+        .cornerRadius = CLAY_CORNER_RADIUS(8),
+        .layout = {.sizing = {.width = CLAY_SIZING_FIXED(280),
+                              .height = CLAY_SIZING_FIXED(200)},
+                   .layoutDirection = CLAY_TOP_TO_BOTTOM,
+                   .childGap = 8,
+                   .padding = CLAY_PADDING_ALL(16)}}) {
+
+    // Header with rarity and category
+    CLAY({.id = CLAY_IDI("reward_option_header", index),
+          .layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT,
+                     .sizing = {.width = CLAY_SIZING_GROW(),
+                                .height = CLAY_SIZING_FIT()},
+                     .childAlignment = {.y = CLAY_ALIGN_Y_CENTER},
+                     .childGap = 8}}) {
+
+      CLAY_TEXT(CLAY_STRING("⚡"), &TEXT_CONFIG_MEDIUM); // Simplified icon
+      CLAY_TEXT(CLAY_STRING("Common"),
+                &TEXT_CONFIG_MEDIUM); // Simplified rarity
+      CLAY_TEXT(CLAY_STRING("Production"),
+                &TEXT_CONFIG_MEDIUM); // Simplified category
+    }
+
+    // Title
+    CLAY_TEXT(CLAY_STRING("Sample Reward"), &TEXT_CONFIG_LARGE);
+
+    // Description
+    CLAY_TEXT(CLAY_STRING("This is a sample reward description"),
+              &TEXT_CONFIG_MEDIUM);
+
+    // Power score
+    static char power_text[64];
+    snprintf(power_text, sizeof(power_text), "Power: %.1f", 2.5f);
+    CLAY_TEXT(CLAY_STRING(power_text), &TEXT_CONFIG_MEDIUM);
+
+    // Flavor text
+    CLAY({.id = CLAY_IDI("reward_flavor", index),
+          .layout = {.padding = CLAY_PADDING_ALL(4)}}) {
+      CLAY_TEXT(CLAY_STRING("Sample flavor text"), &TEXT_CONFIG_MEDIUM);
+    }
+  }
+}
+
+static void ui_build_reward_buttons(game_controller_t *controller) {
+  if (!controller || !controller->game || !controller->game->reward_state) {
+    return;
+  }
+
+  const reward_state_t *reward_state = controller->game->reward_state;
+  bool can_interact = true;   // TODO: implement proper interaction checking
+  bool has_selection = false; // TODO: implement selection checking
+
+  CLAY({.id = CLAY_ID("reward_buttons"),
+        .layout = {
+          .layoutDirection = CLAY_LEFT_TO_RIGHT,
+          .sizing = {.width = CLAY_SIZING_GROW(), .height = CLAY_SIZING_FIT()},
+          .childGap = 20,
+          .padding = CLAY_PADDING_ALL(20),
+          .childAlignment = {.x = CLAY_ALIGN_X_CENTER}}}) {
+
+    // Confirm button
+    if (has_selection && can_interact) {
+      CLAY({.id = CLAY_ID("confirm_button"),
+            .backgroundColor = M_GREEN,
+            .border = {.color = M_DARKGREEN, .width = 2},
+            .cornerRadius = CLAY_CORNER_RADIUS(6),
+            .layout = {.padding = CLAY_PADDING_ALL(12)}}) {
+        CLAY_TEXT(CLAY_STRING("Confirm Selection"), &TEXT_CONFIG_MEDIUM);
+      }
+    }
+
+    // Skip button (if allowed) - simplified for now
+    if (can_interact) {
+      CLAY({.id = CLAY_ID("skip_button"),
+            .backgroundColor = M_LIGHTGRAY,
+            .border = {.color = M_GRAY, .width = 2},
+            .cornerRadius = CLAY_CORNER_RADIUS(6),
+            .layout = {.padding = CLAY_PADDING_ALL(12)}}) {
+        CLAY_TEXT(CLAY_STRING("Skip Reward"), &TEXT_CONFIG_MEDIUM);
+      }
+    }
+
+    // Phase info
+    CLAY({.id = CLAY_ID("phase_info"),
+          .layout = {.padding = CLAY_PADDING_ALL(8)}}) {
+      CLAY_TEXT(CLAY_STRING("Phase: Presenting"), &TEXT_CONFIG_MEDIUM);
+    }
+  }
+}
 
 Clay_RenderCommandArray ui_build_layout(app_controller_t *app_controller) {
   Clay_SetPointerState((Clay_Vector2){app_controller->input.mouse.x,

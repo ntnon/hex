@@ -7,6 +7,9 @@
 #include "rule_manager.h"
 #include "tile/tile.h"
 
+// Forward declarations
+typedef struct reward_state reward_state_t;
+
 typedef struct simple_preview_t {
     board_t *source_board;           /* Board being previewed for placement */
     grid_cell_t target_position;     /* Where the center would be placed */
@@ -29,6 +32,7 @@ typedef struct game {
     int reward_count;
     game_state_e state;
     rule_manager_t *rule_manager;
+    reward_state_t *reward_state;
     
     // Hover system
     tile_t *hovered_tile;
@@ -52,6 +56,11 @@ void game_state_cycle(game_t *game);
 void game_set_preview(game_t *game, board_t *source_board, grid_cell_t target_position);
 void game_clear_preview(game_t *game);
 bool game_get_preview_conflicts(const game_t *game, grid_cell_t **out_conflicts, size_t *out_count);
+
+// Reward system functions
+bool game_trigger_reward_selection(game_t *game, int trigger);
+bool game_handle_reward_input(game_t *game, const input_state_t *input);
+bool game_is_in_reward_state(const game_t *game);
 
 
 #endif // GAME_H

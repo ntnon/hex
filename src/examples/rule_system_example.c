@@ -25,7 +25,7 @@ void example_neighbor_bonus() {
   game.board = board_create(GRID_TYPE_HEXAGON, 3, BOARD_TYPE_MAIN);
 
   rule_manager_t rule_manager;
-  if (!rule_manager_init(&rule_manager, &game)) {
+  if (!rule_manager_init(&rule_manager, game.board, 1000)) {
     printf("Failed to initialize rule manager\n");
     return;
   }
@@ -93,7 +93,7 @@ void example_perception_override() {
   game.board = board_create(GRID_TYPE_HEXAGON, 3, BOARD_TYPE_MAIN);
 
   rule_manager_t rule_manager;
-  if (!rule_manager_init(&rule_manager, &game)) {
+  if (!rule_manager_init(&rule_manager, game.board, 1000)) {
     printf("Failed to initialize rule manager\n");
     return;
   }
@@ -156,7 +156,7 @@ void example_pool_rules() {
   game.board = board_create(GRID_TYPE_HEXAGON, 5, BOARD_TYPE_MAIN);
 
   rule_manager_t rule_manager;
-  if (!rule_manager_init(&rule_manager, &game)) {
+  if (!rule_manager_init(&rule_manager, game.board, 1000)) {
     printf("Failed to initialize rule manager\n");
     return;
   }
@@ -209,7 +209,7 @@ void example_instant_rules() {
   game.board = board_create(GRID_TYPE_HEXAGON, 3, BOARD_TYPE_MAIN);
 
   rule_manager_t rule_manager;
-  if (!rule_manager_init(&rule_manager, &game)) {
+  if (!rule_manager_init(&rule_manager, game.board, 1000)) {
     printf("Failed to initialize rule manager\n");
     return;
   }
@@ -261,7 +261,7 @@ void example_rule_debugging() {
   game.board = board_create(GRID_TYPE_HEXAGON, 3, BOARD_TYPE_MAIN);
 
   rule_manager_t rule_manager;
-  if (!rule_manager_init(&rule_manager, &game)) {
+  if (!rule_manager_init(&rule_manager, game.board, 1000)) {
     printf("Failed to initialize rule manager\n");
     return;
   }
