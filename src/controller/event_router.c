@@ -19,31 +19,14 @@ void event_router_init(event_router_t *router, game_t *game) {
 }
 
 void event_router_process_events(event_router_t *router) {
-  ui_event_t evt;
-  while ((evt = ui_poll_event()).type != UI_EVENT_NONE) {
-    switch (evt.type) {
-    case UI_EVENT_HOVER_START:
-      event_router_handle_hover_start(router, evt);
-      break;
-    case UI_EVENT_HOVER_END:
-      event_router_handle_hover_end(router, evt);
-      break;
-    case UI_EVENT_CLICK:
-      event_router_handle_click(router, evt);
-      break;
-    case UI_EVENT_INVENTORY_ITEM_CLICK:
-      event_router_handle_inventory_click(router, evt);
-      break;
-    case UI_EVENT_NONE:
-    default:
-      break;
-    }
-  }
+  // Events are now handled directly in UI callbacks
+  // This function is kept for compatibility but does nothing
 }
 
-void event_router_handle_click(event_router_t *router, ui_event_t evt) {
-  router->last_clicked_element_id = evt.element_id;
-  printf("Clicked on element: %s\n", evt.element_id.stringId.chars);
+void event_router_handle_click(event_router_t *router,
+                               Clay_ElementId elementId) {
+  router->last_clicked_element_id = elementId;
+  printf("Clicked on element: %s\n", elementId.stringId.chars);
 
   if (router->last_clicked_element_id.id == UI_BUTTON_ADD_INVENTORY_ITEM.id) {
     handle_add_inventory_button_click(router);
@@ -52,26 +35,28 @@ void event_router_handle_click(event_router_t *router, ui_event_t evt) {
   }
 }
 
-void event_router_handle_hover_start(event_router_t *router, ui_event_t evt) {
-  router->hovered_element_id = evt.element_id;
+void event_router_handle_hover_start(event_router_t *router,
+                                     Clay_ElementId elementId) {
+  router->hovered_element_id = elementId;
   // Additional hover start logic can be added here
 }
 
-void event_router_handle_hover_end(event_router_t *router, ui_event_t evt) {
-  if (router->hovered_element_id.id == evt.element_id.id) {
+void event_router_handle_hover_end(event_router_t *router,
+                                   Clay_ElementId elementId) {
+  if (router->hovered_element_id.id == elementId.id) {
     router->hovered_element_id = UI_ID_NONE;
   }
 }
 
 void event_router_handle_inventory_click(event_router_t *router,
-                                         ui_event_t evt) {
-  printf("Inventory item clicked: %s\n", evt.element_id.stringId.chars);
+                                         Clay_ElementId elementId) {
+  printf("Inventory item clicked: %s\n", elementId.stringId.chars);
 
   // Find which inventory item was clicked by matching the element ID
   int inventory_size = inventory_get_size(router->game->inventory);
   for (int i = 0; i < inventory_size; i++) {
     inventory_item_t item = inventory_get_item(router->game->inventory, i);
-    if (item.id.id == evt.element_id.id) {
+    if (item.id.id == elementId.id) {
       inventory_set_index(router->game->inventory, i);
       printf("Selected inventory item at index %d\n", i);
       break;

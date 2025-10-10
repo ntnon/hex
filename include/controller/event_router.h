@@ -17,9 +17,9 @@ typedef struct {
 /* Function declarations */
 void event_router_init(event_router_t *router, game_t *game);
 void event_router_process_events(event_router_t *router);
-void event_router_handle_click(event_router_t *router, ui_event_t evt);
-void event_router_handle_hover_start(event_router_t *router, ui_event_t evt);
-void event_router_handle_hover_end(event_router_t *router, ui_event_t evt);
-void event_router_handle_inventory_click(event_router_t *router, ui_event_t evt);
+void event_router_handle_click(event_router_t *router, Clay_ElementId elementId);
+void event_router_handle_hover_start(event_router_t *router, Clay_ElementId elementId);
+void event_router_handle_hover_end(event_router_t *router, Clay_ElementId elementId);
+void event_router_handle_inventory_click(event_router_t *router, Clay_ElementId elementId);
 
 #endif // EVENT_ROUTER_H

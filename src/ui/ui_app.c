@@ -226,6 +226,11 @@ void ui_build_pause_menu(app_controller_t *app_controller) {
 }
 
 Clay_RenderCommandArray ui_build_root(app_controller_t *app_controller) {
+  // Set pointer state BEFORE layout begins so hover callbacks work
+  Clay_SetPointerState((Clay_Vector2){app_controller->input.mouse.x,
+                                      app_controller->input.mouse.y},
+                       app_controller->input.mouse_left_down);
+
   Clay_SetLayoutDimensions(
     (Clay_Dimensions){.width = GetScreenWidth(), .height = GetScreenHeight()});
   Clay_BeginLayout();

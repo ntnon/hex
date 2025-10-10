@@ -15,13 +15,18 @@ static void ui_build_reward_area(game_controller_t *controller);
 static void ui_build_reward(game_controller_t *controller);
 
 static void ui_build_game_area(game_controller_t *controller) {
-  CLAY({.id = UI_ID_GAME_AREA,
-        .cornerRadius = 0,
-        .backgroundColor = M_BLANK,
+  CLAY(
+    {.id = UI_ID_GAME_AREA,
+     .cornerRadius = 0,
+     .backgroundColor = {0, 0, 0, 1}, // Very faint black to make it "real"
+     // .clip = {.horizontal = true, .vertical = true},  // Disabled for testing
+     .layout = {.sizing = (Clay_Sizing){.height = CLAY_SIZING_GROW(),
+                                        .width = CLAY_SIZING_GROW()}}}) {
+    Clay_OnHover(ui_hover_handler, 0);
 
-        .layout = {.sizing = (Clay_Sizing){.height = CLAY_SIZING_GROW(),
-                                           .width = CLAY_SIZING_GROW()}}}) {
-    Clay_OnHover(handle_hover, (intptr_t)controller);
+    // Add a tiny invisible child to ensure the element has content
+    CLAY({.layout = {.sizing = {.width = CLAY_SIZING_FIXED(1),
+                                .height = CLAY_SIZING_FIXED(1)}}}) {}
   }
 }
 
@@ -49,7 +54,7 @@ static void ui_build_inventory_item(game_controller_t *controller,
                    .sizing =
                      (Clay_Sizing){.height = CLAY_SIZING_FIXED(item_height),
                                    .width = CLAY_SIZING_GROW()}}}) {
-    Clay_OnHover(handle_inventory_item_click, (intptr_t)controller);
+    Clay_OnHover(ui_hover_handler, 0);
   }
 }
 
@@ -62,7 +67,7 @@ static void ui_build_inventory_area(game_controller_t *controller){
                    .layoutDirection = CLAY_TOP_TO_BOTTOM,
                    .sizing = (Clay_Sizing){.width = CLAY_SIZING_GROW(4, 200),
                                            .height = CLAY_SIZING_GROW()}}}){
-    Clay_OnHover(handle_hover, (intptr_t)controller);
+    Clay_OnHover(ui_hover_handler, 0);
 
 int inventory_size = inventory_get_size(controller->game->inventory);
 int total_height = GetScreenHeight();
@@ -250,9 +255,6 @@ void ui_build_tile_info_card(game_t *game, Vector2 mouse_pos) {
 }
 
 void ui_build_game(app_controller_t *app_controller) {
-  Clay_SetPointerState((Clay_Vector2){app_controller->input.mouse.x,
-                                      app_controller->input.mouse.y},
-                       app_controller->input.mouse_left_down);
   CLAY({.id = UI_ID_GAME,
         .backgroundColor = M_BLANK,
         .layout = {

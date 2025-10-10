@@ -33,8 +33,6 @@ void game_controller_add_game_bounds(game_controller_t *controller, Clay_Boundin
 void game_controller_update(game_controller_t *controller, input_state_t *input);
 void game_controller_process_events(game_controller_t *controller);
 void game_controller_hover(game_controller_t *controller, Clay_ElementId elementId);
-void game_controller_set_hover(game_controller_t *controller, ui_event_t evt);
-void game_controller_clear_hover(game_controller_t *controller, ui_event_t evt);
 
 /* Legacy accessors for backward compatibility */
 Clay_ElementId game_controller_get_last_clicked_element(game_controller_t *controller);

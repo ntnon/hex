@@ -113,12 +113,17 @@ int main(int argc, char *argv[]) {
 
     // Update app controller
     app_controller_update(&app_controller, &input);
-    app_controller_process_events(&app_controller);
 
     // Build UI layout based on current app state with error handling
     Clay_RenderCommandArray renderCommands;
 
     renderCommands = ui_build_root(&app_controller);
+
+    // Get the hovered element from our tracking system
+    input.hovered_element_id = ui_get_hovered_element();
+
+    // Clear click state for next frame
+    ui_clear_click();
 
     // Validate render commands before passing to Clay
     if (renderCommands.length == 0 || !renderCommands.internalArray) {
