@@ -137,7 +137,7 @@ Clay_RenderCommandArray ui_build_layout(app_controller_t *app_controller) {
       if (app_controller->game) {
         game_controller_t *game_controller = &app_controller->game_controller;
         switch (game_controller->game->state) {
-        case GAME_STATE_PLAYING:
+        case GAME_STATE_PLACE:
           ui_build_game_area(game_controller);
           ui_build_inventory_area(game_controller);
           // Add tile info card overlay

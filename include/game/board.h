@@ -25,7 +25,7 @@ typedef struct {
     tile_map_t *tiles;
     pool_map_t *pools;
     uint32_t next_pool_id;
-    
+
     edge_render_list_t *edge_list;  // Rendered edge list for pool boundaries
 
     Camera2D camera; // Camera for this board

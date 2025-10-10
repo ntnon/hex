@@ -11,10 +11,20 @@
 /* Forward declaration to avoid circular dependency */
 typedef struct input_area_info input_area_info_t;
 
+typedef enum {
+    GAME_STATE_VIEW,
+    GAME_STATE_PLACE,
+    GAME_STATE_COLLECT,
+    GAME_STATE_REWARD,
+    GAME_STATE_GAME_OVER,
+    GAME_STATE_COUNT
+} game_state_e;
+
 typedef struct game_controller {
     game_t *game;
     int generation;
     input_state_t input;
+    game_state_e state;
 
     /* Composed components */
     input_handler_t input_handler;

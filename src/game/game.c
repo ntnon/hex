@@ -12,7 +12,7 @@ void game_init(game_t *game) {
   // Initialize rule manager
   game->rule_manager = malloc(sizeof(rule_manager_t));
   if (game->rule_manager) {
-    if (!rule_manager_init(game->rule_manager, game)) {
+    if (!rule_manager_init(game->rule_manager, game, 2000)) {
       free(game->rule_manager);
       game->rule_manager = NULL;
       printf("Failed to initialize rule manager\n");
@@ -31,7 +31,7 @@ void game_init(game_t *game) {
   game->preview.target_position = (grid_cell_t){0};
   game->preview.is_active = false;
 
-  game->state = GAME_STATE_PLAYING;
+  game->state = GAME_STATE_PLACE;
   // board_randomize(game->board);
   // Use smaller radius for testing to avoid long load times
   printf("Board created with radius: %d\n", game->board->radius);

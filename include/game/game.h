@@ -13,28 +13,19 @@ typedef struct simple_preview_t {
     bool is_active;                  /* Whether preview is currently active */
 } simple_preview_t;
 
-typedef enum {
-    //GAME_STATE_MENU,
-    GAME_STATE_PLAYING,
-    GAME_STATE_COLLECT,
-    GAME_STATE_REWARD,
 
-    GAME_STATE_GAME_OVER,
-    GAME_STATE_COUNT
-} game_state_e;
 
 typedef struct game {
     board_t *board;
     inventory_t *inventory;
     int reward_count;
-    game_state_e state;
     rule_manager_t *rule_manager;
-    
+
     // Hover system
     tile_t *hovered_tile;
     grid_cell_t hovered_cell;
     bool should_show_tile_info;
-    
+
     // Simplified preview system
     simple_preview_t preview;
 } game_t;
