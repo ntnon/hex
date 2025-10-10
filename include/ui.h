@@ -16,7 +16,8 @@
 
 
 bool is_id_valid(const Clay_ElementId id);
-void ui_build_game(app_controller_t *app_controller);
+void ui_build_game(app_controller_t *app_controller, const input_state_t *input);
+
 
 
 
@@ -80,10 +81,7 @@ void ui_shutdown(UI_Context *ctx);
  * UI Event System
  * ============================================================================ */
 
-void handle_hover(Clay_ElementId elementId, Clay_PointerData pointer, intptr_t userData);
 void ui_hover_handler(Clay_ElementId elementId, Clay_PointerData pointerData, intptr_t userData);
-void handle_inventory_click(Clay_ElementId elementId, Clay_PointerData pointerData, intptr_t userData);
-void handle_inventory_item_click(Clay_ElementId elementId, Clay_PointerData pointerData, intptr_t userData);
 void handle_menu_button_hover(Clay_ElementId elementId, Clay_PointerData pointerData, intptr_t userData);
 Clay_ElementId ui_get_hovered_element(void);
 bool ui_was_clicked(Clay_ElementId elementId);
@@ -97,5 +95,5 @@ void ui_build_pause_menu(app_controller_t *app_controller);
 void ui_build_tile_info_card(game_t *game, Vector2 mouse_pos);
 void ui_build_game_ui(app_controller_t *app_controller);
 
-Clay_RenderCommandArray ui_build_root(app_controller_t *app_controller);
+Clay_RenderCommandArray ui_build_root(app_controller_t *app_controller, const input_state_t *input);
 #endif // UI_H

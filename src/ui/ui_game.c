@@ -36,7 +36,7 @@ static void ui_build_add_inventory_button(game_controller_t *controller) {
         .layout = {.sizing = (Clay_Sizing){.width = CLAY_SIZING_FIT(),
                                            .height = CLAY_SIZING_FIT()}}}) {
     CLAY_TEXT(CLAY_STRING("Add to inventory"), &TEXT_CONFIG_MEDIUM);
-    Clay_OnHover(handle_hover, (intptr_t)controller);
+    Clay_OnHover(ui_hover_handler, (intptr_t)controller);
   }
 }
 
@@ -59,9 +59,9 @@ static void ui_build_inventory_item(game_controller_t *controller,
 }
 
 static void ui_build_inventory_area(game_controller_t *controller){
-  CLAY({.id = UI_ID_INVENTORY,
+  CLAY({.id = UI_ID_INVENTORY_AREA,
         .cornerRadius = 0,
-        .backgroundColor = M_BLANK,
+        .backgroundColor = M_GRAY,
         .layout = {.childGap = INVENTORY_GAP,
                    .padding = CLAY_PADDING_ALL(INVENTORY_PADDING),
                    .layoutDirection = CLAY_TOP_TO_BOTTOM,
@@ -254,7 +254,8 @@ void ui_build_tile_info_card(game_t *game, Vector2 mouse_pos) {
   }
 }
 
-void ui_build_game(app_controller_t *app_controller) {
+void ui_build_game(app_controller_t *app_controller,
+                   const input_state_t *input) {
   CLAY({.id = UI_ID_GAME,
         .backgroundColor = M_BLANK,
         .layout = {
@@ -268,8 +269,7 @@ void ui_build_game(app_controller_t *app_controller) {
       ui_build_game_area(game_controller);
       ui_build_inventory_area(game_controller);
       ui_build_tile_info_card(game_controller->game,
-                              (Vector2){app_controller->input.mouse.x,
-                                        app_controller->input.mouse.y});
+                              (Vector2){input->mouse.x, input->mouse.y});
     } else { // PREVENTS CONDITIONAL RENDERING
 
       switch (game_controller->game->state) {
@@ -277,8 +277,7 @@ void ui_build_game(app_controller_t *app_controller) {
         ui_build_game_area(game_controller);
         ui_build_inventory_area(game_controller);
         ui_build_tile_info_card(game_controller->game,
-                                (Vector2){app_controller->input.mouse.x,
-                                          app_controller->input.mouse.y});
+                                (Vector2){input->mouse.x, input->mouse.y});
         break;
       case GAME_STATE_PLACE:
         ui_build_game_area(game_controller);
@@ -294,8 +293,7 @@ void ui_build_game(app_controller_t *app_controller) {
         ui_build_inventory_area(game_controller);
         // Add tile info card overlay
         ui_build_tile_info_card(game_controller->game,
-                                (Vector2){app_controller->input.mouse.x,
-                                          app_controller->input.mouse.y});
+                                (Vector2){input->mouse.x, input->mouse.y});
         break;
       default:
         break;

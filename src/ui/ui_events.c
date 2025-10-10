@@ -1,5 +1,4 @@
 #include "controller/app_controller.h"
-#include "controller/game_controller.h"
 #include "ui.h"
 #include "ui_types.h"
 #include <stdio.h>
@@ -13,11 +12,6 @@ static bool g_click_occurred = false;
 void ui_hover_handler(Clay_ElementId elementId, Clay_PointerData pointerData,
                       intptr_t userData) {
   g_current_hovered_element = elementId;
-
-  // Debug: print what's being hovered
-  if (elementId.stringId.chars) {
-    printf("Hovering: %s (id: %u)\n", elementId.stringId.chars, elementId.id);
-  }
 
   // Track clicks
   if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
@@ -45,26 +39,13 @@ void ui_clear_click(void) {
   g_last_clicked_element = (Clay_ElementId){0};
 }
 
-// Legacy handlers that now just delegate to the generic handler
-void handle_hover(Clay_ElementId elementId, Clay_PointerData pointerData,
-                  intptr_t userData) {
-  ui_hover_handler(elementId, pointerData, userData);
-}
-
-void handle_inventory_click(Clay_ElementId elementId,
-                            Clay_PointerData pointerData, intptr_t userData) {
-  ui_hover_handler(elementId, pointerData, userData);
-}
-
-void handle_inventory_item_click(Clay_ElementId elementId,
-                                 Clay_PointerData pointerData,
-                                 intptr_t userData) {
-  ui_hover_handler(elementId, pointerData, userData);
-}
-
+// Special handler for menu buttons that need immediate visual feedback
 void handle_menu_button_hover(Clay_ElementId elementId,
                               Clay_PointerData pointerData, intptr_t userData) {
   app_controller_t *app_controller = (app_controller_t *)userData;
+
+  // Track hover globally
+  ui_hover_handler(elementId, pointerData, userData);
 
   // Update hover state for visual feedback
   if (elementId.id == UI_ID_MENU_ITEM_NEW_GAME.id) {

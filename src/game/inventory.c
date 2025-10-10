@@ -6,11 +6,7 @@
 #include <stdlib.h>
 
 // Create the inventory
-inventory_t *inventory_create(int size) {
-  if (size <= 0) {
-    printf("Invalid inventory size.\n");
-    return NULL; // Handle invalid size
-  }
+inventory_t *inventory_create() {
 
   inventory_t *inventory = malloc(sizeof(inventory_t));
   if (inventory == NULL) {
@@ -34,7 +30,6 @@ inventory_item_t inventory_create_item(inventory_t *inv) {
   board_t *item_board =
     board_create(GRID_TYPE_HEXAGON, 1, BOARD_TYPE_INVENTORY);
   board_fill(item_board, 0, BOARD_TYPE_INVENTORY);
-
   return (inventory_item_t){
     .quantity = 1,
     .id = CLAY_IDI(UI_ID_INVENTORY_ITEM_BASE_STRING, next_id),

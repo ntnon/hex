@@ -8,7 +8,7 @@
 #define UI_ID_GAME CLAY_ID("game")
 #define UI_ID_GAME_AREA CLAY_ID("game_area")
 
-#define UI_ID_INVENTORY CLAY_ID("inventory")
+#define UI_ID_INVENTORY_AREA CLAY_ID("inventory_area")
 #define UI_ID_INVENTORY_ITEM_BASE_STRING "inventory_item_base_"
 
 #define UI_ID_REWARDS CLAY_ID("rewards")

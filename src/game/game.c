@@ -6,13 +6,13 @@
 
 void game_init(game_t *game) {
   game->board = board_create(GRID_TYPE_HEXAGON, 50, BOARD_TYPE_MAIN);
-  game->inventory = inventory_create(2);
+  game->inventory = inventory_create();
   game->reward_count = 3;
 
   // Initialize rule manager
   game->rule_manager = malloc(sizeof(rule_manager_t));
   if (game->rule_manager) {
-    if (!rule_manager_init(game->rule_manager, game, 2000)) {
+    if (!rule_manager_init(game->rule_manager, game->board, 2000)) {
       free(game->rule_manager);
       game->rule_manager = NULL;
       printf("Failed to initialize rule manager\n");
@@ -37,7 +37,7 @@ void game_init(game_t *game) {
   printf("Board created with radius: %d\n", game->board->radius);
   // board_fill_batch(game->board, 30, BOARD_TYPE_MAIN); // Small radius for
   //  fast loading
-  inventory_fill(game->inventory, 1);
+  inventory_fill(game->inventory, 3);
 }
 
 void free_game(game_t *game) {

@@ -225,11 +225,11 @@ void ui_build_pause_menu(app_controller_t *app_controller) {
   }
 }
 
-Clay_RenderCommandArray ui_build_root(app_controller_t *app_controller) {
+Clay_RenderCommandArray ui_build_root(app_controller_t *app_controller,
+                                      const input_state_t *input) {
   // Set pointer state BEFORE layout begins so hover callbacks work
-  Clay_SetPointerState((Clay_Vector2){app_controller->input.mouse.x,
-                                      app_controller->input.mouse.y},
-                       app_controller->input.mouse_left_down);
+  Clay_SetPointerState((Clay_Vector2){input->mouse.x, input->mouse.y},
+                       input->mouse_left_down);
 
   Clay_SetLayoutDimensions(
     (Clay_Dimensions){.width = GetScreenWidth(), .height = GetScreenHeight()});
@@ -246,7 +246,7 @@ Clay_RenderCommandArray ui_build_root(app_controller_t *app_controller) {
       break;
     case APP_STATE_GAME:
       if (app_controller->game) {
-        ui_build_game(app_controller);
+        ui_build_game(app_controller, input);
       }
       break;
     case APP_STATE_SETTINGS:

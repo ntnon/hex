@@ -22,7 +22,7 @@ typedef struct {
 
 // --- Lifecycle Functions ---
 
-inventory_t* inventory_create(int size);
+inventory_t* inventory_create();
 void free_inventory(inventory_t* inv);
 
 // --- Item Management ---

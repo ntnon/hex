@@ -11,7 +11,7 @@ void input_handler_init(input_handler_t *handler, game_t *game) {
   handler->game_bounds = (Clay_BoundingBox){0};
 }
 
-void input_handler_update(input_handler_t *handler, input_state_t *input,
+void input_handler_update(input_handler_t *handler, const input_state_t *input,
                           Clay_BoundingBox game_bounds) {
   handler->game_bounds = game_bounds;
 
@@ -20,7 +20,7 @@ void input_handler_update(input_handler_t *handler, input_state_t *input,
 }
 
 void input_handler_process_keyboard(input_handler_t *handler,
-                                    input_state_t *input) {
+                                    const input_state_t *input) {
   // Handle rotation of currently selected/held inventory item
   if (input->key_r_pressed) {
     if (inventory_rotate_selected(handler->game->inventory, 1)) {
@@ -35,7 +35,7 @@ void input_handler_process_keyboard(input_handler_t *handler,
 }
 
 void input_handler_process_camera(input_handler_t *handler,
-                                  input_state_t *input) {
+                                  const input_state_t *input) {
   // Only update camera if mouse is within game bounds and hovering game area
   if (point_in_bounds(input->mouse, handler->game_bounds) &&
       input->hovered_element_id.id == UI_ID_GAME_AREA.id) {

@@ -109,21 +109,28 @@ int main(int argc, char *argv[]) {
   // Main game loop
   while (!WindowShouldClose() && !app_controller_should_quit(&app_controller)) {
     input_state_t input;
+    input_state_init(&input); // Initialize before getting state
     get_input_state(&input);
-
-    // Update app controller
-    app_controller_update(&app_controller, &input);
 
     // Build UI layout based on current app state with error handling
     Clay_RenderCommandArray renderCommands;
 
-    renderCommands = ui_build_root(&app_controller);
+    renderCommands = ui_build_root(&app_controller, &input);
 
     // Get the hovered element from our tracking system
     input.hovered_element_id = ui_get_hovered_element();
 
-    // Clear click state for next frame
-    ui_clear_click();
+    // Set drag bounds if we're in game and hovering over game area
+    if (app_controller_get_state(&app_controller) == APP_STATE_GAME) {
+      if (input.hovered_element_id.id == UI_ID_GAME_AREA.id) {
+        Clay_BoundingBox game_bounds =
+          Clay_GetElementData(UI_ID_GAME_AREA).boundingBox;
+        input.drag_bounds = game_bounds;
+      }
+    }
+
+    // Update app controller (after UI build so click state is available)
+    app_controller_update(&app_controller, &input);
 
     // Validate render commands before passing to Clay
     if (renderCommands.length == 0 || !renderCommands.internalArray) {
@@ -166,6 +173,9 @@ int main(int argc, char *argv[]) {
     }
 
     EndDrawing();
+
+    // Clear click state at the very end of frame, after all processing
+    ui_clear_click();
   }
 
   // Cleanup - simplified order

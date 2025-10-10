@@ -1,6 +1,4 @@
 #include "controller/app_controller.h"
-#include "controller/menu_controller.h"
-#include "controller/settings_controller.h"
 #include "game/game.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,22 +13,6 @@ void app_controller_init(app_controller_t *app_controller) {
   // Initialize menu navigation
   app_controller->selected_menu_item = 0;
   app_controller->menu_item_count = 3; // New Game, Settings, Quit
-
-  // Initialize input state
-  input_state_init(&app_controller->input);
-
-  // Initialize menu controller
-  app_controller->menu_controller = malloc(sizeof(menu_controller_t));
-  if (app_controller->menu_controller) {
-    menu_controller_init(app_controller->menu_controller, app_controller);
-  }
-
-  // Initialize settings controller
-  app_controller->settings_controller = malloc(sizeof(settings_controller_t));
-  if (app_controller->settings_controller) {
-    settings_controller_init(app_controller->settings_controller,
-                             app_controller);
-  }
 
   // Game will be initialized when entering PLAYING state
   app_controller->game = NULL;
@@ -49,33 +31,16 @@ void app_controller_cleanup(app_controller_t *app_controller) {
     app_controller->game = NULL;
   }
 
-  // Cleanup menu controller
-  if (app_controller->menu_controller) {
-    menu_controller_cleanup(app_controller->menu_controller);
-    free(app_controller->menu_controller);
-    app_controller->menu_controller = NULL;
-  }
-
-  // Cleanup settings controller
-  if (app_controller->settings_controller) {
-    settings_controller_cleanup(app_controller->settings_controller);
-    free(app_controller->settings_controller);
-    app_controller->settings_controller = NULL;
-  }
-
   app_controller->is_initialized = false;
   printf("App controller cleaned up\n");
 }
 
 void app_controller_update(app_controller_t *app_controller,
-                           input_state_t *input) {
+                           const input_state_t *input) {
   if (!app_controller->is_initialized) {
     printf("Warning: App controller not initialized\n");
     return;
   }
-
-  // Store input state
-  app_controller->input = *input;
 
   // Handle global input (ESC key, etc.)
   app_controller_handle_global_input(app_controller, input);
@@ -112,17 +77,10 @@ void app_controller_update(app_controller_t *app_controller,
         break;
       }
     }
-
-    if (app_controller->menu_controller) {
-      menu_controller_update(app_controller->menu_controller, input);
-    }
     break;
 
   case APP_STATE_SETTINGS:
     // Simple settings navigation - ESC to return to menu (handled globally)
-    if (app_controller->settings_controller) {
-      settings_controller_update(app_controller->settings_controller, input);
-    }
     break;
 
   case APP_STATE_GAME:
@@ -149,15 +107,11 @@ void app_controller_process_events(app_controller_t *app_controller) {
   // Process events based on current state
   switch (app_controller->current_state) {
   case APP_STATE_MAIN_MENU:
-    if (app_controller->menu_controller) {
-      menu_controller_process_events(app_controller->menu_controller);
-    }
+    // Handle menu events directly
     break;
 
   case APP_STATE_SETTINGS:
-    if (app_controller->settings_controller) {
-      settings_controller_process_events(app_controller->settings_controller);
-    }
+    // Handle settings events directly
     break;
 
   case APP_STATE_GAME:
@@ -219,17 +173,10 @@ void app_controller_set_state(app_controller_t *app_controller,
   case APP_STATE_MAIN_MENU:
     // Reset menu selection when entering main menu
     app_controller->selected_menu_item = 0;
-    if (app_controller->menu_controller) {
-      menu_controller_set_state(app_controller->menu_controller,
-                                MENU_STATE_MAIN);
-    }
     break;
 
   case APP_STATE_SETTINGS:
-    if (app_controller->settings_controller) {
-      settings_controller_set_category(app_controller->settings_controller,
-                                       SETTINGS_CATEGORY_GRAPHICS);
-    }
+    // Initialize settings state
     break;
 
   default:
@@ -280,7 +227,7 @@ void app_controller_quit_application(app_controller_t *app_controller) {
 }
 
 void app_controller_handle_global_input(app_controller_t *app_controller,
-                                        input_state_t *input) {
+                                        const input_state_t *input) {
   // ESC key handling based on current state
   if (input->key_escape_pressed) {
     switch (app_controller->current_state) {
@@ -293,12 +240,7 @@ void app_controller_handle_global_input(app_controller_t *app_controller,
       break;
 
     case APP_STATE_SETTINGS:
-      // Check if settings have unsaved changes
-      if (app_controller->settings_controller &&
-          settings_controller_has_unsaved_changes(
-            app_controller->settings_controller)) {
-        // Could show confirmation dialog here
-      }
+      // Could check for unsaved changes here
       app_controller_quit_to_menu(app_controller);
       break;
 
