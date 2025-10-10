@@ -1042,7 +1042,7 @@ void rule_registry_print_stats(const rule_registry_t *registry) {
   printf("  Self: %u\n", registry->self_count);
   printf("  Neighbors: %u\n", registry->neighbor_count);
   printf("  Range: %u\n", registry->range_count);
-  printf("  Pool: %u\n", registry->pool_count);
+  // printf("  Pool: %u\n", registry->pool_count);
   printf("  Global: %u\n", registry->global_count);
 
   uint32_t active_count = 0;

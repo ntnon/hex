@@ -4,13 +4,12 @@
 #include "controller/game_controller.h"
 #include "controller/input_state.h"
 #include "game/game.h"
-#include "ui_types.h"
 
 /* Application-level states */
 typedef enum {
     APP_STATE_MAIN_MENU,
     APP_STATE_SETTINGS,
-    APP_STATE_PLAYING,
+    APP_STATE_GAME,
     APP_STATE_PAUSED,
     APP_STATE_QUIT
 } app_state_t;
@@ -22,24 +21,24 @@ typedef struct settings_controller settings_controller_t;
 typedef struct app_controller {
     app_state_t current_state;
     app_state_t previous_state;
-    
-    /* Game components - only active during APP_STATE_PLAYING */
+
+    /* Game components - only active during APP_STATE_GAME */
     game_t *game;
     game_controller_t game_controller;
-    
+
     /* UI controllers for different states */
     menu_controller_t *menu_controller;
     settings_controller_t *settings_controller;
-    
+
     /* Application-level data */
     input_state_t input;
     bool is_initialized;
     bool should_quit;
-    
+
     /* Menu navigation state */
     int selected_menu_item;
     int menu_item_count;
-    
+
 } app_controller_t;
 
 /* Function declarations */

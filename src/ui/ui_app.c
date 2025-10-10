@@ -225,155 +225,36 @@ void ui_build_pause_menu(app_controller_t *app_controller) {
   }
 }
 
-void ui_build_game_ui(app_controller_t *app_controller) {
-  // The game UI is handled in the main ui_build_layout function
-  // This is a placeholder for any game-specific overlay UI
-}
+Clay_RenderCommandArray ui_build_root(app_controller_t *app_controller) {
+  Clay_SetLayoutDimensions(
+    (Clay_Dimensions){.width = GetScreenWidth(), .height = GetScreenHeight()});
+  Clay_BeginLayout();
 
-void ui_build_tile_info_card(game_t *game, Vector2 mouse_pos) {
-  if (!game->should_show_tile_info || !game->hovered_tile) {
-    return;
-  }
-
-  tile_t *tile = game->hovered_tile;
-  pool_t *pool = pool_map_get_pool_by_tile(game->board->pools, tile);
-  int score = pool ? pool_tile_score(pool) : 0;
-  if (pool) {
-    pool_print(pool);
-  } else {
-    printf("Pool: NULL\n");
-  }
-
-  // Position the info card near the mouse, but keep it on screen
-  float card_width = 200;
-  float card_height = 120;
-  float screen_width = GetScreenWidth();
-  float screen_height = GetScreenHeight();
-
-  // Default position: offset from mouse
-  float card_x = mouse_pos.x + 20;
-  float card_y = mouse_pos.y - card_height / 2;
-
-  // Adjust if card would go off screen
-  if (card_x + card_width > screen_width) {
-    card_x = mouse_pos.x - card_width - 20;
-  }
-  if (card_y < 0) {
-    card_y = 10;
-  } else if (card_y + card_height > screen_height) {
-    card_y = screen_height - card_height - 10;
-  }
-
-  CLAY({
-    .id = UI_ID_TILE_INFO_CARD,
-    .floating = {.attachTo = CLAY_ATTACH_TO_ROOT,
-                 .offset = {.x = (int)card_x, .y = (int)card_y},
-                 .zIndex = 1000,
-                 .pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH},
-    .layout = {.sizing = {.width = CLAY_SIZING_FIT(),
-                          .height = CLAY_SIZING_FIT()},
-               .padding = CLAY_PADDING_ALL(12),
-               .childGap = 8,
-               .layoutDirection = CLAY_TOP_TO_BOTTOM},
-  }) {
-
-    // Tile card
-    CLAY({.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
-                                .height = CLAY_SIZING_GROW()},
-                     .padding = CLAY_PADDING_ALL(12),
-                     .childGap = 8,
-                     .layoutDirection = CLAY_TOP_TO_BOTTOM},
-
-          .backgroundColor = (Clay_Color){40, 40, 40, 240},
-          .cornerRadius = CLAY_CORNER_RADIUS(6),
-          .border = {.color = (Clay_Color){80, 80, 80, 255}, .width = 1}}) {
-      switch (tile->data.type) {
-      case TILE_MAGENTA:
-        CLAY_TEXT(CLAY_STRING("Magenta tile"), &TEXT_CONFIG_MEDIUM);
-        break;
-      case TILE_CYAN:
-        CLAY_TEXT(CLAY_STRING("Cyan tile"), &TEXT_CONFIG_MEDIUM);
-        break;
-      case TILE_YELLOW:
-        CLAY_TEXT(CLAY_STRING("Yellow tile"), &TEXT_CONFIG_MEDIUM);
-        break;
-      case TILE_GREEN:
-        CLAY_TEXT(CLAY_STRING("Green tile"), &TEXT_CONFIG_MEDIUM);
-        break;
-      default:
-        CLAY_TEXT(CLAY_STRING("Unknown tile"), &TEXT_CONFIG_MEDIUM);
-        break;
-      }
-
-      static char value_text[32];
-      snprintf(value_text, sizeof(value_text), "Value: %d", tile->data.value);
-      Clay_String value_string = {.chars = value_text,
-                                  .length = strlen(value_text)};
-      CLAY_TEXT(value_string, &TEXT_CONFIG_MEDIUM);
-
-      static char tile_modifier_text[32];
-      snprintf(tile_modifier_text, sizeof(tile_modifier_text), "Modifier: %.2f",
-               tile_get_modifier(tile));
-      Clay_String tile_modifier = {.chars = tile_modifier_text,
-                                   .length = strlen(tile_modifier_text)};
-      CLAY_TEXT(tile_modifier, &TEXT_CONFIG_MEDIUM);
-
-      static char tile_range_text[32];
-      snprintf(tile_range_text, sizeof(tile_range_text), "Range: %d",
-               tile_get_range(tile));
-      Clay_String tile_range = {.chars = tile_range_text,
-                                .length = strlen(tile_modifier_text)};
-      CLAY_TEXT(tile_range, &TEXT_CONFIG_MEDIUM);
-    }
-
-    // Pool card
-    if (pool) {
-      CLAY({.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
+  CLAY({.id = UI_ID_ROOT,
+        .layout = {
+          .sizing = (Clay_Sizing){.width = CLAY_SIZING_GROW(),
                                   .height = CLAY_SIZING_GROW()},
-                       .padding = CLAY_PADDING_ALL(12),
-                       .childGap = 8,
-                       .layoutDirection = CLAY_TOP_TO_BOTTOM},
-
-            .backgroundColor = (Clay_Color){40, 40, 40, 240},
-            .cornerRadius = CLAY_CORNER_RADIUS(6),
-            .border = {.color = (Clay_Color){80, 80, 80, 255}, .width = 1}}) {
-        CLAY_TEXT(CLAY_STRING("Pool"), &TEXT_CONFIG_MEDIUM);
-
-        static char pool_text[32];
-        snprintf(pool_text, sizeof(pool_text), "Tiles: %u", score);
-        Clay_String pool_score = {.chars = pool_text,
-                                  .length = strlen(pool_text)};
-        CLAY_TEXT(pool_score, &TEXT_CONFIG_MEDIUM);
-
-        static char pool_modifier_text[32];
-        snprintf(pool_modifier_text, sizeof(pool_modifier_text),
-                 "Modifier: %.2f", pool_get_modifier(pool));
-        Clay_String pool_modifier = {.chars = pool_modifier_text,
-                                     .length = strlen(pool_modifier_text)};
-        CLAY_TEXT(pool_modifier, &TEXT_CONFIG_MEDIUM);
-
-        // Geometric properties with user-friendly names
-        static char span_text[32];
-        snprintf(span_text, sizeof(span_text), "Span: %d", pool->diameter);
-        Clay_String span = {.chars = span_text, .length = strlen(span_text)};
-        CLAY_TEXT(span, &TEXT_CONFIG_MEDIUM);
-
-        static char edge_text[32];
-        snprintf(edge_text, sizeof(edge_text), "Edges: %d", pool->edge_count);
-        Clay_String edge = {.chars = edge_text, .length = strlen(edge_text)};
-        CLAY_TEXT(edge, &TEXT_CONFIG_MEDIUM);
-
-        static char compactness_text[32];
-        snprintf(compactness_text, sizeof(compactness_text),
-                 "Compactness: %.2f", pool->compactness_score);
-        Clay_String compactness = {.chars = compactness_text,
-                                   .length = strlen(compactness_text)};
-        CLAY_TEXT(compactness, &TEXT_CONFIG_MEDIUM);
+        }}) {
+    switch (app_controller->current_state) {
+    case APP_STATE_MAIN_MENU:
+      ui_build_main_menu(app_controller);
+      break;
+    case APP_STATE_GAME:
+      if (app_controller->game) {
+        ui_build_game(app_controller);
       }
+      break;
+    case APP_STATE_SETTINGS:
+      ui_build_settings_menu(app_controller);
+      break;
+    default:
+      printf("no app state found");
+      break;
     }
   }
+  Clay_RenderCommandArray commands = Clay_EndLayout();
+  return commands;
 }
-
 // Helper function implementations
 // Removed problematic ui_build_menu_button functions that caused memory
 // corruption

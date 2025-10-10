@@ -47,7 +47,7 @@ void event_router_handle_click(event_router_t *router, ui_event_t evt) {
 
   if (router->last_clicked_element_id.id == UI_BUTTON_ADD_INVENTORY_ITEM.id) {
     handle_add_inventory_button_click(router);
-  } else if (router->last_clicked_element_id.id == UI_ID_GAME.id) {
+  } else if (router->last_clicked_element_id.id == UI_ID_GAME_AREA.id) {
     handle_game_area_click(router);
   }
 }

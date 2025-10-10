@@ -158,7 +158,7 @@ typedef struct {
     size_t num_chunks;          /* Number of active chunks */
     bool system_dirty;          /* Whether the chunk system needs rebuilding */
     coord_pool_entry_t *coord_pool; /* Pool of reusable coordinate arrays */
-    
+
     /* Static hex mesh for instanced rendering */
     float *hex_vertices;        /* Canonical hex vertex data */
     unsigned int *hex_indices;  /* Canonical hex triangle indices */

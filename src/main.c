@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
     // Build UI layout based on current app state with error handling
     Clay_RenderCommandArray renderCommands;
 
-    renderCommands = ui_build_layout(&app_controller);
+    renderCommands = ui_build_root(&app_controller);
 
     // Validate render commands before passing to Clay
     if (renderCommands.length == 0 || !renderCommands.internalArray) {
@@ -135,11 +135,10 @@ int main(int argc, char *argv[]) {
     ClearBackground(BROWN);
 
     // Render game world if in playing state
-    if (app_controller_get_state(&app_controller) == APP_STATE_PLAYING ||
-        app_controller_get_state(&app_controller) == APP_STATE_PAUSED) {
+    if (app_controller_get_state(&app_controller) == APP_STATE_GAME) {
       if (app_controller.game) {
         Clay_BoundingBox game_bounds =
-          Clay_GetElementData(UI_ID_GAME).boundingBox;
+          Clay_GetElementData(UI_ID_GAME_AREA).boundingBox;
 
         camera_set_offset(&app_controller.game->board->camera,
                           game_bounds.width, game_bounds.height);
@@ -154,8 +153,8 @@ int main(int argc, char *argv[]) {
     Clay_Raylib_Render(renderCommands, UI_FONTS);
 
     // Render inventory overlay if in game
-    if (app_controller_get_state(&app_controller) == APP_STATE_PLAYING ||
-        app_controller_get_state(&app_controller) == APP_STATE_PAUSED) {
+    if (app_controller_get_state(&app_controller) == APP_STATE_GAME &&
+        app_controller.game->state == GAME_STATE_VIEW) {
       if (app_controller.game) {
         render_inventory(app_controller.game->inventory);
       }

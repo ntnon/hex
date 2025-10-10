@@ -7,6 +7,15 @@
 #include "rule_manager.h"
 #include "tile/tile.h"
 
+typedef enum {
+    GAME_STATE_VIEW,
+    GAME_STATE_PLACE,
+    GAME_STATE_COLLECT,
+    GAME_STATE_REWARD,
+    GAME_STATE_GAME_OVER,
+    GAME_STATE_COUNT
+} game_state_e;
+
 typedef struct simple_preview_t {
     board_t *source_board;           /* Board being previewed for placement */
     grid_cell_t target_position;     /* Where the center would be placed */
@@ -14,13 +23,12 @@ typedef struct simple_preview_t {
 } simple_preview_t;
 
 
-
 typedef struct game {
     board_t *board;
     inventory_t *inventory;
     int reward_count;
     rule_manager_t *rule_manager;
-
+    game_state_e state;
     // Hover system
     tile_t *hovered_tile;
     grid_cell_t hovered_cell;
@@ -44,5 +52,5 @@ void game_set_preview(game_t *game, board_t *source_board, grid_cell_t target_po
 void game_clear_preview(game_t *game);
 bool game_get_preview_conflicts(const game_t *game, grid_cell_t **out_conflicts, size_t *out_count);
 
-
+const char *game_state_to_string(game_state_e *game);
 #endif // GAME_H

@@ -2,7 +2,7 @@
 #include "controller/input_state.h"
 #include <stdio.h>
 
-void controller_init(game_controller_t *controller, game_t *game) {
+void game_controller_init(game_controller_t *controller, game_t *game) {
   controller->game = game;
   controller->generation = 0;
   controller->is_initialized = true;
@@ -19,7 +19,9 @@ void controller_init(game_controller_t *controller, game_t *game) {
   controller->hovered_element_data = (Clay_ElementData){0};
 }
 
-void controller_update(game_controller_t *controller, input_state_t *input) {
+void game_controller_update(game_controller_t *controller,
+                            input_state_t *input) {
+  printf("Game Controller Update\n");
   if (!controller->is_initialized) {
     printf("Warning: Controller not initialized\n");
     return;
@@ -32,12 +34,14 @@ void controller_update(game_controller_t *controller, input_state_t *input) {
   // controls
   controller->input.hovered_element_id =
     controller->event_router.hovered_element_id;
-
+  printf("controller.input.hovered_element_id.id %s",
+         controller->input.hovered_element_id.stringId.chars);
   // Get current game bounds
-  Clay_BoundingBox game_bounds = Clay_GetElementData(UI_ID_GAME).boundingBox;
+  Clay_BoundingBox game_bounds =
+    Clay_GetElementData(UI_ID_GAME_AREA).boundingBox;
 
   // Set drag bounds to game area if hovering over game area
-  if (controller->input.hovered_element_id.id == UI_ID_GAME.id) {
+  if (controller->input.hovered_element_id.id == UI_ID_GAME_AREA.id) {
     controller->input.drag_bounds = game_bounds;
   }
 
@@ -49,7 +53,7 @@ void controller_update(game_controller_t *controller, input_state_t *input) {
   update_game(controller->game, &controller->input);
 }
 
-void controller_process_events(game_controller_t *controller) {
+void game_controller_process_events(game_controller_t *controller) {
   if (!controller->is_initialized) {
     printf("Warning: Controller not initialized\n");
     return;
@@ -59,17 +63,19 @@ void controller_process_events(game_controller_t *controller) {
   event_router_process_events(&controller->event_router);
 }
 
-void controller_hover(game_controller_t *controller, Clay_ElementId elementId) {
+void game_controller_hover(game_controller_t *controller,
+                           Clay_ElementId elementId) {
   controller->event_router.hovered_element_id = elementId;
 }
 
-void controller_set_hover(game_controller_t *controller, ui_event_t evt) {
+void game_controller_set_hover(game_controller_t *controller, ui_event_t evt) {
   controller->input.hovered_element_id = evt.element_id;
   controller->input.drag_bounds = evt.element_data.boundingBox;
   controller->hovered_element_data = evt.element_data;
 }
 
-void controller_clear_hover(game_controller_t *controller, ui_event_t evt) {
+void game_controller_clear_hover(game_controller_t *controller,
+                                 ui_event_t evt) {
   if (controller->event_router.hovered_element_id.id == evt.element_id.id) {
     controller->event_router.hovered_element_id = UI_ID_NONE;
   }
@@ -78,26 +84,27 @@ void controller_clear_hover(game_controller_t *controller, ui_event_t evt) {
 
 /* Legacy accessors for backward compatibility */
 Clay_ElementId
-controller_get_last_clicked_element(game_controller_t *controller) {
+game_controller_get_last_clicked_element(game_controller_t *controller) {
   return controller->event_router.last_clicked_element_id;
 }
 
-Clay_ElementId controller_get_hovered_element(game_controller_t *controller) {
+Clay_ElementId
+game_controller_get_hovered_element(game_controller_t *controller) {
   return controller->event_router.hovered_element_id;
 }
 
-void controller_add_game_bounds(game_controller_t *controller,
-                                Clay_BoundingBox bounds) {
+void game_controller_add_game_bounds(game_controller_t *controller,
+                                     Clay_BoundingBox bounds) {
   controller->input_handler.game_bounds = bounds;
 }
 
 /* Direct hovered element access for UI events */
 Clay_ElementId
-controller_get_hovered_element_id(game_controller_t *controller) {
+game_controller_get_hovered_element_id(game_controller_t *controller) {
   return controller->event_router.hovered_element_id;
 }
 
-void controller_set_hovered_element_id(game_controller_t *controller,
-                                       Clay_ElementId elementId) {
+void game_controller_set_hovered_element_id(game_controller_t *controller,
+                                            Clay_ElementId elementId) {
   controller->event_router.hovered_element_id = elementId;
 }

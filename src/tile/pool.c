@@ -206,7 +206,6 @@ float pool_calculate_compactness_score(const pool_t *pool) {
 
 void pool_print(const pool_t *pool) {
   if (!pool) {
-    printf("Pool: NULL\n");
     return;
   }
 

@@ -91,25 +91,25 @@ typedef enum {
  */
 typedef union {
     tile_type_t tile_type;
-    
+
     struct {
         tile_type_t neighbor_type;
         uint8_t min_count;
         uint8_t max_count;
         uint8_t range;
     } neighbor_count;
-    
+
     struct {
         uint16_t min_size;
         uint16_t max_size;
     } pool_size;
-    
+
     struct {
         tile_type_t target_type;
         uint16_t min_count;
         uint16_t max_count;
     } board_count;
-    
+
     struct {
         float threshold;
         bool greater_than;
@@ -123,7 +123,7 @@ typedef union {
     float value;                // For ADD_FLAT, MULTIPLY, SET_VALUE
     tile_type_t override_type;  // For OVERRIDE_TYPE
     int8_t range_delta;         // For MODIFY_RANGE
-    
+
     struct {
         float base_value;
         float scale_factor;
@@ -140,24 +140,24 @@ typedef struct rule {
     uint16_t priority;                  // Evaluation priority
     uint8_t scope;                      // rule_scope_t
     uint8_t target;                     // rule_target_t
-    
+
     // Condition
     uint8_t condition_type;             // rule_condition_type_t
     rule_condition_params_t condition_params;
-    
-    // Effect  
+
+    // Effect
     uint8_t effect_type;                // rule_effect_type_t
     rule_effect_params_t effect_params;
-    
+
     // Source and spatial data
     grid_cell_t source_cell;            // Cell that created this rule
     uint8_t affected_range;             // Maximum range this rule affects
-    
+
     // Performance optimization flags
     bool is_active;                     // Can be temporarily disabled
     bool needs_recalc;                  // Marked for recalculation
     bool cache_friendly;                // Result can be cached
-    
+
 } rule_t;
 
 /**
@@ -186,21 +186,21 @@ typedef struct {
 typedef struct {
     rule_t *affecting_rules[MAX_RULES_PER_TILE]; // Rules that affect this tile
     uint8_t rule_count;                          // Number of affecting rules
-    
+
     // Cached calculations
     float cached_production;            // Last calculated production
-    uint8_t cached_range;              // Last calculated range  
+    uint8_t cached_range;              // Last calculated range
     tile_type_t cached_type;           // Last calculated perceived type
-    
+
     // Cache validity
     uint32_t cache_generation;
     bool production_dirty;
     bool range_dirty;
     bool type_dirty;
-    
+
     // Spatial cache for this tile
     spatial_cache_t spatial_cache;
-    
+
 } tile_rule_data_t;
 
 /**
@@ -212,33 +212,33 @@ typedef struct {
     uint32_t rule_count;
     uint32_t rule_capacity;
     uint32_t next_rule_id;
-    
+
     // Spatial indexing for O(1) tile->rules lookup
-    tile_rule_data_t *tile_data;        // tile_data[tile_index] 
+    tile_rule_data_t *tile_data;        // tile_data[tile_index]
     uint32_t tile_data_capacity;
-    
+
     // Fast lookups by scope
     uint32_t *self_rules;               // Rules with SCOPE_SELF
-    uint32_t *neighbor_rules;           // Rules with SCOPE_NEIGHBORS  
+    uint32_t *neighbor_rules;           // Rules with SCOPE_NEIGHBORS
     uint32_t *range_rules;              // Rules with SCOPE_RANGE
     uint32_t *pool_rules;               // Rules with SCOPE_POOL
     uint32_t *global_rules;             // Rules with global scope
     uint16_t self_count, neighbor_count, range_count, pool_count, global_count;
-    
+
     // Rule result cache
     rule_cache_entry_t rule_cache[RULE_CACHE_SIZE];
     uint32_t cache_generation;          // Incremented when cache invalidated
-    
+
     // Batch processing for performance
     uint32_t *dirty_tiles;              // Tiles needing rule recalculation
     uint32_t dirty_tile_count;
     bool batch_mode;                    // Defer updates until batch_process()
-    
+
     // Performance tracking
     uint64_t evaluations_total;
     uint64_t cache_hits;
     uint64_t cache_misses;
-    
+
 } rule_registry_t;
 
 /**
@@ -247,22 +247,22 @@ typedef struct {
 typedef struct {
     const board_t *board;
     const rule_registry_t *registry;
-    
+
     // Current evaluation state
     const tile_t *current_tile;
     grid_cell_t current_cell;
     uint32_t current_tile_index;
-    
+
     // Batch processing arrays (reused to avoid allocations)
     grid_cell_t *temp_cells;            // For range calculations
     tile_t **temp_tiles;                // For neighbor lookups
     float *temp_values;                 // For calculations
     uint32_t temp_capacity;
-    
+
     // Performance optimization
     bool skip_cache;                    // Force recalculation
     uint32_t evaluation_id;             // Unique ID for this evaluation cycle
-    
+
 } rule_context_t;
 
 // --- Core API ---
@@ -330,12 +330,12 @@ void rule_context_cleanup(rule_context_t *context);
  * @param tile Tile to calculate production for
  * @return Effective production value
  */
-float rule_calculate_tile_production(rule_registry_t *registry, rule_context_t *context, 
+float rule_calculate_tile_production(rule_registry_t *registry, rule_context_t *context,
                                     const tile_t *tile);
 
 /**
  * @brief Calculate effective range for a tile (with caching)
- * @param registry Rule registry  
+ * @param registry Rule registry
  * @param context Evaluation context
  * @param tile Tile to calculate range for
  * @return Effective range value
@@ -346,7 +346,7 @@ uint8_t rule_calculate_tile_range(rule_registry_t *registry, rule_context_t *con
 /**
  * @brief Get perceived tile type (with caching)
  * @param registry Rule registry
- * @param context Evaluation context  
+ * @param context Evaluation context
  * @param tile Tile to get perceived type for
  * @param observer_cell Cell observing the tile
  * @return Perceived tile type
@@ -365,7 +365,7 @@ void rule_registry_mark_tile_dirty(rule_registry_t *registry, uint32_t tile_inde
 
 /**
  * @brief Mark area around cell as needing recalculation
- * @param registry Rule registry  
+ * @param registry Rule registry
  * @param cell Center of area that changed
  * @param radius Radius of area to mark dirty
  */
@@ -399,13 +399,13 @@ void rule_registry_set_batch_mode(rule_registry_t *registry, bool enabled);
  * @return Number of tiles found
  */
 uint32_t rule_get_tiles_in_range(rule_registry_t *registry, rule_context_t *context,
-                                grid_cell_t center_cell, tile_type_t tile_type, 
+                                grid_cell_t center_cell, tile_type_t tile_type,
                                 uint8_t range, tile_t **out_tiles, uint32_t max_tiles);
 
 /**
  * @brief Count tiles of specific type within range (cached)
  * @param registry Rule registry
- * @param context Evaluation context  
+ * @param context Evaluation context
  * @param center_cell Center of search
  * @param tile_type Type of tiles to count
  * @param range Search radius
@@ -434,7 +434,7 @@ rule_t rule_create_neighbor_bonus(grid_cell_t source_cell, tile_type_t neighbor_
  * @param range_delta Change in range (+/-)
  * @return Created rule
  */
-rule_t rule_create_range_modifier(grid_cell_t source_cell, tile_type_t target_type, 
+rule_t rule_create_range_modifier(grid_cell_t source_cell, tile_type_t target_type,
                                  int8_t range_delta);
 
 /**
@@ -442,9 +442,9 @@ rule_t rule_create_range_modifier(grid_cell_t source_cell, tile_type_t target_ty
  * @param source_cell Cell creating the rule
  * @param override_type Type to make neighbors appear as
  * @param range Range of override effect
- * @return Created rule  
+ * @return Created rule
  */
-rule_t rule_create_type_override(grid_cell_t source_cell, tile_type_t override_type, 
+rule_t rule_create_type_override(grid_cell_t source_cell, tile_type_t override_type,
                                 uint8_t range);
 
 /**
@@ -463,7 +463,7 @@ rule_t rule_create_pool_scaling(grid_cell_t source_cell, float base_bonus, float
  * @param modifier Flat modifier to apply
  * @return Created rule
  */
-rule_t rule_create_global_modifier(grid_cell_t source_cell, tile_type_t target_type, 
+rule_t rule_create_global_modifier(grid_cell_t source_cell, tile_type_t target_type,
                                   float modifier);
 
 // --- Cache Management ---
@@ -494,7 +494,7 @@ void rule_registry_get_cache_stats(const rule_registry_t *registry, float *out_h
 // --- Debugging and Profiling ---
 
 /**
- * @brief Print detailed rule registry statistics  
+ * @brief Print detailed rule registry statistics
  * @param registry Rule registry
  */
 void rule_registry_print_stats(const rule_registry_t *registry);

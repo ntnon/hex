@@ -30,7 +30,6 @@ void input_handler_process_keyboard(input_handler_t *handler,
 
   // Handle state cycling
   if (input->key_m_pressed) {
-    printf("Cycling game state\n");
     game_state_cycle(handler->game);
   }
 }
@@ -39,7 +38,7 @@ void input_handler_process_camera(input_handler_t *handler,
                                   input_state_t *input) {
   // Only update camera if mouse is within game bounds and hovering game area
   if (point_in_bounds(input->mouse, handler->game_bounds) &&
-      input->hovered_element_id.id == UI_ID_GAME.id) {
+      input->hovered_element_id.id == UI_ID_GAME_AREA.id) {
     update_camera(&handler->game->board->camera, input);
   }
 }

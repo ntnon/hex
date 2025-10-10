@@ -34,7 +34,7 @@ void app_controller_init(app_controller_t *app_controller) {
 
   // Game will be initialized when entering PLAYING state
   app_controller->game = NULL;
-  app_controller_start_game(app_controller);
+  // app_controller_start_game(app_controller);
   printf("App controller initialized in PLAYING state\n");
 }
 
@@ -125,9 +125,9 @@ void app_controller_update(app_controller_t *app_controller,
     }
     break;
 
-  case APP_STATE_PLAYING:
+  case APP_STATE_GAME:
     if (app_controller->game) {
-      controller_update(&app_controller->game_controller, input);
+      game_controller_update(&app_controller->game_controller, input);
     }
     break;
 
@@ -160,9 +160,9 @@ void app_controller_process_events(app_controller_t *app_controller) {
     }
     break;
 
-  case APP_STATE_PLAYING:
+  case APP_STATE_GAME:
     if (app_controller->game) {
-      controller_process_events(&app_controller->game_controller);
+      game_controller_process_events(&app_controller->game_controller);
     }
     break;
 
@@ -190,7 +190,7 @@ void app_controller_set_state(app_controller_t *app_controller,
 
   // Handle state exit logic
   switch (old_state) {
-  case APP_STATE_PLAYING:
+  case APP_STATE_GAME:
     // Don't cleanup game when pausing, only when going to menu
     if (new_state == APP_STATE_MAIN_MENU || new_state == APP_STATE_QUIT) {
       if (app_controller->game) {
@@ -206,11 +206,12 @@ void app_controller_set_state(app_controller_t *app_controller,
 
   // Handle state entry logic
   switch (new_state) {
-  case APP_STATE_PLAYING:
+  case APP_STATE_GAME:
     if (!app_controller->game) {
       app_controller->game = malloc(sizeof(game_t));
       game_init(app_controller->game);
-      controller_init(&app_controller->game_controller, app_controller->game);
+      game_controller_init(&app_controller->game_controller,
+                           app_controller->game);
       printf("Game initialized for PLAYING state\n");
     }
     break;
@@ -246,11 +247,11 @@ bool app_controller_should_quit(app_controller_t *app_controller) {
 
 void app_controller_start_game(app_controller_t *app_controller) {
   printf("Starting new game\n");
-  app_controller_set_state(app_controller, APP_STATE_PLAYING);
+  app_controller_set_state(app_controller, APP_STATE_GAME);
 }
 
 void app_controller_pause_game(app_controller_t *app_controller) {
-  if (app_controller->current_state == APP_STATE_PLAYING) {
+  if (app_controller->current_state == APP_STATE_GAME) {
     printf("Pausing game\n");
     app_controller_set_state(app_controller, APP_STATE_PAUSED);
   }
@@ -259,7 +260,7 @@ void app_controller_pause_game(app_controller_t *app_controller) {
 void app_controller_resume_game(app_controller_t *app_controller) {
   if (app_controller->current_state == APP_STATE_PAUSED) {
     printf("Resuming game\n");
-    app_controller_set_state(app_controller, APP_STATE_PLAYING);
+    app_controller_set_state(app_controller, APP_STATE_GAME);
   }
 }
 
@@ -283,7 +284,7 @@ void app_controller_handle_global_input(app_controller_t *app_controller,
   // ESC key handling based on current state
   if (input->key_escape_pressed) {
     switch (app_controller->current_state) {
-    case APP_STATE_PLAYING:
+    case APP_STATE_GAME:
       app_controller_pause_game(app_controller);
       break;
 

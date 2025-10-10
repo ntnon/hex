@@ -12,12 +12,11 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "reward_system.h"
+#include "game.h"
 
-// Forward declarations
-typedef struct game game_t;
 typedef struct game_controller game_controller_t;
 
-#define MAX_REWARD_OPTIONS 10
 
 /**
  * @brief Reward state transition triggers

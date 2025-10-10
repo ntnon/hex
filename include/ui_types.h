@@ -4,8 +4,9 @@
 #include "third_party/clay.h"
 
 #define UI_ID_NONE CLAY_ID("none")
-#define UI_ID_MAIN CLAY_ID("main")
+#define UI_ID_ROOT CLAY_ID("root")
 #define UI_ID_GAME CLAY_ID("game")
+#define UI_ID_GAME_AREA CLAY_ID("game_area")
 
 #define UI_ID_INVENTORY CLAY_ID("inventory")
 #define UI_ID_INVENTORY_ITEM_BASE_STRING "inventory_item_base_"

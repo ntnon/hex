@@ -40,7 +40,7 @@ void handle_inventory_item_click(Clay_ElementId elementId,
 
   // Handle hover events
   Clay_ElementId current_hovered =
-    controller_get_hovered_element_id(controller);
+    game_controller_get_hovered_element_id(controller);
   if (elementId.id != current_hovered.id && current_hovered.id != 0) {
     ui_push_event((ui_event_t){.type = UI_EVENT_HOVER_END,
                                .element_id = current_hovered,
@@ -52,7 +52,7 @@ void handle_inventory_item_click(Clay_ElementId elementId,
                              .element_data = element_data});
 
   // Update controller immediately
-  controller_set_hovered_element_id(controller, elementId);
+  game_controller_set_hovered_element_id(controller, elementId);
 
   // Handle click events
   if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
@@ -68,7 +68,7 @@ void handle_hover(Clay_ElementId elementId, Clay_PointerData pointerData,
   game_controller_t *controller = (game_controller_t *)userData;
   Clay_ElementData element_data = Clay_GetElementData(elementId);
   Clay_ElementId current_hovered =
-    controller_get_hovered_element_id(controller);
+    game_controller_get_hovered_element_id(controller);
   if (elementId.id != current_hovered.id && current_hovered.id != 0) {
     ui_push_event((ui_event_t){.type = UI_EVENT_HOVER_END,
                                .element_id = current_hovered,
@@ -80,7 +80,7 @@ void handle_hover(Clay_ElementId elementId, Clay_PointerData pointerData,
                              .element_data = element_data});
 
   // Update controller immediately
-  controller_set_hovered_element_id(controller, elementId);
+  game_controller_set_hovered_element_id(controller, elementId);
 
   // Handle click events on release, but only if no dragging occurred
   if (pointerData.state == CLAY_POINTER_DATA_RELEASED_THIS_FRAME) {

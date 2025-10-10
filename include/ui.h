@@ -16,7 +16,7 @@
 
 
 bool is_id_valid(const Clay_ElementId id);
-Clay_RenderCommandArray ui_build_layout(app_controller_t *app_controller);
+void ui_build_game(app_controller_t *app_controller);
 
 
 
@@ -97,4 +97,6 @@ void ui_build_settings_menu(app_controller_t *app_controller);
 void ui_build_pause_menu(app_controller_t *app_controller);
 void ui_build_tile_info_card(game_t *game, Vector2 mouse_pos);
 void ui_build_game_ui(app_controller_t *app_controller);
+
+Clay_RenderCommandArray ui_build_root(app_controller_t *app_controller);
 #endif // UI_H

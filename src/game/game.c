@@ -31,7 +31,7 @@ void game_init(game_t *game) {
   game->preview.target_position = (grid_cell_t){0};
   game->preview.is_active = false;
 
-  game->state = GAME_STATE_PLACE;
+  game->state = GAME_STATE_VIEW;
   // board_randomize(game->board);
   // Use smaller radius for testing to avoid long load times
   printf("Board created with radius: %d\n", game->board->radius);
@@ -166,4 +166,24 @@ bool game_get_preview_conflicts(const game_t *game, grid_cell_t **out_conflicts,
 
 void game_state_cycle(game_t *game) {
   game->state = (game->state + 1) % GAME_STATE_COUNT;
+  printf("State changed to %s\n", game_state_to_string(&game->state));
+}
+
+const char *game_state_to_string(game_state_e *state) {
+  switch (*state) {
+  case GAME_STATE_VIEW:
+    return "Playing";
+  case GAME_STATE_PLACE:
+    return "Paused";
+  case GAME_STATE_GAME_OVER:
+    return "Game Over";
+  case GAME_STATE_REWARD:
+    return "Reward";
+  case GAME_STATE_COLLECT:
+    return "Collect";
+  case GAME_STATE_COUNT:
+    return "Count";
+  default:
+    return "Unknown";
+  }
 }
