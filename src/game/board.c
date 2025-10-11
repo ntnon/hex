@@ -1134,3 +1134,33 @@ bool board_validate_tile_map_bounds(const board_t *board,
 
   return true;
 }
+
+bool board_calculate_bounds(const board_t *board, float *out_min_x,
+                            float *out_min_y, float *out_max_x,
+                            float *out_max_y) {
+  if (!board || !board->tiles || tile_map_size(board->tiles) == 0) {
+    return false;
+  }
+
+  // Get all tile cells from the board
+  size_t tile_count = tile_map_size(board->tiles);
+  grid_cell_t *cells = malloc(tile_count * sizeof(grid_cell_t));
+  if (!cells) {
+    return false;
+  }
+
+  // Collect all tile cells
+  size_t index = 0;
+  tile_map_entry_t *entry, *tmp;
+  HASH_ITER(hh, board->tiles->root, entry, tmp) {
+    cells[index++] = entry->tile->cell;
+  }
+
+  // Use the optimized grid_geometry function
+  bool result = grid_geometry_calculate_bounds(
+    board->geometry_type, &board->layout, cells, tile_count, out_min_x,
+    out_min_y, out_max_x, out_max_y);
+
+  free(cells);
+  return result;
+}

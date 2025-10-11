@@ -320,28 +320,13 @@ void render_board_in_bounds(const board_t *board, Rectangle bounds) {
     return;
   }
 
-  if (coord_count == 0) {
+  // Calculate board bounding box using the optimized function
+  float min_x, min_y, max_x, max_y;
+  if (!grid_geometry_calculate_bounds(board->geometry_type, &board->layout,
+                                      all_coords, coord_count, &min_x, &min_y,
+                                      &max_x, &max_y)) {
     free(all_coords);
     return;
-  }
-
-  // Calculate board bounding box by sampling a few cells
-  float min_x = 1e6f, min_y = 1e6f, max_x = -1e6f, max_y = -1e6f;
-
-  for (size_t i = 0; i < coord_count; i += (coord_count / 10 + 1)) {
-    point_t corners[6];
-    grid_geometry_get_corners(board->geometry_type, &board->layout,
-                              all_coords[i], corners);
-    for (int j = 0; j < 6; j++) {
-      if (corners[j].x < min_x)
-        min_x = corners[j].x;
-      if (corners[j].y < min_y)
-        min_y = corners[j].y;
-      if (corners[j].x > max_x)
-        max_x = corners[j].x;
-      if (corners[j].y > max_y)
-        max_y = corners[j].y;
-    }
   }
 
   free(all_coords);
@@ -381,9 +366,10 @@ void render_inventory(const inventory_t *inventory) {
   if (!inventory) {
     return;
   }
-
   for (size_t i = 0; i < kv_size(inventory->items); i++) {
+
     inventory_item_t *item = &kv_A(inventory->items, i);
+
     if (item && item->board && is_id_valid(item->id)) {
       Clay_BoundingBox boundingBox = Clay_GetElementData(item->id).boundingBox;
       if (boundingBox.width > 0 && boundingBox.height > 0) {

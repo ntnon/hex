@@ -93,6 +93,16 @@ void test_pool_logic(board_t *board);
  */
 bool board_validate_tile_map_bounds(const board_t *board, const tile_map_t *tile_map);
 
-
+/**
+ * @brief Calculates the smallest bounding box that contains all cells in the board.
+ * @param board The board to calculate bounds for.
+ * @param out_min_x Output for minimum x coordinate.
+ * @param out_min_y Output for minimum y coordinate.
+ * @param out_max_x Output for maximum x coordinate.
+ * @param out_max_y Output for maximum y coordinate.
+ * @return True if bounds were calculated successfully, false otherwise.
+ */
+bool board_calculate_bounds(const board_t *board, float *out_min_x, float *out_min_y,
+                            float *out_max_x, float *out_max_y);
 
 #endif /* BOARD_H */

@@ -165,8 +165,7 @@ int main(int argc, char *argv[]) {
     Clay_Raylib_Render(renderCommands, UI_FONTS);
 
     // Render inventory overlay if in game
-    if (app_controller_get_state(&app_controller) == APP_STATE_GAME &&
-        app_controller.game->state == GAME_STATE_VIEW) {
+    if (app_controller_get_state(&app_controller) == APP_STATE_GAME) {
       if (app_controller.game) {
         render_inventory(app_controller.game->inventory);
       }

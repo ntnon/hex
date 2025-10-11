@@ -312,6 +312,23 @@ int grid_geometry_count_external_edges(grid_type_e type, grid_cell_t* cells,
 int grid_geometry_count_internal_edges(grid_type_e type, grid_cell_t* cells,
                                        size_t cell_count);
 
+/**
+ * @brief Calculates the smallest bounding box that contains all cells.
+ * @param type The grid type.
+ * @param layout The layout configuration for coordinate conversion.
+ * @param cells Array of cells to calculate bounds for.
+ * @param cell_count Number of cells.
+ * @param out_min_x Output for minimum x coordinate.
+ * @param out_min_y Output for minimum y coordinate.
+ * @param out_max_x Output for maximum x coordinate.
+ * @param out_max_y Output for maximum y coordinate.
+ * @return True if bounds were calculated successfully, false otherwise.
+ */
+bool grid_geometry_calculate_bounds(grid_type_e type, const layout_t* layout,
+                                    grid_cell_t* cells, size_t cell_count,
+                                    float* out_min_x, float* out_min_y,
+                                    float* out_max_x, float* out_max_y);
+
 // --- Registration of grid implementations ---
 
 /**

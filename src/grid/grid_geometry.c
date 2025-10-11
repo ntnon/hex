@@ -336,3 +336,51 @@ int grid_geometry_count_internal_edges(grid_type_e type, grid_cell_t *cells,
   // Each internal edge is counted twice (once from each side)
   return internal_edges / 2;
 }
+
+bool grid_geometry_calculate_bounds(grid_type_e type, const layout_t *layout,
+                                    grid_cell_t *cells, size_t cell_count,
+                                    float *out_min_x, float *out_min_y,
+                                    float *out_max_x, float *out_max_y) {
+  if (!cells || cell_count == 0 || !layout || !out_min_x || !out_min_y ||
+      !out_max_x || !out_max_y) {
+    return false;
+  }
+
+  const grid_vtable_t *vtable = grid_geometry_get_vtable(type);
+  if (!vtable || !vtable->get_corners) {
+    return false;
+  }
+
+  int corner_count = vtable->corner_count;
+  float min_x = 1e6f, min_y = 1e6f, max_x = -1e6f, max_y = -1e6f;
+
+  // For each cell, get all corners and update bounds
+  for (size_t i = 0; i < cell_count; i++) {
+    point_t *corners = malloc(corner_count * sizeof(point_t));
+    if (!corners) {
+      return false;
+    }
+
+    vtable->get_corners(layout, cells[i], corners);
+
+    for (int j = 0; j < corner_count; j++) {
+      if (corners[j].x < min_x)
+        min_x = corners[j].x;
+      if (corners[j].y < min_y)
+        min_y = corners[j].y;
+      if (corners[j].x > max_x)
+        max_x = corners[j].x;
+      if (corners[j].y > max_y)
+        max_y = corners[j].y;
+    }
+
+    free(corners);
+  }
+
+  *out_min_x = min_x;
+  *out_min_y = min_y;
+  *out_max_x = max_x;
+  *out_max_y = max_y;
+
+  return true;
+}
