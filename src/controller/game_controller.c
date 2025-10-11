@@ -1,5 +1,6 @@
 #include "controller/game_controller.h"
 #include "controller/input_state.h"
+#include "game/game_actions.h"
 #include "ui.h"
 #include <stdio.h>
 
@@ -38,6 +39,34 @@ void game_controller_update(game_controller_t *controller,
           controller->game->inventory->selected_index = i;
         }
         break;
+      }
+    }
+  }
+
+  // Check for game area clicks when in PLACE state
+  if (controller->game && controller->game->state == GAME_STATE_PLACE) {
+    if (ui_was_clicked(UI_ID_GAME_AREA)) {
+      // Place the selected inventory item at the hovered position
+      game_actions_t actions;
+      game_actions_init(&actions, controller->game);
+      if (game_actions_place_tile(&actions, controller->game->hovered_cell)) {
+        // Successfully placed - deselect the inventory item
+        controller->game->inventory->selected_index = -1;
+        controller->game->state = GAME_STATE_VIEW;
+      }
+    }
+  }
+
+  // Check for game area clicks when in PLACE state
+  if (controller->game && controller->game->state == GAME_STATE_PLACE) {
+    if (ui_was_clicked(UI_ID_GAME_AREA)) {
+      // Place the selected inventory item at the hovered position
+      game_actions_t actions;
+      game_actions_init(&actions, controller->game);
+      if (game_actions_place_tile(&actions, controller->game->hovered_cell)) {
+        // Successfully placed - deselect the inventory item
+        controller->game->inventory->selected_index = -1;
+        controller->game->state = GAME_STATE_VIEW;
       }
     }
   }

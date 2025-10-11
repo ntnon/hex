@@ -155,8 +155,8 @@ int main(int argc, char *argv[]) {
         camera_set_offset(&app_controller.game->board->camera,
                           game_bounds.width, game_bounds.height);
         BeginMode2D(app_controller.game->board->camera);
-        render_board(app_controller.game->board);
-        render_game_previews(app_controller.game);
+        render_game(app_controller.game);
+
         EndMode2D();
       }
     }

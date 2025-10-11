@@ -106,8 +106,13 @@ void update_game(game_t *game, const input_state_t *input) {
   Vector2 world_mouse = GetScreenToWorld2D(
     (Vector2){input->mouse.x, input->mouse.y}, game->board->camera);
   // Set the hovered cell
+  game->hovered_cell = grid_geometry_pixel_to_cell(
+    game->board->geometry_type, &game->board->layout,
+    (point_t){world_mouse.x, world_mouse.y});
   game->hovered_tile = get_tile_at_cell(game->board, game->hovered_cell);
+
   update_game_state(game, input);
+
   switch (game->state) {
   case GAME_STATE_REWARD:
     // Handle reward state logic
@@ -124,11 +129,6 @@ void update_game(game_t *game, const input_state_t *input) {
   default:
     break;
   }
-
-  // Convert pixel to cell using pure geometry conversion
-  game->hovered_cell = grid_geometry_pixel_to_cell(
-    game->board->geometry_type, &game->board->layout,
-    (point_t){world_mouse.x, world_mouse.y});
 
   // Check if there's a tile at the hovered cell (only for existing tiles)
   // But first verify the coordinate is within board bounds
@@ -149,11 +149,6 @@ void update_game(game_t *game, const input_state_t *input) {
     (inventory_get_selected_board(game->inventory) != NULL);
   game->should_show_tile_info =
     (game->hovered_tile != NULL && !in_placement_mode);
-
-  // Clear hover state if pixel-to-cell conversion failed
-  game->hovered_tile = NULL;
-  game->hovered_cell = (grid_cell_t){.type = GRID_TYPE_UNKNOWN};
-  game->should_show_tile_info = false;
 
   // Update board preview based on selected inventory item
   update_board_preview(game);

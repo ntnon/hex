@@ -35,6 +35,8 @@ void render_board_in_bounds(const board_t *board, Rectangle bounds);
 void render_inventory(const inventory_t *inventory);
 void renderer_cleanup(void);
 
+void render_game(game_t *game);
+
 /* Rendering mode controls - only mesh instancing supported */
 
 

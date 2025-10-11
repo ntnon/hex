@@ -171,6 +171,16 @@ void render_board_batched(const board_t *board) {
   // render_board_edges(board);
 }
 
+void render_game(game_t *game) {
+  if (!game) {
+    printf("ERROR: game is null\n");
+    return;
+  }
+
+  render_board(game->board);
+  render_game_previews(game);
+}
+
 void render_board(const board_t *board) {
   if (!board) {
     printf("ERROR: board is null\n");
