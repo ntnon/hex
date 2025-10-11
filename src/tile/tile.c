@@ -152,9 +152,9 @@ float tile_get_effective_production(const tile_t *tile) {
 
 // --- Range Calculation Functions ---
 
-void tile_get_coordinates_in_range(const tile_t *tile, const grid_t *grid,
+void tile_get_coordinates_in_range(grid_type_e grid_type, const tile_t *tile,
                                    grid_cell_t **out_cells, size_t *out_count) {
-  if (!tile || !grid || !out_cells || !out_count) {
+  if (!tile || !out_cells || !out_count) {
     if (out_cells)
       *out_cells = NULL;
     if (out_count)
@@ -163,13 +163,14 @@ void tile_get_coordinates_in_range(const tile_t *tile, const grid_t *grid,
   }
 
   // Use the grid's get_cells_in_range function
-  grid_get_cells_in_range(grid, tile->cell, tile->range, out_cells, out_count);
+  grid_geometry_get_cells_in_range(grid_type, tile->cell, tile->range,
+                                   out_cells, out_count);
 }
 
-void tile_get_tiles_in_range(const tile_t *tile, const tile_map_t *tile_map,
-                             const grid_t *grid, tile_t ***out_tiles,
+void tile_get_tiles_in_range(grid_type_e grid_type, const tile_t *tile,
+                             const tile_map_t *tile_map, tile_t ***out_tiles,
                              size_t *out_count) {
-  if (!tile || !tile_map || !grid || !out_tiles || !out_count) {
+  if (!tile || !tile_map || !out_tiles || !out_count) {
     if (out_tiles)
       *out_tiles = NULL;
     if (out_count)
@@ -180,7 +181,8 @@ void tile_get_tiles_in_range(const tile_t *tile, const tile_map_t *tile_map,
   // First get all coordinates in range
   grid_cell_t *coords_in_range = NULL;
   size_t coord_count = 0;
-  tile_get_coordinates_in_range(tile, grid, &coords_in_range, &coord_count);
+  tile_get_coordinates_in_range(grid_type, tile, &coords_in_range,
+                                &coord_count);
 
   if (!coords_in_range || coord_count == 0) {
     *out_tiles = NULL;

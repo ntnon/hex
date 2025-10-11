@@ -69,7 +69,7 @@ bool pool_add_tile_to_pool (pool_t *pool, const tile_t *tile, grid_type_e geomet
 void pool_remove_tile(const pool_t* pool, const tile_t* tile_ptr);
 
 void
-pool_update (pool_t *pool, const grid_t *grid);
+pool_update (pool_t *pool, grid_type_e grid_type);
 /**
  * @brief Checks if a specific tile is a member of this pool.
  * @param pool A constant pointer to the pool to check within.
@@ -80,7 +80,7 @@ bool pool_contains_tile(const pool_t* pool, const tile_t* tile_ptr);
 
 bool pool_accepts_tile_type(const pool_t *pool, tile_type_t type);
 
-void pool_update_edges (const grid_t *grid, pool_t *pool);
+void pool_update_edges (grid_type_e grid_type, const layout_t *layout, pool_t *pool);
 
 void pool_update_center(pool_t *pool);
 
@@ -88,13 +88,13 @@ int compare_pools_by_score(const void *a, const void *b);
 
 int
 pool_find_tile_friendly_neighbor_count (tile_map_t *tile_map,
-                                        const tile_t *tile, const grid_t *grid);
+                                        const tile_t *tile, grid_type_e grid_type);
 
 int
-pool_find_max_tile_neighbors_in_pool (pool_t *pool, const grid_t *grid);
+pool_find_max_tile_neighbors_in_pool (pool_t *pool, grid_type_e grid_type);
 
 void
-pool_calculate_score (pool_t *pool, const grid_t *grid);
+pool_calculate_score (pool_t *pool, grid_type_e grid_type);
 
 void
 pool_add_tile (pool_t *pool, const tile_t *tile_ptr, grid_type_e geometry_type);

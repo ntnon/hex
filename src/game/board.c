@@ -1,5 +1,6 @@
 #include "game/board.h"
 #include "game/camera.h"
+#include "grid/grid_geometry.h"
 #include "third_party/uthash.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,6 +8,16 @@
 #include <time.h>
 
 #define MAX_POOL_CANDIDATES 10
+
+// Temporary hex edge definitions until we have a better solution
+typedef enum {
+  HEX_EDGE_E = 0,  // East
+  HEX_EDGE_NE = 1, // Northeast
+  HEX_EDGE_NW = 2, // Northwest
+  HEX_EDGE_W = 3,  // West
+  HEX_EDGE_SW = 4, // Southwest
+  HEX_EDGE_SE = 5  // Southeast
+} hex_edge_direction_t;
 
 const orientation_t layout_pointy_t = {.f0 = 1.732050808,
                                        .f1 = 0.866025404,
@@ -27,8 +38,7 @@ layout_t default_layout = {
 };
 
 static void create_center_cluster(board_t *board) {
-  grid_cell_t center = grid_get_center_cell(board->geometry_type);
-
+  grid_cell_t center = grid_geometry_get_origin(board->geometry_type);
   // Create three clustered tiles of different colors at center
   tile_data_t magenta_data = tile_data_create(TILE_MAGENTA, 1);
   tile_data_t cyan_data = tile_data_create(TILE_CYAN, 1);
@@ -39,14 +49,16 @@ static void create_center_cluster(board_t *board) {
   add_tile(board, center_tile);
 
   // Get the first two neighbors for the other colors
-  grid_cell_t neighbors[6];
-  board->geometry->get_neighbor_cells(center, neighbors);
+  int neighbor_count = grid_geometry_get_neighbor_count(board->geometry_type);
+  grid_cell_t neighbor_cells[neighbor_count];
+  grid_geometry_get_all_neighbors(board->geometry_type, center_tile->cell,
+                                  neighbor_cells);
 
-  tile_t *neighbor1_tile = tile_create_ptr(neighbors[0], cyan_data);
+  tile_t *neighbor1_tile = tile_create_ptr(neighbor_cells[0], cyan_data);
   neighbor1_tile->pool_id = 0;
   add_tile(board, neighbor1_tile);
 
-  tile_t *neighbor2_tile = tile_create_ptr(neighbors[1], yellow_data);
+  tile_t *neighbor2_tile = tile_create_ptr(neighbor_cells[1], yellow_data);
   neighbor2_tile->pool_id = 0;
   add_tile(board, neighbor2_tile);
 }
@@ -65,13 +77,16 @@ board_t *board_create(grid_type_e grid_type, int radius,
   board->board_type = board_type;
   board->layout = default_layout;
 
-  // Set geometry function pointers based on type
-  switch (grid_type) {
-  case GRID_TYPE_HEXAGON:
-    board->geometry = &hex_grid_vtable;
-    break;
-  // Add other geometry types as they're implemented
-  default:
+  // Initialize grid geometry system if not already done
+  static bool geometry_initialized = false;
+  if (!geometry_initialized) {
+    grid_geometry_init();
+    geometry_initialized = true;
+  }
+
+  // Get geometry vtable for this grid type
+  board->geometry = grid_geometry_get_vtable(grid_type);
+  if (!board->geometry) {
     fprintf(stderr, "Unsupported grid type: %d\n", grid_type);
     free(board);
     return NULL;
@@ -115,14 +130,6 @@ void free_board(board_t *board) {
   free(board);
 }
 
-bool valid_tile(board_t *board, tile_t *tile) {
-  if (!grid_is_valid_cell_with_radius(tile->cell, board->radius)) {
-    fprintf(stderr, "Tile cell not in grid\n");
-    return false;
-  }
-  return true;
-}
-
 // Helper function to get tile from cell
 tile_t *get_tile_at_cell(const board_t *board, grid_cell_t cell) {
   tile_map_entry_t *entry = tile_map_find(board->tiles, cell);
@@ -134,7 +141,8 @@ void get_neighbor_pools(board_t *board, tile_t *tile, pool_t **out_pools,
                         size_t max_neighbors) {
   grid_cell_t neighbor_cells[6];
 
-  board->geometry->get_neighbor_cells(tile->cell, neighbor_cells);
+  grid_geometry_get_all_neighbors(board->geometry_type, tile->cell,
+                                  neighbor_cells);
 
   for (size_t i = 0; i < max_neighbors; ++i) {
     tile_t *neighbor_tile = get_tile_at_cell(board, neighbor_cells[i]);
@@ -154,18 +162,16 @@ void get_neighbor_pools(board_t *board, tile_t *tile, pool_t **out_pools,
 }
 
 void add_tile(board_t *board, tile_t *tile) {
-  if (!valid_tile(board, tile))
-    return;
-
   pool_t *target_pool = NULL;
   uint32_t compatible_pool_ids[MAX_POOL_CANDIDATES];
   size_t num_compatible_pools = 0;
   bool has_same_color_neighbors = false;
 
-  // Check all 6 neighbors for same color tiles and their pools
-  grid_cell_t neighbor_cells[6];
-  int neighbor_count = 6; // Hex geometry always has 6 neighbors
-  board->geometry->get_neighbor_cells(tile->cell, neighbor_cells);
+  // Initialize neighbor count and array
+  int neighbor_count = grid_geometry_get_neighbor_count(board->geometry_type);
+  grid_cell_t neighbor_cells[neighbor_count];
+  grid_geometry_get_all_neighbors(board->geometry_type, tile->cell,
+                                  neighbor_cells);
 
   for (int i = 0; i < neighbor_count; i++) {
     tile_t *neighbor_tile = get_tile_at_cell(board, neighbor_cells[i]);
@@ -270,8 +276,6 @@ void add_tile(board_t *board, tile_t *tile) {
 }
 
 void remove_tile(board_t *board, tile_t *tile) {
-  if (!valid_tile(board, tile))
-    return;
 
   // Get the pool this tile belongs to (only if tile has a pool)
   if (tile->pool_id != 0) {
@@ -330,14 +334,16 @@ void board_randomize(board_t *board, int radius, board_type_e board_type) {
   // radius
   grid_cell_t *all_coords;
   size_t coord_count;
-  if (!grid_get_all_coordinates_in_radius(board->geometry_type, radius,
-                                          &all_coords, &coord_count)) {
+  grid_cell_t origin = grid_geometry_get_origin(board->geometry_type);
+  grid_geometry_get_cells_in_range(board->geometry_type, origin, radius,
+                                   &all_coords, &coord_count);
+  if (!all_coords || coord_count == 0) {
     return;
   }
 
   // Remove center coordinate from the list if we placed a center tile
   if (board_type == BOARD_TYPE_MAIN) {
-    grid_cell_t center = grid_get_center_cell(board->geometry_type);
+    grid_cell_t center = grid_geometry_get_origin(board->geometry_type);
     size_t filtered_count = 0;
     for (size_t i = 0; i < coord_count; i++) {
       bool is_center = (all_coords[i].coord.hex.q == center.coord.hex.q &&
@@ -411,8 +417,10 @@ void board_fill_fast(board_t *board, int radius, board_type_e board_type) {
   clock_t coords_start = clock();
   grid_cell_t *all_coords;
   size_t coord_count;
-  if (!grid_get_all_coordinates_in_radius(board->geometry_type, radius,
-                                          &all_coords, &coord_count)) {
+  grid_cell_t origin = grid_geometry_get_origin(board->geometry_type);
+  grid_geometry_get_cells_in_range(board->geometry_type, origin, radius,
+                                   &all_coords, &coord_count);
+  if (!all_coords || coord_count == 0) {
     return;
   }
   printf("Generated %zu coordinates in %.3fs\n", coord_count,
@@ -432,7 +440,7 @@ void board_fill_fast(board_t *board, int radius, board_type_e board_type) {
 
     // Skip center coordinate if we placed a center tile
     if (board_type == BOARD_TYPE_MAIN) {
-      grid_cell_t center = grid_get_center_cell(board->geometry_type);
+      grid_cell_t center = grid_geometry_get_origin(board->geometry_type);
       bool is_center = (cell.coord.hex.q == center.coord.hex.q &&
                         cell.coord.hex.r == center.coord.hex.r &&
                         cell.coord.hex.s == center.coord.hex.s);
@@ -494,8 +502,10 @@ void board_fill_batch(board_t *board, int radius, board_type_e board_type) {
   clock_t coords_start = clock();
   grid_cell_t *all_coords;
   size_t coord_count;
-  if (!grid_get_all_coordinates_in_radius(board->geometry_type, radius,
-                                          &all_coords, &coord_count)) {
+  grid_cell_t origin = grid_geometry_get_origin(board->geometry_type);
+  grid_geometry_get_cells_in_range(board->geometry_type, origin, radius,
+                                   &all_coords, &coord_count);
+  if (!all_coords || coord_count == 0) {
     return;
   }
   printf("Generated %zu coordinates in %.3fs\n", coord_count,
@@ -515,7 +525,7 @@ void board_fill_batch(board_t *board, int radius, board_type_e board_type) {
 
     // Skip center coordinate if we placed a center tile
     if (board_type == BOARD_TYPE_MAIN) {
-      grid_cell_t center = grid_get_center_cell(board->geometry_type);
+      grid_cell_t center = grid_geometry_get_origin(board->geometry_type);
       bool is_center = (cell.coord.hex.q == center.coord.hex.q &&
                         cell.coord.hex.r == center.coord.hex.r &&
                         cell.coord.hex.s == center.coord.hex.s);
@@ -565,7 +575,7 @@ void add_tiles_batch(board_t *board, tile_t **tiles, size_t count) {
 
   // Add all tiles to the board's tile map without pool assignment
   for (size_t i = 0; i < count; i++) {
-    if (tiles[i] && valid_tile(board, tiles[i])) {
+    if (tiles[i]) {
       tile_map_add_unchecked(board->tiles, tiles[i]);
     }
   }
@@ -598,7 +608,8 @@ void assign_pools_batch(board_t *board) {
     if (tile->pool_id == 0) { // Unassigned
       // First check if this tile has same-color neighbors
       grid_cell_t neighbor_cells[6];
-      board->geometry->get_neighbor_cells(tile->cell, neighbor_cells);
+      grid_geometry_get_all_neighbors(board->geometry_type, tile->cell,
+                                      neighbor_cells);
       int neighbor_count = 6; // Hex geometry always has 6 neighbors
       bool has_same_color_neighbors = false;
 
@@ -658,8 +669,8 @@ void flood_fill_assign_pool(board_t *board, tile_t *start_tile, pool_t *pool) {
     // Check all 6 neighbors
     for (int dir = 0; dir < 6; dir++) {
       grid_cell_t neighbor_cell;
-      board->geometry->get_neighbor_cell(current_tile->cell, dir,
-                                         &neighbor_cell);
+      grid_geometry_get_neighbor(board->geometry_type, current_tile->cell, dir,
+                                 &neighbor_cell);
       tile_t *neighbor = get_tile_at_cell(board, neighbor_cell);
 
       if (neighbor && neighbor->pool_id == 0 &&             // Unassigned
@@ -695,18 +706,22 @@ bool is_merge_valid(board_t *target_board, board_t *source_board,
   }
 
   // Calculate the offset needed to align source_center with target_center
-  grid_cell_t offset = grid_calculate_offset(target_center, source_center);
+  grid_cell_t offset = grid_geometry_calculate_offset(
+    source_board->geometry_type, source_center, target_center);
 
   // Check each tile in the source board directly
 
   tile_map_entry_t *entry, *tmp;
   HASH_ITER(hh, source_board->tiles->root, entry, tmp) {
     grid_cell_t source_cell = entry->tile->cell;
-    grid_cell_t target_position = grid_apply_offset(source_cell, offset);
+    grid_cell_t target_position = grid_geometry_apply_offset(
+      source_board->geometry_type, source_cell, offset);
 
-    // Check if this position is valid in the target grid
-    if (!grid_is_valid_cell_with_radius(target_position,
-                                        target_board->radius)) {
+    // Check if this position is valid in the target board
+    grid_cell_t origin = grid_geometry_get_origin(target_board->geometry_type);
+    int distance = grid_geometry_distance(target_board->geometry_type,
+                                          target_position, origin);
+    if (distance > target_board->radius) {
       return false; // Target position out of bounds
     }
 
@@ -728,7 +743,8 @@ bool merge_boards(board_t *target_board, board_t *source_board,
   }
 
   // Calculate the offset needed to align source_center with target_center
-  grid_cell_t offset = grid_calculate_offset(target_center, source_center);
+  grid_cell_t offset = grid_geometry_calculate_offset(
+    source_board->geometry_type, source_center, target_center);
 
   // Merge each tile from source to target
   int tiles_added = 0;
@@ -737,12 +753,15 @@ bool merge_boards(board_t *target_board, board_t *source_board,
     tile_t *source_tile = entry->tile;
 
     // Apply offset to get the target position
-    grid_cell_t target_position = grid_apply_offset(source_tile->cell, offset);
+    grid_cell_t target_position = grid_geometry_apply_offset(
+      source_board->geometry_type, source_tile->cell, offset);
 
-    // Check if this position is valid in the target grid
-    if (!grid_is_valid_cell_with_radius(target_position,
-                                        target_board->radius)) {
-      continue; // Skip tiles that would fall outside the target grid
+    // Check if this position is valid in the target board
+    grid_cell_t origin = grid_geometry_get_origin(target_board->geometry_type);
+    int distance = grid_geometry_distance(target_board->geometry_type,
+                                          target_position, origin);
+    if (distance > target_board->radius) {
+      continue; // Skip tiles that would fall outside the target board
     }
 
     // Create a new tile at the target position with the same data
@@ -773,7 +792,7 @@ void test_pool_logic(board_t *board) {
 
   // Test 1: Single isolated tile should not create pool
   printf("Test 1: Singleton tile behavior\n");
-  grid_cell_t center = grid_get_center_cell(board->geometry_type);
+  grid_cell_t center = grid_geometry_get_origin(board->geometry_type);
   tile_data_t red_data = tile_data_create(TILE_MAGENTA, 1);
   tile_t *single_tile = tile_create_ptr(center, red_data);
   add_tile(board, single_tile);
@@ -788,7 +807,7 @@ void test_pool_logic(board_t *board) {
   // Test 2: Add adjacent tile should create pool for both
   printf("Test 2: Adjacent tiles create pool\n");
   grid_cell_t neighbor_cells[6];
-  board->geometry->get_neighbor_cells(center, neighbor_cells);
+  grid_geometry_get_all_neighbors(board->geometry_type, center, neighbor_cells);
   tile_t *adjacent_tile = tile_create_ptr(neighbor_cells[0], red_data);
   add_tile(board, adjacent_tile);
 
@@ -839,9 +858,10 @@ void test_pool_logic(board_t *board) {
 
   // Create a truly isolated scenario by manually creating distant positions
   // Pool: tiles at (0,0,0) and (1,0,-1)
-  grid_cell_t center_pos = grid_get_center_cell(board->geometry_type);
+  grid_cell_t center_pos = grid_geometry_get_origin(board->geometry_type);
   grid_cell_t center_neighbors[6];
-  board->geometry->get_neighbor_cells(center_pos, center_neighbors);
+  grid_geometry_get_all_neighbors(board->geometry_type, center_pos,
+                                  center_neighbors);
 
   tile_t *pool_tile1 = tile_create_ptr(center_pos, red_data);
   tile_t *pool_tile2 = tile_create_ptr(center_neighbors[0], red_data);
@@ -851,7 +871,8 @@ void test_pool_logic(board_t *board) {
   // Create singleton at a position that requires multiple steps to reach pool
   // Get neighbors of center_neighbors[3] to ensure real isolation
   grid_cell_t far_neighbors[6];
-  board->geometry->get_neighbor_cells(center_neighbors[3], far_neighbors);
+  grid_geometry_get_all_neighbors(board->geometry_type, center_neighbors[3],
+                                  far_neighbors);
 
   tile_t *singleton_tile = tile_create_ptr(far_neighbors[1], red_data);
   add_tile(board, singleton_tile);
@@ -978,7 +999,7 @@ bool board_rotate(board_t *board, grid_cell_t center, int rotation_steps) {
 // Check if this tile should draw the edge in the given direction
 // Uses deterministic ownership to prevent duplicate edge drawing
 static bool should_draw_edge(const board_t *board, grid_cell_t cell,
-                             hex_edge_direction_t edge_dir) {
+                             int edge_dir) {
   if (!board)
     return false;
 
@@ -988,10 +1009,13 @@ static bool should_draw_edge(const board_t *board, grid_cell_t cell,
     return false; // No tile here, no edges to draw
 
   // Get neighbor cell using geometry-native function
-  grid_cell_t neighbor = hex_get_edge_neighbor(cell, edge_dir);
+  grid_cell_t neighbor;
+  grid_geometry_get_neighbor(board->geometry_type, cell, edge_dir, &neighbor);
 
   // Check if neighbor is out of bounds
-  if (!grid_is_valid_cell_with_radius(neighbor, board->radius)) {
+  grid_cell_t origin = grid_geometry_get_origin(board->geometry_type);
+  int distance = grid_geometry_distance(board->geometry_type, neighbor, origin);
+  if (distance > board->radius) {
     return true; // Always draw boundary edges
   }
 
@@ -1059,12 +1083,13 @@ void board_update_edge_list(board_t *board) {
 
     // Check each hex edge direction using geometry-native approach
     for (int dir = 0; dir < 6; dir++) {
-      hex_edge_direction_t edge_dir = (hex_edge_direction_t)dir;
-      if (should_draw_edge(board, tile->cell, edge_dir)) {
-        // Get edge endpoints directly from geometry
-        point_t start_pt =
-          hex_get_edge_start(&board->layout, tile->cell, edge_dir);
-        point_t end_pt = hex_get_edge_end(&board->layout, tile->cell, edge_dir);
+      if (should_draw_edge(board, tile->cell, dir)) {
+        // Get edge endpoints using corner positions
+        point_t corners[6];
+        grid_geometry_get_corners(board->geometry_type, &board->layout,
+                                  tile->cell, corners);
+        point_t start_pt = corners[dir];
+        point_t end_pt = corners[(dir + 1) % 6];
 
         Vector2 start = {start_pt.x, start_pt.y};
         Vector2 end = {end_pt.x, end_pt.y};
@@ -1099,7 +1124,10 @@ bool board_validate_tile_map_bounds(const board_t *board,
   // Validate each tile is within board's spatial bounds
   tile_map_entry_t *entry, *tmp;
   HASH_ITER(hh, tile_map->root, entry, tmp) {
-    if (!grid_is_valid_cell_with_radius(entry->tile->cell, board->radius)) {
+    grid_cell_t origin = grid_geometry_get_origin(board->geometry_type);
+    int distance =
+      grid_geometry_distance(board->geometry_type, entry->tile->cell, origin);
+    if (distance > board->radius) {
       return false;
     }
   }

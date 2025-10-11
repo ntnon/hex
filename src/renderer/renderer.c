@@ -39,7 +39,8 @@ void render_hex_cell(const board_t *board, grid_cell_t cell,
 
   // Get hex corners using geometry-agnostic functions
   point_t corners[6];
-  grid_get_cell_corners(board->geometry_type, &board->layout, cell, corners);
+  grid_geometry_get_corners(board->geometry_type, &board->layout, cell,
+                            corners);
 
   Vector2 verts[6];
   // Reverse vertex order for counter-clockwise winding
@@ -89,8 +90,8 @@ void render_hex_cells_batched(const board_t *board, grid_cell_t *cells,
 
   for (size_t i = 0; i < count; i++) {
     point_t corners[6];
-    grid_get_cell_corners(board->geometry_type, &board->layout, cells[i],
-                          corners);
+    grid_geometry_get_corners(board->geometry_type, &board->layout, cells[i],
+                              corners);
 
     Vector2 hex_verts[6];
     for (int j = 0; j < 6; j++) {
@@ -224,9 +225,10 @@ void render_game_previews(const game_t *game) {
 
   // Calculate offset from source center to target position
   grid_cell_t source_center =
-    grid_get_center_cell(game->preview.source_board->geometry_type);
-  grid_cell_t offset =
-    grid_calculate_offset(game->preview.target_position, source_center);
+    grid_geometry_get_origin(game->preview.source_board->geometry_type);
+  grid_cell_t offset = grid_geometry_calculate_offset(
+    game->preview.source_board->geometry_type, source_center,
+    game->preview.target_position);
 
   // Get conflicts using the simplified system
   grid_cell_t *conflicts;
@@ -238,11 +240,14 @@ void render_game_previews(const game_t *game) {
   tile_map_entry_t *entry, *tmp;
   HASH_ITER(hh, game->preview.source_board->tiles->root, entry, tmp) {
     tile_t *source_tile = entry->tile;
-    grid_cell_t target_pos = grid_apply_offset(source_tile->cell, offset);
+    grid_cell_t target_pos = grid_geometry_apply_offset(
+      game->preview.source_board->geometry_type, source_tile->cell, offset);
 
     // Check if this position is valid (within board bounds)
-    bool is_valid_cell =
-      grid_is_valid_cell_with_radius(target_pos, game->board->radius);
+    grid_cell_t origin = grid_geometry_get_origin(game->board->geometry_type);
+    int distance =
+      grid_geometry_distance(game->board->geometry_type, target_pos, origin);
+    bool is_valid_cell = (distance <= game->board->radius);
 
     if (is_valid_cell) {
       // Check if this position conflicts
@@ -285,8 +290,10 @@ void render_hex_grid(const board_t *board) {
   // Get all coordinates for this geometry type and radius
   grid_cell_t *all_coords;
   size_t coord_count;
-  if (!grid_get_all_coordinates_in_radius(board->geometry_type, board->radius,
-                                          &all_coords, &coord_count)) {
+  grid_cell_t origin = grid_geometry_get_origin(board->geometry_type);
+  grid_geometry_get_cells_in_range(board->geometry_type, origin, board->radius,
+                                   &all_coords, &coord_count);
+  if (!all_coords || coord_count == 0) {
     return;
   }
 
@@ -306,8 +313,10 @@ void render_board_in_bounds(const board_t *board, Rectangle bounds) {
   // Get all coordinates to calculate board bounding box
   grid_cell_t *all_coords;
   size_t coord_count;
-  if (!grid_get_all_coordinates_in_radius(board->geometry_type, board->radius,
-                                          &all_coords, &coord_count)) {
+  grid_cell_t origin = grid_geometry_get_origin(board->geometry_type);
+  grid_geometry_get_cells_in_range(board->geometry_type, origin, board->radius,
+                                   &all_coords, &coord_count);
+  if (!all_coords || coord_count == 0) {
     return;
   }
 
@@ -321,8 +330,8 @@ void render_board_in_bounds(const board_t *board, Rectangle bounds) {
 
   for (size_t i = 0; i < coord_count; i += (coord_count / 10 + 1)) {
     point_t corners[6];
-    grid_get_cell_corners(board->geometry_type, &board->layout, all_coords[i],
-                          corners);
+    grid_geometry_get_corners(board->geometry_type, &board->layout,
+                              all_coords[i], corners);
     for (int j = 0; j < 6; j++) {
       if (corners[j].x < min_x)
         min_x = corners[j].x;

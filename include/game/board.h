@@ -54,8 +54,6 @@ void remove_tile(board_t *board, tile_t* tile);
 
 void cycle_tile_type(board_t *board, tile_t *tile);
 
-bool valid_tile(board_t *board, tile_t *tile);
-
 /**
  * @brief Grows the board's grid by the specified amount.
  * @param board The board to grow.

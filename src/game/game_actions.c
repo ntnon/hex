@@ -47,7 +47,7 @@ bool game_actions_place_tile(game_actions_t *actions,
          target_position.coord.hex.q, target_position.coord.hex.r);
 
   grid_cell_t source_center =
-    grid_get_center_cell(selected_board->geometry_type);
+    grid_geometry_get_origin(selected_board->geometry_type);
 
   if (merge_boards(actions->game->board, selected_board, target_position,
                    source_center)) {

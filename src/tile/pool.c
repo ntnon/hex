@@ -15,7 +15,7 @@ pool_t *pool_create() {
   // Since we're not given a tile here, we don't set accepted_tile_types.
   // Create the pool's internal tile map container.
   pool->tiles = tile_map_create();
-  pool->edges = edge_map_create();
+  pool->edges = NULL; // Initialize to NULL, edges will be added as needed
   pool->highest_n = 0;
   pool->accepted_tile_type = TILE_UNDEFINED; // Default to empty type.
   pool->modifier = 0.0f;                     // Initialize modifier to 0
@@ -104,8 +104,8 @@ int pool_calculate_diameter(const pool_t *pool, grid_type_e geometry_type) {
   }
 
   // Use geometry-agnostic calculation
-  int diameter = grid_geometry_calculate_cells_diameter(geometry_type, cells,
-                                                        pool->tiles->num_tiles);
+  int diameter = grid_geometry_calculate_diameter(geometry_type, cells,
+                                                  pool->tiles->num_tiles);
   free(cells);
   return diameter;
 }
@@ -130,8 +130,8 @@ grid_cell_t pool_calculate_center(const pool_t *pool,
   }
 
   // Use geometry-agnostic calculation
-  grid_cell_t center = grid_geometry_calculate_cells_center(
-    geometry_type, cells, pool->tiles->num_tiles);
+  grid_cell_t center = grid_geometry_calculate_center(geometry_type, cells,
+                                                      pool->tiles->num_tiles);
   free(cells);
   return center;
 }
@@ -154,8 +154,8 @@ int pool_calculate_edge_count(const pool_t *pool, grid_type_e geometry_type) {
   }
 
   // Use geometry-agnostic calculation
-  int edge_count = grid_geometry_calculate_cells_edge_count(
-    geometry_type, cells, pool->tiles->num_tiles);
+  int edge_count = grid_geometry_count_external_edges(geometry_type, cells,
+                                                      pool->tiles->num_tiles);
   free(cells);
   return edge_count;
 }
@@ -181,8 +181,8 @@ float pool_calculate_compactness_score(const pool_t *pool) {
   }
 
   // Calculate internal edges (shared between tiles in pool)
-  int internal_edges =
-    grid_calculate_internal_edges(GRID_TYPE_HEXAGON, coordinates, actual_tiles);
+  int internal_edges = grid_geometry_count_internal_edges(
+    GRID_TYPE_HEXAGON, coordinates, actual_tiles);
 
   free(coordinates);
 
@@ -303,12 +303,14 @@ int compare_pools_by_score(const void *a, const void *b) {
   return score_b - score_a;
 }
 
-void pool_update_edges(const grid_t *grid, pool_t *pool) {
-  edge_map_entry_t *collected_edges = edge_map_create();
+void pool_update_edges(grid_type_e grid_type, const layout_t *layout,
+                       pool_t *pool) {
+  edge_map_entry_t *collected_edges = NULL; // Initialize to NULL
 
   tile_map_entry_t *tile_entry, *tmp;
   HASH_ITER(hh, pool->tiles->root, tile_entry, tmp) {
-    get_cell_edges(grid, tile_entry->cell, &collected_edges);
+    edge_map_add_cell_edges(grid_type, layout, tile_entry->tile->cell,
+                            &collected_edges);
   }
   edge_map_free(&pool->edges);   // Free old edges if needed
   pool->edges = collected_edges; // Assign the new set
@@ -316,10 +318,10 @@ void pool_update_edges(const grid_t *grid, pool_t *pool) {
 
 int pool_find_tile_friendly_neighbor_count(tile_map_t *tile_map,
                                            const tile_t *tile,
-                                           const grid_t *grid) {
-  int num_neighbors = grid->vtable->num_neighbors;
+                                           grid_type_e grid_type) {
+  int num_neighbors = grid_geometry_get_neighbor_count(grid_type);
   grid_cell_t neighbor_cells[num_neighbors];
-  grid->vtable->get_neighbor_cells(tile->cell, neighbor_cells);
+  grid_geometry_get_all_neighbors(grid_type, tile->cell, neighbor_cells);
 
   int neighbor_count = 0;
   for (int i = 0; i < num_neighbors; ++i) {
@@ -331,7 +333,7 @@ int pool_find_tile_friendly_neighbor_count(tile_map_t *tile_map,
   return neighbor_count;
 }
 
-int pool_find_max_tile_neighbors_in_pool(pool_t *pool, const grid_t *grid) {
+int pool_find_max_tile_neighbors_in_pool(pool_t *pool, grid_type_e grid_type) {
 
   if (!pool->tiles) {
     printf("Pool tiles not found\n");
@@ -341,8 +343,8 @@ int pool_find_max_tile_neighbors_in_pool(pool_t *pool, const grid_t *grid) {
   int best_score = 0;
   tile_map_entry_t *entry, *tmp;
   HASH_ITER(hh, pool->tiles->root, entry, tmp) {
-    int score =
-      pool_find_tile_friendly_neighbor_count(pool->tiles, entry->tile, grid);
+    int score = pool_find_tile_friendly_neighbor_count(pool->tiles, entry->tile,
+                                                       grid_type);
     if (score > best_score) {
       best_score = score;
     }
@@ -351,12 +353,12 @@ int pool_find_max_tile_neighbors_in_pool(pool_t *pool, const grid_t *grid) {
   return best_score;
 }
 
-void pool_calculate_score(pool_t *pool, const grid_t *grid) {
-  pool->highest_n = pool_find_max_tile_neighbors_in_pool(pool, grid);
+void pool_calculate_score(pool_t *pool, grid_type_e grid_type) {
+  pool->highest_n = pool_find_max_tile_neighbors_in_pool(pool, grid_type);
 }
 
-void pool_update(pool_t *pool, const grid_t *grid) {
-  pool_calculate_score(pool, grid);
+void pool_update(pool_t *pool, grid_type_e grid_type) {
+  pool_calculate_score(pool, grid_type);
 }
 
 static void add_tile_value(tile_t *tile, void *user_data) {

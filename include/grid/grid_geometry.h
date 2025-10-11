@@ -3,509 +3,335 @@
 
 #include "grid_types.h"
 #include <stdlib.h>
-
-// Hex-specific edge directions (clockwise from East)
-typedef enum {
-    HEX_EDGE_E = 0,     // East
-    HEX_EDGE_NE = 1,    // Northeast  
-    HEX_EDGE_NW = 2,    // Northwest
-    HEX_EDGE_W = 3,     // West
-    HEX_EDGE_SW = 4,    // Southwest
-    HEX_EDGE_SE = 5     // Southeast
-} hex_edge_direction_t;
-
-// Hex vertex directions (corners, clockwise from Northeast)
-typedef enum {
-    HEX_VERTEX_NE = 0,  // Northeast corner
-    HEX_VERTEX_N = 1,   // North corner
-    HEX_VERTEX_NW = 2,  // Northwest corner  
-    HEX_VERTEX_SW = 3,  // Southwest corner
-    HEX_VERTEX_S = 4,   // South corner
-    HEX_VERTEX_SE = 5   // Southeast corner
-} hex_vertex_direction_t;
+#include <stdbool.h>
 
 // Forward declarations
-typedef struct grid_t grid_t;
+typedef struct grid_vtable_t grid_vtable_t;
 
-// The "v-table" (Virtual Table) of grid operations.
-// This struct holds function pointers to the concrete implementation for a
-// specific grid tessellation (hex, square, etc.).
-typedef struct {
+/**
+ * @brief Virtual function table for grid geometry implementations.
+ *
+ * This table defines the interface that all grid types must implement.
+ * All functions work with pure mathematical concepts - no instance state,
+ * no radius limits, no growth tracking.
+ */
+struct grid_vtable_t {
     /**
-     * @brief Converts a grid cell's coordinates to pixel coordinates.
-     * @param grid The grid system instance.
+     * @brief Converts a grid cell to pixel coordinates.
+     * @param layout The layout configuration for coordinate conversion.
      * @param cell The grid cell to convert.
-     * @return The calculated pixel coordinate as a point_t.
+     * @return The pixel coordinates of the cell center.
      */
-    point_t (*to_pixel)(const grid_t* grid, grid_cell_t cell);
+    point_t (*cell_to_pixel)(const layout_t* layout, grid_cell_t cell);
 
     /**
      * @brief Converts pixel coordinates to the nearest grid cell.
-     * @param grid The grid system instance.
+     * @param layout The layout configuration for coordinate conversion.
      * @param p The pixel point to convert.
-     * @return The closest grid cell.
+     * @return The grid cell at or nearest to the pixel point.
      */
-    grid_cell_t (*from_pixel)(const grid_t* grid, point_t p);
+    grid_cell_t (*pixel_to_cell)(const layout_t* layout, point_t p);
 
     /**
-     * @brief Gets a neighboring cell in a specified direction.
-     * @param cell The starting cell.
-     * @param direction An integer representing the direction (e.g., 0-5 for hex).
-     * @param out_neighbor Pointer to a grid_cell_t to store the result.
+     * @brief Gets a neighbor cell in the specified direction.
+     * @param cell The source cell.
+     * @param direction The direction index (interpretation depends on grid type).
+     * @param out_neighbor Output parameter for the neighbor cell.
      */
-    void (*get_neighbor_cell)(const grid_cell_t cell, int direction, grid_cell_t* out_neighbor);
+    void (*get_neighbor)(grid_cell_t cell, int direction, grid_cell_t* out_neighbor);
 
     /**
-     * @brief Gets the neighboring cells of a given cell.
-     * @param cell The starting cell.
-     * @param neighbors An array to be filled with the neighboring cells.
+     * @brief Gets all neighbor cells.
+     * @param cell The source cell.
+     * @param out_neighbors Array to store neighbors (must be sized for grid type).
      */
-    void (*get_neighbor_cells)(const grid_cell_t cell, grid_cell_t neighbors[]);
+    void (*get_all_neighbors)(grid_cell_t cell, grid_cell_t* out_neighbors);
 
     /**
-     * @brief Gets all coordinates within a specified range of a center coordinate.
-     * @param grid The grid system instance.
-     * @param center The center coordinate.
-     * @param range The maximum distance from center (0 = just center, 1 = center + neighbors, etc).
-     * @param out_cells Pointer to store the allocated array of cells.
-     * @param out_count Pointer to store the number of cells.
-     * @note Caller is responsible for freeing the allocated array.
+     * @brief Gets all cells within a given range from a center cell.
+     * @param center The center cell.
+     * @param range The maximum distance from center.
+     * @param out_cells Output array for cells (caller allocates).
+     * @param out_count Output parameter for number of cells found.
      */
-    void (*get_cells_in_range)(const grid_t* grid, grid_cell_t center, int range,
+    void (*get_cells_in_range)(grid_cell_t center, int range,
                               grid_cell_t** out_cells, size_t* out_count);
 
     /**
-     * @brief Rotates coordinates around a center point.
-     * @param coordinates Array of coordinates to rotate.
-     * @param count Number of coordinates in the array.
-     * @param center The center point to rotate around.
-     * @param rotation_steps Number of 60-degree clockwise rotation steps (0-5).
-     * @param out_rotated Pointer to store the allocated array of rotated coordinates.
-     * @return True if rotation was successful, false otherwise.
-     * @note Caller is responsible for freeing the allocated array.
+     * @brief Rotates a cell around the origin.
+     * @param cell The cell to rotate.
+     * @param rotations Number of rotational steps (interpretation depends on grid type).
+     * @param out_cell Output parameter for the rotated cell.
+     * @return True if rotation is valid for this cell.
      */
-    bool (*rotate_coordinates)(const grid_cell_t* coordinates, size_t count,
-                              grid_cell_t center, int rotation_steps,
-                              grid_cell_t** out_rotated);
+    bool (*rotate_cell)(grid_cell_t cell, int rotations, grid_cell_t* out_cell);
 
     /**
-     * @brief Calculates the grid-specific distance between two cells.
-     * @param a The first cell.
-     * @param b The second cell.
-     * @return The distance in number of cells.
+     * @brief Calculates the distance between two cells.
+     * @param a First cell.
+     * @param b Second cell.
+     * @return The distance in grid steps.
      */
     int (*distance)(grid_cell_t a, grid_cell_t b);
 
     /**
-     * @brief Gets the pixel coordinates of a cell's corners. It is very important that the order of the corners are clockwise. Otherwise, the rendering method will not work correctly.
-     * @param grid The grid system instance.
-     * @param cell The cell whose corners are to be calculated.
-     * @param corners An array to be filled with the corner points. The size
-     *                of the array must be appropriate for the grid type (e.g., 6 for hex).
+     * @brief Gets the corner points of a cell.
+     * @param layout The layout configuration for coordinate conversion.
+     * @param cell The cell.
+     * @param corners Output array for corner points (must be sized for grid type).
      */
-     void (*get_corners)(const grid_t *grid, grid_cell_t cell, point_t corners[]);
-
-    /**
-     * @brief Gets all valid cells in the grid.
-     * @param grid The grid system instance.
-     * @param out_cells Pointer to store the allocated array of cells.
-     * @param out_count Pointer to store the number of cells.
-     * @note Caller is responsible for freeing the allocated array.
-     */
-    void (*get_all_cells)(const grid_t* grid, grid_cell_t** out_cells, size_t* out_count);
-
-    /**
-     * @brief Gets the canonical hex mesh geometry for instanced rendering.
-     * @param grid The grid system instance.
-     * @param vertices Output buffer for vertex data (x, y for each vertex).
-     * @param indices Output buffer for triangle indices.
-     * @param vertex_count Output for number of vertices.
-     * @param index_count Output for number of indices.
-     * @return True if mesh data was successfully generated.
-     */
-    bool (*get_hex_mesh)(const grid_t* grid, float** vertices, unsigned int** indices,
-                        size_t* vertex_count, size_t* index_count);
-
-    grid_t *(*grid_create)(grid_type_e type, layout_t layout, int size);
-
-    int num_neighbors;
-
-    bool (*is_valid_cell)(const grid_t* grid, grid_cell_t check_cell);
-
-    void(*grid_free)(grid_t* grid);
+    void (*get_corners)(const layout_t* layout, grid_cell_t cell, point_t* corners);
 
     /**
      * @brief Calculates offset between two cells.
-     * @param target The target cell position.
-     * @param source The source cell position.
-     * @return The offset needed to transform source to target.
+     * @param from Source cell.
+     * @param to Destination cell.
+     * @return The offset as a grid cell (represents direction and magnitude).
      */
-    grid_cell_t (*calculate_offset)(grid_cell_t target, grid_cell_t source);
+    grid_cell_t (*calculate_offset)(grid_cell_t from, grid_cell_t to);
 
     /**
      * @brief Applies an offset to a cell.
-     * @param cell The original cell.
+     * @param cell The base cell.
      * @param offset The offset to apply.
-     * @return The resulting cell after applying offset.
+     * @return The resulting cell after applying the offset.
      */
     grid_cell_t (*apply_offset)(grid_cell_t cell, grid_cell_t offset);
 
     /**
-     * @brief Gets the center cell of the grid.
-     * @param grid The grid system instance.
-     * @return The center cell of the grid.
+     * @brief Gets the origin cell for this grid type.
+     * @return The cell at coordinates (0,0) or equivalent.
      */
-    grid_cell_t (*get_center_cell)(const grid_t* grid);
+    grid_cell_t (*get_origin)(void);
 
     /**
-     * @brief Gets a pointer to the cell at the specified pixel coordinates.
-     * @param grid The grid system instance.
-     * @param p The pixel coordinates to check.
-     * @return A pointer to the grid cell at the pixel coordinates, or NULL if outside the grid.
+     * @brief Gets all cells in a ring at a specific distance from center.
+     * @param center The center cell.
+     * @param radius The exact distance from center.
+     * @param out_cells Output array for cells (caller allocates).
+     * @param out_count Output parameter for number of cells found.
      */
-    grid_cell_t* (*get_cell_at_pixel)(const grid_t* grid, point_t p);
-    void (*print_cell)(const grid_t *grid, grid_cell_t cell);
+    void (*get_ring)(grid_cell_t center, int radius,
+                    grid_cell_t** out_cells, size_t* out_count);
 
     /**
-     * @brief Calculates the diameter (maximum distance between any two cells) in a collection.
-     * @param cells Array of grid cells.
-     * @param cell_count Number of cells in the array.
-     * @return The diameter of the cell collection, or 0 if less than 2 cells.
+     * @brief Gets cells along a line between two cells.
+     * @param start Starting cell.
+     * @param end Ending cell.
+     * @param out_cells Output array for cells (caller allocates).
+     * @param out_count Output parameter for number of cells found.
      */
-    int (*calculate_cells_diameter)(grid_cell_t *cells, size_t cell_count);
+    void (*get_line)(grid_cell_t start, grid_cell_t end,
+                    grid_cell_t** out_cells, size_t* out_count);
 
     /**
-     * @brief Calculates the geometric center of a collection of cells.
-     * @param cells Array of grid cells.
-     * @param cell_count Number of cells in the array.
-     * @return The geometric center as a grid cell (may not correspond to an actual cell).
+     * @brief Checks if two cells are equal.
+     * @param a First cell.
+     * @param b Second cell.
+     * @return True if cells have the same coordinates.
      */
-    grid_cell_t (*calculate_cells_center)(grid_cell_t *cells, size_t cell_count);
+    bool (*cells_equal)(grid_cell_t a, grid_cell_t b);
 
     /**
-     * @brief Calculates the average distance from cells to a center point.
-     * @param cells Array of grid cells.
-     * @param cell_count Number of cells in the array.
-     * @param center The center point to measure distances from.
-     * @return The average distance from cells to center.
+     * @brief Generates mesh data for rendering a single cell.
+     * @param layout The layout configuration for coordinate conversion.
+     * @param vertices Output array for vertex positions.
+     * @param indices Output array for triangle indices.
+     * @param vertex_count Output parameter for number of vertices.
+     * @param index_count Output parameter for number of indices.
+     * @return True if mesh generation succeeded.
      */
-    float (*calculate_cells_avg_center_distance)(grid_cell_t *cells, size_t cell_count, grid_cell_t center);
+    bool (*get_cell_mesh)(const layout_t* layout, float** vertices,
+                         unsigned int** indices, size_t* vertex_count,
+                         size_t* index_count);
 
     /**
-     * @brief Calculates the number of external edges for a collection of cells.
-     * @param cells Array of grid cells.
-     * @param cell_count Number of cells in the array.
-     * @return The number of external edges (edges that border non-collection cells).
+     * @brief Number of neighbors for this grid type.
      */
-    int (*calculate_cells_edge_count)(grid_cell_t *cells, size_t cell_count);
+    int neighbor_count;
 
+    /**
+     * @brief Number of corners/vertices for cells in this grid type.
+     */
+    int corner_count;
 
-} grid_vtable_t;
-
-// The main grid object. This is the primary struct that game logic will interact with.
-// It abstracts away the underlying grid implementation details.
-struct grid_t {
+    /**
+     * @brief Grid type identifier.
+     */
     grid_type_e type;
-    layout_t layout;
-    const grid_vtable_t* vtable;
-    int radius;  /* Mathematical bounds - for hex: max distance from origin */
-    int initial_radius;  /* Original radius when grid was created */
-    int total_growth;    /* Total amount grid has grown since creation */
 };
 
-
-//
-// --- Public API ---
-//
+// --- Public geometry functions ---
+// These dispatch to the appropriate implementation based on grid_type
 
 /**
- * @brief Factory function to create and initialize a grid of a specific type.
- * @param type The type of grid to create (e.g., GRID_TYPE_HEXAGON).
- * @param layout The layout defining cell size and orientation.
- * @param size A generic size parameter (e.g., radius).
- * @return A pointer to the newly created grid_t object, or NULL on failure.
+ * @brief Gets the vtable for a specific grid type.
+ * @param type The grid type.
+ * @return Pointer to the vtable, or NULL if type is unknown.
  */
-grid_t *grid_create(grid_type_e type, layout_t layout, int size);
+const grid_vtable_t* grid_geometry_get_vtable(grid_type_e type);
 
 /**
- * @brief Frees all memory associated with a grid object.
- * @param grid A pointer to the grid_t object to be freed.
+ * @brief Converts a grid cell to pixel coordinates.
  */
-void grid_free(grid_t* grid);
-
-
-bool is_valid_cell(const grid_t* grid, grid_cell_t check_cell);
-
-
+point_t grid_geometry_cell_to_pixel(grid_type_e type, const layout_t* layout,
+                                    grid_cell_t cell);
 
 /**
- * @brief Gets a pointer to the cell at the specified pixel coordinates.
- * @param grid The grid system instance.
- * @param p The pixel coordinates to check.
- * @return A pointer to the grid cell at the pixel coordinates, or NULL if outside the grid.
+ * @brief Converts pixel coordinates to a grid cell.
  */
-grid_cell_t* grid_get_cell_at_pixel(const grid_t* grid, point_t p);
-
-void print_cell(const grid_t *grid, grid_cell_t cell);
+grid_cell_t grid_geometry_pixel_to_cell(grid_type_e type, const layout_t* layout,
+                                        point_t p);
 
 /**
- * @brief Gets all valid cells in the grid.
- * @param grid The grid system instance.
- * @param out_cells Pointer to store the allocated array of cells.
- * @param out_count Pointer to store the number of cells.
- * @note Caller is responsible for freeing the allocated array.
+ * @brief Gets a neighbor cell in the specified direction.
  */
-void grid_get_all_cells(const grid_t* grid, grid_cell_t** out_cells, size_t* out_count);
+void grid_geometry_get_neighbor(grid_type_e type, grid_cell_t cell,
+                                int direction, grid_cell_t* out_neighbor);
 
 /**
- * @brief Gets all coordinates within a specified range of a center coordinate.
- * @param grid The grid system instance.
- * @param center The center coordinate.
- * @param range The maximum distance from center (0 = just center, 1 = center + neighbors, etc).
- * @param out_cells Pointer to store the allocated array of cells.
- * @param out_count Pointer to store the number of cells.
- * @note Caller is responsible for freeing the allocated array.
+ * @brief Gets all neighbor cells.
  */
-void grid_get_cells_in_range(const grid_t* grid, grid_cell_t center, int range, 
+void grid_geometry_get_all_neighbors(grid_type_e type, grid_cell_t cell,
+                                     grid_cell_t* out_neighbors);
+
+/**
+ * @brief Gets all cells within range from a center cell.
+ */
+void grid_geometry_get_cells_in_range(grid_type_e type, grid_cell_t center,
+                                      int range, grid_cell_t** out_cells,
+                                      size_t* out_count);
+
+/**
+ * @brief Calculates distance between two cells.
+ */
+int grid_geometry_distance(grid_type_e type, grid_cell_t a, grid_cell_t b);
+
+/**
+ * @brief Gets corner points of a cell.
+ */
+void grid_geometry_get_corners(grid_type_e type, const layout_t* layout,
+                               grid_cell_t cell, point_t* corners);
+
+/**
+ * @brief Rotates a cell around the origin.
+ */
+bool grid_geometry_rotate_cell(grid_type_e type, grid_cell_t cell,
+                               int rotations, grid_cell_t* out_cell);
+
+/**
+ * @brief Gets the origin cell for a grid type.
+ */
+grid_cell_t grid_geometry_get_origin(grid_type_e type);
+
+/**
+ * @brief Calculates offset between two cells.
+ */
+grid_cell_t grid_geometry_calculate_offset(grid_type_e type, grid_cell_t from,
+                                           grid_cell_t to);
+
+/**
+ * @brief Applies an offset to a cell.
+ */
+grid_cell_t grid_geometry_apply_offset(grid_type_e type, grid_cell_t cell,
+                                       grid_cell_t offset);
+
+/**
+ * @brief Gets cells in a ring at exact distance from center.
+ */
+void grid_geometry_get_ring(grid_type_e type, grid_cell_t center, int radius,
                             grid_cell_t** out_cells, size_t* out_count);
 
 /**
- * @brief Rotates coordinates around a center point.
- * @param coordinates Array of coordinates to rotate.
- * @param count Number of coordinates in the array.
- * @param center The center point to rotate around.
- * @param rotation_steps Number of 60-degree clockwise rotation steps (0-5).
- * @param out_rotated Pointer to store the allocated array of rotated coordinates.
- * @return True if rotation was successful, false otherwise.
- * @note Caller is responsible for freeing the allocated array.
+ * @brief Gets cells along a line between two cells.
  */
-bool grid_rotate_coordinates(const grid_cell_t* coordinates, size_t count,
-                            grid_cell_t center, int rotation_steps,
-                            grid_cell_t** out_rotated);
+void grid_geometry_get_line(grid_type_e type, grid_cell_t start, grid_cell_t end,
+                            grid_cell_t** out_cells, size_t* out_count);
 
 /**
- * @brief Applies an offset to a grid coordinate.
- * @param cell The original coordinate.
- * @param offset The offset to apply.
- * @return The resulting coordinate after applying offset, or GRID_TYPE_UNKNOWN on error.
+ * @brief Checks if two cells are equal.
  */
-grid_cell_t grid_apply_offset(grid_cell_t cell, grid_cell_t offset);
+bool grid_geometry_cells_equal(grid_type_e type, grid_cell_t a, grid_cell_t b);
 
 /**
- * @brief Validates that a coordinate is within specified bounds (geometry-agnostic).
- * @param cell The coordinate to validate.
- * @param radius Maximum distance from origin (0,0,0).
- * @return True if coordinate is within bounds, false otherwise.
+ * @brief Gets mesh data for rendering a cell.
  */
-bool grid_is_valid_cell_with_radius(grid_cell_t cell, int radius);
+bool grid_geometry_get_cell_mesh(grid_type_e type, const layout_t* layout,
+                                 float** vertices, unsigned int** indices,
+                                 size_t* vertex_count, size_t* index_count);
 
 /**
- * @brief Calculates distance between two coordinates (geometry-agnostic).
- * @param a The first coordinate.
- * @param b The second coordinate.
- * @return Distance in grid units, or -1 on error.
+ * @brief Gets the number of neighbors for a grid type.
  */
-int grid_distance(grid_cell_t a, grid_cell_t b);
+int grid_geometry_get_neighbor_count(grid_type_e type);
 
 /**
- * @brief Creates a center coordinate for the given geometry type.
- * @param geometry_type The type of grid geometry.
- * @return The center coordinate (0,0,0) for the specified geometry.
+ * @brief Gets the number of corners for cells in a grid type.
  */
-grid_cell_t grid_get_center_cell(grid_type_e geometry_type);
+int grid_geometry_get_corner_count(grid_type_e type);
+
+// --- Utility functions for collections of cells ---
 
 /**
- * @brief Calculates offset between two coordinates (geometry-agnostic).
- * @param target The target coordinate.
- * @param source The source coordinate.
- * @return The offset needed to transform source to target.
+ * @brief Calculates the diameter of a cell collection.
+ * @param type The grid type.
+ * @param cells Array of cells.
+ * @param cell_count Number of cells.
+ * @return Maximum distance between any two cells.
  */
-grid_cell_t grid_calculate_offset(grid_cell_t target, grid_cell_t source);
+int grid_geometry_calculate_diameter(grid_type_e type, grid_cell_t* cells,
+                                     size_t cell_count);
 
 /**
- * @brief Gets all coordinates within a specified radius for any geometry type.
- * @param geometry_type The type of grid geometry to use.
- * @param radius The maximum radius from center.
- * @param out_cells Pointer to store the allocated array of coordinates.
- * @param out_count Pointer to store the number of coordinates.
- * @return True if successful, false on memory allocation failure.
- * @note Caller is responsible for freeing the allocated array.
+ * @brief Calculates the geometric center of a cell collection.
+ * @param type The grid type.
+ * @param cells Array of cells.
+ * @param cell_count Number of cells.
+ * @return The center cell (may not be in the collection).
  */
-bool grid_get_all_coordinates_in_radius(grid_type_e geometry_type, int radius, 
-                                       grid_cell_t **out_cells, size_t *out_count);
+grid_cell_t grid_geometry_calculate_center(grid_type_e type, grid_cell_t* cells,
+                                           size_t cell_count);
 
 /**
- * @brief Converts pixel coordinates to grid cell using pure geometry (no bounds checking).
- * @param geometry_type The type of grid geometry to use.
- * @param layout The layout configuration for pixel conversion.
- * @param p The pixel coordinates to convert.
- * @param out_cell Pointer to store the resulting cell.
- * @return True if conversion successful, false on invalid input.
- * @note This function performs pure geometric conversion - bounds checking should be done at board level.
+ * @brief Counts external edges of a cell collection.
+ * @param type The grid type.
+ * @param cells Array of cells.
+ * @param cell_count Number of cells.
+ * @return Number of edges not shared with other cells in the collection.
  */
-bool grid_pixel_to_cell(grid_type_e geometry_type, const layout_t *layout, point_t p, grid_cell_t *out_cell);
+int grid_geometry_count_external_edges(grid_type_e type, grid_cell_t* cells,
+                                       size_t cell_count);
 
 /**
- * @brief Calculates corner points for a cell using geometry and layout (geometry-agnostic).
- * @param geometry_type The type of grid geometry to use.
- * @param layout The layout configuration for positioning and scaling.
- * @param cell The cell to calculate corners for.
- * @param corners Array to store the corner points (must be appropriately sized).
+ * @brief Counts internal edges of a cell collection.
+ * @param type The grid type.
+ * @param cells Array of cells.
+ * @param cell_count Number of cells.
+ * @return Number of edges shared between cells in the collection.
  */
-void grid_get_cell_corners(grid_type_e geometry_type, const layout_t *layout, grid_cell_t cell, point_t corners[]);
+int grid_geometry_count_internal_edges(grid_type_e type, grid_cell_t* cells,
+                                       size_t cell_count);
+
+// --- Registration of grid implementations ---
 
 /**
- * @brief Gets the start point of a specific hex edge.
- * @param layout The layout configuration for positioning and scaling.
- * @param cell The hex cell.
- * @param edge The edge direction.
- * @return The start point of the edge.
+ * @brief Registers the hexagonal grid implementation.
  */
-point_t hex_get_edge_start(const layout_t *layout, grid_cell_t cell, hex_edge_direction_t edge);
+void grid_geometry_register_hex(void);
 
 /**
- * @brief Gets the end point of a specific hex edge.
- * @param layout The layout configuration for positioning and scaling.
- * @param cell The hex cell.
- * @param edge The edge direction.
- * @return The end point of the edge.
+ * @brief Registers the square grid implementation.
  */
-point_t hex_get_edge_end(const layout_t *layout, grid_cell_t cell, hex_edge_direction_t edge);
+void grid_geometry_register_square(void);
 
 /**
- * @brief Gets the position of a specific hex vertex.
- * @param layout The layout configuration for positioning and scaling.
- * @param cell The hex cell.
- * @param vertex The vertex direction.
- * @return The position of the vertex.
+ * @brief Registers the triangular grid implementation.
  */
-point_t hex_get_vertex_position(const layout_t *layout, grid_cell_t cell, hex_vertex_direction_t vertex);
+void grid_geometry_register_triangle(void);
 
 /**
- * @brief Gets the neighboring cell across a specific hex edge.
- * @param cell The starting hex cell.
- * @param edge The edge direction to cross.
- * @return The neighboring cell across that edge.
+ * @brief Initializes all available grid geometry implementations.
  */
-grid_cell_t hex_get_edge_neighbor(grid_cell_t cell, hex_edge_direction_t edge);
+void grid_geometry_init(void);
 
-/**
- * @brief Calculates the diameter (maximum distance between any two cells) in a collection.
- * @param grid The grid system instance.
- * @param cells Array of grid cells.
- * @param cell_count Number of cells in the array.
- * @return The diameter of the cell collection, or 0 if less than 2 cells.
- */
-int grid_calculate_cells_diameter(const grid_t* grid, grid_cell_t *cells, size_t cell_count);
-
-/**
- * @brief Calculates the geometric center of a collection of cells.
- * @param grid The grid system instance.
- * @param cells Array of grid cells.
- * @param cell_count Number of cells in the array.
- * @return The geometric center as a grid cell (may not correspond to an actual cell).
- */
-grid_cell_t grid_calculate_cells_center(const grid_t* grid, grid_cell_t *cells, size_t cell_count);
-
-/**
- * @brief Calculates the average distance from cells to a center point.
- * @param grid The grid system instance.
- * @param cells Array of grid cells.
- * @param cell_count Number of cells in the array.
- * @param center The center point to measure distances from.
- * @return The average distance from cells to center.
- */
-float grid_calculate_cells_avg_center_distance(const grid_t* grid, grid_cell_t *cells, size_t cell_count, grid_cell_t center);
-
-/**
- * @brief Calculates the number of external edges for a collection of cells.
- * @param grid The grid system instance.
- * @param cells Array of grid cells.
- * @param cell_count Number of cells in the array.
- * @return The number of external edges (edges that border non-collection cells).
- */
-int grid_calculate_cells_edge_count(const grid_t* grid, grid_cell_t *cells, size_t cell_count);
-
-// --- Geometry-Agnostic Functions (No Grid Instance Required) ---
-
-/**
- * @brief Calculates the diameter (maximum distance between any two cells) using pure geometry.
- * @param geometry_type The type of grid geometry to use.
- * @param cells Array of grid cells.
- * @param cell_count Number of cells in the array.
- * @return The diameter of the cell collection, or 0 if less than 2 cells.
- */
-int grid_geometry_calculate_cells_diameter(grid_type_e geometry_type, grid_cell_t *cells, size_t cell_count);
-
-/**
- * @brief Calculates the geometric center of a collection of cells using pure geometry.
- * @param geometry_type The type of grid geometry to use.
- * @param cells Array of grid cells.
- * @param cell_count Number of cells in the array.
- * @return The geometric center as a grid cell (may not correspond to an actual cell).
- */
-grid_cell_t grid_geometry_calculate_cells_center(grid_type_e geometry_type, grid_cell_t *cells, size_t cell_count);
-
-/**
- * @brief Calculates the average distance from cells to a center point using pure geometry.
- * @param geometry_type The type of grid geometry to use.
- * @param cells Array of grid cells.
- * @param cell_count Number of cells in the array.
- * @param center The center point to measure distances from.
- * @return The average distance from cells to center.
- */
-float grid_geometry_calculate_cells_avg_center_distance(grid_type_e geometry_type, grid_cell_t *cells, size_t cell_count, grid_cell_t center);
-
-/**
- * @brief Calculates the number of external edges for a collection of cells using pure geometry.
- * @param geometry_type The type of grid geometry to use.
- * @param cells Array of grid cells.
- * @param cell_count Number of cells in the array.
- * @return The number of external edges (edges that border non-collection cells).
- */
-int grid_geometry_calculate_cells_edge_count(grid_type_e geometry_type, grid_cell_t *cells, size_t cell_count);
-
-/**
- * @brief Grows the grid by the specified amount.
- * @param grid The grid system instance.
- * @param growth_amount Amount to increase the grid radius by.
- * @return true if growth was successful, false otherwise.
- */
-bool grid_grow(grid_t* grid, int growth_amount);
-
-/**
- * @brief Gets the total amount the grid has grown since creation.
- * @param grid The grid system instance.
- * @return Total growth amount, or -1 if grid is NULL.
- */
-int grid_get_total_growth(const grid_t* grid);
-
-/**
- * @brief Gets the initial radius when the grid was created.
- * @param grid The grid system instance.
- * @return Initial radius, or -1 if grid is NULL.
- */
-int grid_get_initial_radius(const grid_t* grid);
-
-/**
- * @brief Calculates the number of internal (shared) edges within a collection of tiles.
- * Internal edges are edges that are shared between two tiles in the collection.
- * @param geometry_type The type of grid geometry to use.
- * @param cells Array of grid cells representing actual tiles.
- * @param cell_count Number of cells in the array.
- * @return The number of internal edges (shared between tiles in the collection).
- */
-int grid_calculate_internal_edges(grid_type_e geometry_type, grid_cell_t *cells, size_t cell_count);
-
-
-
-/**
- * @brief The public instance of the v-table for.
- *
- * This struct is initialized in hex_grid.c with pointers to the static
- * implementation functions. The grid_create() factory function uses this
-* instance to construct a grid of type GRID_TYPE_HEXAGON.
- */
-extern const grid_vtable_t hex_grid_vtable;
-
-#endif // grid_geometry_H
+#endif // GRID_GEOMETRY_H

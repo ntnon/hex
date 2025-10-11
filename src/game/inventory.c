@@ -167,6 +167,6 @@ bool inventory_rotate_selected(inventory_t *inv, int rotation_steps) {
   }
 
   grid_cell_t center =
-    grid_get_center_cell(selected_item->board->geometry_type);
+    grid_geometry_get_origin(selected_item->board->geometry_type);
   return board_rotate(selected_item->board, center, rotation_steps);
 }

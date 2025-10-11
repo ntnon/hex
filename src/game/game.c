@@ -106,54 +106,54 @@ void update_game(game_t *game, const input_state_t *input) {
   Vector2 world_mouse = GetScreenToWorld2D(
     (Vector2){input->mouse.x, input->mouse.y}, game->board->camera);
   // Set the hovered cell
- game->hovered_tile = get_tile_at_cell(game->board, game->hovered_cell);
+  game->hovered_tile = get_tile_at_cell(game->board, game->hovered_cell);
   update_game_state(game, input);
-  switch(game->state) {
-    case GAME_STATE_REWARD:
-      // Handle reward state logic
-      break;
-    case GAME_STATE_PLACE:
-      // Handle place state logic
-      break;
-    case GAME_STATE_VIEW:
-      // Handle view state logic
-      break;
-    case GAME_STATE_GAME_OVER:
-      // Handle game over state logic
-      break;
-    default:
-      break;
+  switch (game->state) {
+  case GAME_STATE_REWARD:
+    // Handle reward state logic
+    break;
+  case GAME_STATE_PLACE:
+    // Handle place state logic
+    break;
+  case GAME_STATE_VIEW:
+    // Handle view state logic
+    break;
+  case GAME_STATE_GAME_OVER:
+    // Handle game over state logic
+    break;
+  default:
+    break;
   }
 
   // Convert pixel to cell using pure geometry conversion
-  if (grid_pixel_to_cell(game->board->geometry_type, &game->board->layout,
-                         (point_t){world_mouse.x, world_mouse.y},
-                         &game->hovered_cell)) {
+  game->hovered_cell = grid_geometry_pixel_to_cell(
+    game->board->geometry_type, &game->board->layout,
+    (point_t){world_mouse.x, world_mouse.y});
 
-    // Check if there's a tile at the hovered cell (only for existing tiles)
-    // But first verify the coordinate is within board bounds
-    bool is_within_bounds =
-      grid_is_valid_cell_with_radius(game->hovered_cell, game->board->radius);
+  // Check if there's a tile at the hovered cell (only for existing tiles)
+  // But first verify the coordinate is within board bounds
+  grid_cell_t origin = grid_geometry_get_origin(game->board->geometry_type);
+  int distance = grid_geometry_distance(game->board->geometry_type,
+                                        game->hovered_cell, origin);
+  bool is_within_bounds = (distance <= game->board->radius);
 
-    if (is_within_bounds) {
-      game->hovered_tile = get_tile_at_cell(game->board, game->hovered_cell);
-    } else {
-      game->hovered_tile = NULL;
-    }
-
-    // Determine if we should show tile info card
-    // Show info only if: hovering a tile AND not in placement mode
-    bool in_placement_mode =
-      (inventory_get_selected_board(game->inventory) != NULL);
-    game->should_show_tile_info =
-      (game->hovered_tile != NULL && !in_placement_mode);
-
+  if (is_within_bounds) {
+    game->hovered_tile = get_tile_at_cell(game->board, game->hovered_cell);
   } else {
-    // Clear hover state if pixel-to-cell conversion failed
     game->hovered_tile = NULL;
-    game->hovered_cell = (grid_cell_t){.type = GRID_TYPE_UNKNOWN};
-    game->should_show_tile_info = false;
   }
+
+  // Determine if we should show tile info card
+  // Show info only if: hovering a tile AND not in placement mode
+  bool in_placement_mode =
+    (inventory_get_selected_board(game->inventory) != NULL);
+  game->should_show_tile_info =
+    (game->hovered_tile != NULL && !in_placement_mode);
+
+  // Clear hover state if pixel-to-cell conversion failed
+  game->hovered_tile = NULL;
+  game->hovered_cell = (grid_cell_t){.type = GRID_TYPE_UNKNOWN};
+  game->should_show_tile_info = false;
 
   // Update board preview based on selected inventory item
   update_board_preview(game);
@@ -193,9 +193,10 @@ bool game_get_preview_conflicts(const game_t *game, grid_cell_t **out_conflicts,
 
   // Calculate offset from source center to target position
   grid_cell_t source_center =
-    grid_get_center_cell(game->preview.source_board->geometry_type);
-  grid_cell_t offset =
-    grid_calculate_offset(game->preview.target_position, source_center);
+    grid_geometry_get_origin(game->preview.source_board->geometry_type);
+  grid_cell_t offset = grid_geometry_calculate_offset(
+    game->preview.source_board->geometry_type, source_center,
+    game->preview.target_position);
 
   // Use tile_map functions to find conflicts
   return tile_map_find_merge_conflicts(game->preview.source_board->tiles,

@@ -38,11 +38,11 @@ typedef struct {
     grid_cell_t cell;    // The cell this tile occupies. Crucially, this will be our hash key.
     tile_data_t data;    // Any specific value for the tile (e.g., resource amount).
     uint32_t pool_id;    // ID of the pool this tile belongs to
-    
+
     // 3-bit range (0-7), stored efficiently
     uint8_t range : 3;
     uint8_t _padding : 5;  // Reserved for future use
-    
+
     // Per-tile modifier (can be negative/positive)
     float modifier;
 } tile_t;
@@ -126,8 +126,8 @@ float tile_get_effective_production(const tile_t *tile);
  * @param out_count Pointer to store the number of tiles found.
  * @note Caller is responsible for freeing the allocated array.
  */
-void tile_get_tiles_in_range(const tile_t *tile, const tile_map_t *tile_map, 
-                            const grid_t *grid, tile_t ***out_tiles, size_t *out_count);
+void tile_get_tiles_in_range(grid_type_e grid_type, const tile_t *tile, const tile_map_t *tile_map,
+                             tile_t ***out_tiles, size_t *out_count);
 
 /**
  * @brief Gets all coordinates within range of a tile (regardless of whether tiles exist there).
@@ -137,7 +137,7 @@ void tile_get_tiles_in_range(const tile_t *tile, const tile_map_t *tile_map,
  * @param out_count Pointer to store the number of coordinates.
  * @note Caller is responsible for freeing the allocated array.
  */
-void tile_get_coordinates_in_range(const tile_t *tile, const grid_t *grid,
+void tile_get_coordinates_in_range(grid_type_e grid_type, const tile_t *tile,
                                   grid_cell_t **out_cells, size_t *out_count);
 
 

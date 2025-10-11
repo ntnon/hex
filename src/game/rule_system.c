@@ -78,7 +78,9 @@ static void spatial_cache_build_range(spatial_cache_t *cache,
     // For now, get all cells in range (we'll filter later if needed)
     grid_cell_t *temp_cells;
     size_t temp_count;
-    grid_get_cells_in_range(NULL, center, range, &temp_cells, &temp_count);
+    // Use hex grid type for now - this should be parameterized later
+    grid_geometry_get_cells_in_range(GRID_TYPE_HEXAGON, center, range,
+                                     &temp_cells, &temp_count);
 
     // Copy to cache
     uint16_t copy_count = (temp_count > 6 * range) ? 6 * range : temp_count;
@@ -555,8 +557,8 @@ float rule_calculate_tile_production(rule_registry_t *registry,
     rule_t *rule = &registry->rules[registry->range_rules[i]];
     if (rule->is_active && rule->target == RULE_TARGET_PRODUCTION) {
       // Check if this tile is in range of the rule source
-      if (grid_distance(tile->cell, rule->source_cell) <=
-            rule->affected_range &&
+      if (grid_geometry_distance(GRID_TYPE_HEXAGON, tile->cell,
+                                 rule->source_cell) <= rule->affected_range &&
           rule_check_condition(rule, context)) {
         production = rule_apply_effect(rule, context, production);
       }
@@ -663,8 +665,8 @@ tile_type_t rule_calculate_perceived_type(rule_registry_t *registry,
     rule_t *rule = &registry->rules[registry->range_rules[i]];
     if (rule->is_active && rule->target == RULE_TARGET_TYPE_OVERRIDE) {
       // Check if observer is within range of the rule source
-      if (grid_distance(observer_cell, rule->source_cell) <=
-          rule->affected_range) {
+      if (grid_geometry_distance(GRID_TYPE_HEXAGON, observer_cell,
+                                 rule->source_cell) <= rule->affected_range) {
         perceived_type = rule->effect_params.override_type;
         break; // First override wins
       }
@@ -708,7 +710,8 @@ void rule_registry_mark_area_dirty(rule_registry_t *registry, grid_cell_t cell,
   grid_cell_t *cells_in_area;
   size_t cell_count;
 
-  grid_get_cells_in_range(NULL, cell, radius, &cells_in_area, &cell_count);
+  grid_geometry_get_cells_in_range(GRID_TYPE_HEXAGON, cell, radius,
+                                   &cells_in_area, &cell_count);
 
   for (size_t i = 0; i < cell_count; i++) {
     uint32_t tile_index =
@@ -771,7 +774,8 @@ uint32_t rule_get_tiles_in_range(rule_registry_t *registry,
   // Get cells in range
   grid_cell_t *cells;
   size_t cell_count;
-  grid_get_cells_in_range(NULL, center_cell, range, &cells, &cell_count);
+  grid_geometry_get_cells_in_range(GRID_TYPE_HEXAGON, center_cell, range,
+                                   &cells, &cell_count);
 
   // Check each cell for matching tiles
   for (size_t i = 0; i < cell_count && found_count < max_tiles; i++) {
@@ -816,7 +820,8 @@ uint32_t rule_count_tiles_in_range(rule_registry_t *registry,
   uint32_t count = 0;
   grid_cell_t *cells;
   size_t cell_count;
-  grid_get_cells_in_range(NULL, center_cell, range, &cells, &cell_count);
+  grid_geometry_get_cells_in_range(GRID_TYPE_HEXAGON, center_cell, range,
+                                   &cells, &cell_count);
 
   for (size_t i = 0; i < cell_count; i++) {
     tile_t *tile = tile_map_get_tile(context->board->tiles, cells[i]);

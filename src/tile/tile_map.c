@@ -126,7 +126,9 @@ bool tile_map_apply_offset(tile_map_t *tile_map, grid_cell_t offset) {
     old_coords[count] = entry->tile->cell;
 
     // Calculate new coordinate with offset using grid geometry functions
-    grid_cell_t new_coord = grid_apply_offset(entry->tile->cell, offset);
+    // Assume hex for now - this should be parameterized
+    grid_cell_t new_coord =
+      grid_geometry_apply_offset(GRID_TYPE_HEXAGON, entry->tile->cell, offset);
     if (new_coord.type == GRID_TYPE_UNKNOWN) {
       free(tiles);
       free(old_coords);
@@ -141,7 +143,8 @@ bool tile_map_apply_offset(tile_map_t *tile_map, grid_cell_t offset) {
   // Check for conflicts between new positions
   for (int i = 0; i < count; i++) {
     for (int j = i + 1; j < count; j++) {
-      if (grid_cells_equal(&new_coords[i], &new_coords[j])) {
+      if (grid_geometry_cells_equal(GRID_TYPE_HEXAGON, new_coords[i],
+                                    new_coords[j])) {
         free(tiles);
         free(old_coords);
         free(new_coords);
@@ -195,19 +198,38 @@ bool tile_map_rotate(tile_map_t *tile_map, grid_cell_t center,
     count++;
   }
 
-  // Use geometric rotation
-  grid_cell_t *rotated_coords;
-  if (!grid_rotate_coordinates(current_coords, count, center, rotation_steps,
-                               &rotated_coords)) {
+  // Rotate each coordinate individually
+  grid_cell_t *rotated_coords = malloc(count * sizeof(grid_cell_t));
+  if (!rotated_coords) {
     free(current_coords);
     free(tiles);
     return false;
   }
 
+  // Rotate each tile's position around the center
+  for (int i = 0; i < count; i++) {
+    // Calculate offset from center
+    grid_cell_t offset = grid_geometry_calculate_offset(
+      GRID_TYPE_HEXAGON, center, current_coords[i]);
+    // Rotate the offset
+    grid_cell_t rotated_offset;
+    if (!grid_geometry_rotate_cell(GRID_TYPE_HEXAGON, offset, rotation_steps,
+                                   &rotated_offset)) {
+      free(current_coords);
+      free(tiles);
+      free(rotated_coords);
+      return false;
+    }
+    // Apply rotated offset back to center
+    rotated_coords[i] =
+      grid_geometry_apply_offset(GRID_TYPE_HEXAGON, center, rotated_offset);
+  }
+
   // Check for conflicts between rotated positions
   for (int i = 0; i < count; i++) {
     for (int j = i + 1; j < count; j++) {
-      if (grid_cells_equal(&rotated_coords[i], &rotated_coords[j])) {
+      if (grid_geometry_cells_equal(GRID_TYPE_HEXAGON, rotated_coords[i],
+                                    rotated_coords[j])) {
         free(current_coords);
         free(tiles);
         free(rotated_coords);
@@ -385,7 +407,8 @@ bool tile_map_find_merge_conflicts(const tile_map_t *source,
   // Check each source tile position after applying offset
   tile_map_entry_t *entry, *tmp;
   HASH_ITER(hh, source->root, entry, tmp) {
-    grid_cell_t target_pos = grid_apply_offset(entry->tile->cell, offset);
+    grid_cell_t target_pos =
+      grid_geometry_apply_offset(GRID_TYPE_HEXAGON, entry->tile->cell, offset);
 
     // Check if position is occupied in destination
     if (tile_map_contains(dest, target_pos)) {
@@ -427,7 +450,8 @@ bool tile_map_can_merge_with_offset(const tile_map_t *source,
   // Check each source tile position after applying offset
   tile_map_entry_t *entry, *tmp;
   HASH_ITER(hh, source->root, entry, tmp) {
-    grid_cell_t target_pos = grid_apply_offset(entry->tile->cell, offset);
+    grid_cell_t target_pos =
+      grid_geometry_apply_offset(GRID_TYPE_HEXAGON, entry->tile->cell, offset);
 
     // Check if position is occupied in destination
     if (tile_map_contains(dest, target_pos)) {
