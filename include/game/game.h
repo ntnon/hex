@@ -29,6 +29,8 @@ typedef struct game {
     int reward_count;
     rule_manager_t *rule_manager;
     game_state_e state;
+    bool round_count;
+    bool is_paused;
     // Hover system
     tile_t *hovered_tile;
     grid_cell_t hovered_cell;

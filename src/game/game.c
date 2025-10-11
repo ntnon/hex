@@ -8,6 +8,8 @@ void game_init(game_t *game) {
   game->board = board_create(GRID_TYPE_HEXAGON, 50, BOARD_TYPE_MAIN);
   game->inventory = inventory_create();
   game->reward_count = 3;
+  game->is_paused = false;
+  game->round_count = 0;
 
   // Initialize rule manager
   game->rule_manager = malloc(sizeof(rule_manager_t));
@@ -81,10 +83,47 @@ void update_board_preview(game_t *game) {
   }
 }
 
+void update_game_state(game_t *game, const input_state_t *input) {
+  if (!game || !game->board || !input)
+    return;
+
+  // check if the user should get a reward
+  if (game->round_count % 4 == 0) {
+    game->state = GAME_STATE_REWARD;
+    return;
+  }
+
+  if (game->inventory->selected_index > 0) {
+    game->state = GAME_STATE_PLACE;
+    return;
+  }
+
+  game->state = GAME_STATE_VIEW;
+}
+
 void update_game(game_t *game, const input_state_t *input) {
   // Transform mouse coordinates from screen space to world space
   Vector2 world_mouse = GetScreenToWorld2D(
     (Vector2){input->mouse.x, input->mouse.y}, game->board->camera);
+  // Set the hovered cell
+ game->hovered_tile = get_tile_at_cell(game->board, game->hovered_cell);
+  update_game_state(game, input);
+  switch(game->state) {
+    case GAME_STATE_REWARD:
+      // Handle reward state logic
+      break;
+    case GAME_STATE_PLACE:
+      // Handle place state logic
+      break;
+    case GAME_STATE_VIEW:
+      // Handle view state logic
+      break;
+    case GAME_STATE_GAME_OVER:
+      // Handle game over state logic
+      break;
+    default:
+      break;
+  }
 
   // Convert pixel to cell using pure geometry conversion
   if (grid_pixel_to_cell(game->board->geometry_type, &game->board->layout,
