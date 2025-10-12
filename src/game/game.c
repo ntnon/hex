@@ -3,6 +3,7 @@
 #include "grid/grid_geometry.h"
 #include "raylib.h"
 #include "stdio.h"
+#include "ui.h"
 
 void game_init(game_t *game) {
   game->board = board_create(GRID_TYPE_HEXAGON, 50, BOARD_TYPE_MAIN);
@@ -83,24 +84,6 @@ void update_board_preview(game_t *game) {
   }
 }
 
-void update_game_state(game_t *game, const input_state_t *input) {
-  if (!game || !game->board || !input)
-    return;
-
-  // check if the user should get a reward
-  if (game->round_count % 4 == 0) {
-    game->state = GAME_STATE_REWARD;
-    return;
-  }
-
-  if (game->inventory->selected_index > 0) {
-    game->state = GAME_STATE_PLACE;
-    return;
-  }
-
-  game->state = GAME_STATE_VIEW;
-}
-
 void update_game(game_t *game, const input_state_t *input) {
   // Transform mouse coordinates from screen space to world space
   Vector2 world_mouse = GetScreenToWorld2D(
@@ -110,26 +93,6 @@ void update_game(game_t *game, const input_state_t *input) {
     game->board->geometry_type, &game->board->layout,
     (point_t){world_mouse.x, world_mouse.y});
   game->hovered_tile = get_tile_at_cell(game->board, game->hovered_cell);
-
-  update_game_state(game, input);
-
-  switch (game->state) {
-  case GAME_STATE_REWARD:
-    // Handle reward state logic
-    break;
-  case GAME_STATE_PLACE:
-    // Handle place state logic
-    break;
-  case GAME_STATE_VIEW:
-    // Handle view state logic
-    break;
-  case GAME_STATE_GAME_OVER:
-    // Handle game over state logic
-    break;
-  default:
-    break;
-  }
-
   // Check if there's a tile at the hovered cell (only for existing tiles)
   // But first verify the coordinate is within board bounds
   grid_cell_t origin = grid_geometry_get_origin(game->board->geometry_type);
@@ -149,7 +112,9 @@ void update_game(game_t *game, const input_state_t *input) {
     (inventory_get_selected_board(game->inventory) != NULL);
   game->should_show_tile_info =
     (game->hovered_tile != NULL && !in_placement_mode);
-
+  if (in_placement_mode && ui_was_clicked(UI_ID_GAME_AREA)) {
+    printf("in placement mode: %d", in_placement_mode);
+  }
   // Update board preview based on selected inventory item
   update_board_preview(game);
 
@@ -209,7 +174,7 @@ const char *game_state_to_string(game_state_e *state) {
   case GAME_STATE_VIEW:
     return "Playing";
   case GAME_STATE_PLACE:
-    return "Paused";
+    return "Place";
   case GAME_STATE_GAME_OVER:
     return "Game Over";
   case GAME_STATE_REWARD:

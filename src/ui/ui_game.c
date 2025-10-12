@@ -36,7 +36,7 @@ static void ui_build_add_inventory_button(game_controller_t *controller) {
         .layout = {.sizing = (Clay_Sizing){.width = CLAY_SIZING_FIT(),
                                            .height = CLAY_SIZING_FIT()}}}) {
     CLAY_TEXT(CLAY_STRING("Add to inventory"), &TEXT_CONFIG_MEDIUM);
-    Clay_OnHover(ui_hover_handler, (intptr_t)controller);
+    Clay_OnHover(ui_hover_handler, 0);
   }
 }
 
@@ -68,6 +68,7 @@ static void ui_build_inventory_area(game_controller_t *controller){
                    .sizing = (Clay_Sizing){.width = CLAY_SIZING_GROW(4, 200),
                                            .height = CLAY_SIZING_GROW()}}}){
     Clay_OnHover(ui_hover_handler, 0);
+ui_build_add_inventory_button(controller);
 
 int inventory_size = inventory_get_size(controller->game->inventory);
 int total_height = GetScreenHeight();

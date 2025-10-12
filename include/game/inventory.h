@@ -44,6 +44,7 @@ char* inventory_get_element_id(const inventory_t *inv, int index);
 void inventory_set_index(inventory_t* inv, int index);
 inventory_item_t* inventory_get_selected(inventory_t* inv);
 board_t* inventory_get_selected_board(inventory_t* inv);
+int inventory_get_index(inventory_t *inv);
 
 // --- Utility Functions ---
 

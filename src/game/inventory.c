@@ -63,6 +63,8 @@ void inventory_set_index(inventory_t *inv, int index) {
   }
 }
 
+int inventory_get_index(inventory_t *inv) { return inv->selected_index; }
+
 void inventory_add_item(inventory_t *inv, inventory_item_t item) {
   kv_push(inventory_item_t, inv->items, item);
 }

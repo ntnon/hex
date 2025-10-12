@@ -35,8 +35,11 @@ bool ui_was_clicked(Clay_ElementId elementId) {
 
 // Clear click state (call this at end of frame)
 void ui_clear_click(void) {
-  g_click_occurred = false;
-  g_last_clicked_element = (Clay_ElementId){0};
+  if (g_click_occurred) {
+    g_click_occurred = false;
+    g_last_clicked_element = (Clay_ElementId){0};
+    printf("click unclicked\n");
+  }
 }
 
 // Special handler for menu buttons that need immediate visual feedback
