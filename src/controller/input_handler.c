@@ -28,10 +28,7 @@ void input_handler_process_keyboard(input_handler_t *handler,
     }
   }
 
-  // Handle state cycling
-  if (input->key_m_pressed) {
-    game_state_cycle(handler->game);
-  }
+  // State cycling is now handled by game_controller
 }
 
 void input_handler_process_camera(input_handler_t *handler,

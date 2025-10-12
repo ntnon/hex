@@ -7,14 +7,6 @@
 #include "rule_manager.h"
 #include "tile/tile.h"
 
-typedef enum {
-    GAME_STATE_VIEW,
-    GAME_STATE_PLACE,
-    GAME_STATE_COLLECT,
-    GAME_STATE_REWARD,
-    GAME_STATE_GAME_OVER,
-    GAME_STATE_COUNT
-} game_state_e;
 
 typedef struct simple_preview_t {
     board_t *source_board;           /* Board being previewed for placement */
@@ -28,7 +20,6 @@ typedef struct game {
     inventory_t *inventory;
     int reward_count;
     rule_manager_t *rule_manager;
-    game_state_e state;
     bool round_count;
     bool is_paused;
     // Hover system
@@ -47,12 +38,16 @@ void free_game(game_t *game);
 void update_game(game_t *game, const input_state_t *input);
 void update_board_preview(game_t *game);
 void game_render(game_t *game, const input_state_t *input);
-void game_state_cycle(game_t *game);
+
+/* Game-level business logic */
+bool game_try_place_tile(game_t *game, grid_cell_t target_position);
+bool game_try_select_inventory_item(game_t *game, int index);
+void game_add_random_inventory_item(game_t *game);
+void game_exit_placement_mode(game_t *game);
 
 // Simplified preview system functions
 void game_set_preview(game_t *game, board_t *source_board, grid_cell_t target_position);
 void game_clear_preview(game_t *game);
 bool game_get_preview_conflicts(const game_t *game, grid_cell_t **out_conflicts, size_t *out_count);
 
-const char *game_state_to_string(game_state_e *game);
 #endif // GAME_H

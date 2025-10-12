@@ -22,14 +22,14 @@ inventory_t *inventory_create() {
   return inventory;
 }
 
-inventory_item_t inventory_create_item(inventory_t *inv) {
+inventory_item_t inventory_create_item(inventory_t *inv, int radius) {
   int next_id = inv->next_element_id++;
 
   // Create a small board for the inventory item (skip randomization to reduce
   // memory pressure)
   board_t *item_board =
-    board_create(GRID_TYPE_HEXAGON, 1, BOARD_TYPE_INVENTORY);
-  board_fill(item_board, 0, BOARD_TYPE_INVENTORY);
+    board_create(GRID_TYPE_HEXAGON, radius, BOARD_TYPE_INVENTORY);
+  board_fill(item_board, radius, BOARD_TYPE_INVENTORY);
   return (inventory_item_t){
     .quantity = 1,
     .id = CLAY_IDI(UI_ID_INVENTORY_ITEM_BASE_STRING, next_id),
@@ -76,7 +76,7 @@ void inventory_fill(inventory_t *inv, int size) {
   }
 
   for (int i = 0; i < size; i++) {
-    inventory_add_item(inv, inventory_create_item(inv));
+    inventory_add_item(inv, inventory_create_item(inv, i));
   }
 
   printf("inventory filled, %d items\n", size);
@@ -127,7 +127,7 @@ void inventory_add_random_item(inventory_t *inv) {
   if (!inv) {
     return;
   }
-  inventory_add_item(inv, inventory_create_item(inv));
+  inventory_add_item(inv, inventory_create_item(inv, rand() % 3));
 }
 
 inventory_item_t *inventory_get_selected(inventory_t *inv) {

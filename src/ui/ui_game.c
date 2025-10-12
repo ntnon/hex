@@ -273,7 +273,7 @@ void ui_build_game(app_controller_t *app_controller,
                               (Vector2){input->mouse.x, input->mouse.y});
     } else { // PREVENTS CONDITIONAL RENDERING
 
-      switch (game_controller->game->state) {
+      switch (game_controller->state) {
       case GAME_STATE_VIEW:
         ui_build_game_area(game_controller);
         ui_build_inventory_area(game_controller);

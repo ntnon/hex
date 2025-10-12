@@ -115,9 +115,7 @@ void app_controller_process_events(app_controller_t *app_controller) {
     break;
 
   case APP_STATE_GAME:
-    if (app_controller->game) {
-      game_controller_process_events(&app_controller->game_controller);
-    }
+    // Event processing now happens in game_controller_update
     break;
 
   case APP_STATE_PAUSED:

@@ -1,9 +1,7 @@
 #include "controller/game_controller.h"
 #include "controller/input_state.h"
-#include "game/board.h"
 #include "game/inventory.h"
 #include "ui.h"
-#include <MacTypes.h>
 #include <stdio.h>
 
 void game_controller_init(game_controller_t *controller, game_t *game) {
@@ -13,6 +11,9 @@ void game_controller_init(game_controller_t *controller, game_t *game) {
 
   // Initialize input handler for camera/keyboard
   input_handler_init(&controller->input_handler, game);
+
+  // Initialize state management
+  controller->state = GAME_STATE_VIEW;
 
   // Initialize state flags
   controller->inventory_open = true; // Inventory visible by default
@@ -30,49 +31,6 @@ void game_controller_init(game_controller_t *controller, game_t *game) {
   printf("Game controller initialized as orchestrator\n");
 }
 
-bool inventory_controller_update(game_controller_t *controller,
-                                 const input_state_t *input) {
-  if (!controller->game || !controller->game->inventory) {
-    return false;
-  }
-
-  // Check if Add Inventory button was clicked
-  if (ui_was_clicked(UI_BUTTON_ADD_INVENTORY_ITEM)) {
-    // Call inventory's add function directly
-    inventory_add_random_item(controller->game->inventory);
-    printf("Added random item to inventory\n");
-    return true;
-  }
-
-  // Check if any inventory item was clicked
-  int inventory_size = inventory_get_size(controller->game->inventory);
-  for (int i = 0; i < inventory_size; i++) {
-    inventory_item_t item = inventory_get_item(controller->game->inventory, i);
-
-    if (ui_was_clicked(item.id)) {
-      // Clicked on inventory item
-      int currently_selected = controller->game->inventory->selected_index;
-
-      if (i == currently_selected) {
-        // Clicking selected item - deselect it
-        inventory_set_index(controller->game->inventory, -1);
-        game_controller_exit_placement_mode(controller);
-        printf("Deselected inventory item %d\n", i);
-      } else {
-        // Select new item
-        inventory_set_index(controller->game->inventory, i);
-        controller->selected_inventory_index = i;
-        game_controller_enter_placement_mode(controller);
-        printf("Selected inventory item %d for placement\n", i);
-      }
-
-      return true; // Consumed the click
-    }
-  }
-
-  return false; // No inventory interaction
-}
-
 void game_controller_update(game_controller_t *controller,
                             const input_state_t *input) {
   if (!controller->is_initialized) {
@@ -84,20 +42,23 @@ void game_controller_update(game_controller_t *controller,
   Clay_BoundingBox game_bounds =
     Clay_GetElementData(UI_ID_GAME_AREA).boundingBox;
 
-  // if the inventory is hovered, process only inventory interactions
-  if (ui_get_hovered_element().id == UI_ID_INVENTORY_AREA.id) {
-    // Handle inventory interactions
-    if (inventory_controller_update(controller, input)) {
+  // Process input in priority order (UI elements first, then game world)
+
+  // 1. Check inventory interactions (if open)
+  if (controller->inventory_open) {
+    if (game_controller_handle_inventory_input(controller, input)) {
       return; // Input consumed by inventory
     }
   }
 
-  if (inventory_get_index(controller->game->inventory)) {
+  // 2. Check placement mode interactions
+  if (controller->placing_tile) {
     if (game_controller_handle_placement_input(controller, input)) {
       return; // Input consumed by placement
     }
-  };
+  }
 
+  // 3. Process keyboard shortcuts (these don't consume mouse input)
   if (input->key_r_pressed && controller->placing_tile) {
     // Rotate held piece
     if (inventory_rotate_selected(controller->game->inventory, 1)) {
@@ -107,7 +68,7 @@ void game_controller_update(game_controller_t *controller,
 
   if (input->key_m_pressed) {
     // Cycle game state for debugging
-    game_state_cycle(controller->game);
+    game_controller_cycle_state(controller);
   }
 
   // 4. Default camera/board interaction
@@ -117,9 +78,44 @@ void game_controller_update(game_controller_t *controller,
   update_game(controller->game, input);
 }
 
+bool game_controller_handle_inventory_input(game_controller_t *controller,
+                                            const input_state_t *input) {
+  if (!controller->game || !controller->game->inventory) {
+    return false;
+  }
+
+  // Check if Add Inventory button was clicked
+  if (ui_was_clicked(UI_BUTTON_ADD_INVENTORY_ITEM)) {
+    // Delegate to game's business logic
+    game_add_random_inventory_item(controller->game);
+    return true;
+  }
+
+  // Check if any inventory item was clicked
+  int inventory_size = inventory_get_size(controller->game->inventory);
+  for (int i = 0; i < inventory_size; i++) {
+    inventory_item_t item = inventory_get_item(controller->game->inventory, i);
+
+    if (ui_was_clicked(item.id)) {
+      // Delegate selection logic to game
+      if (game_try_select_inventory_item(controller->game, i)) {
+        // Update controller's placement state based on selection
+        if (controller->game->inventory->selected_index >= 0) {
+          game_controller_enter_placement_mode(controller);
+        } else {
+          game_controller_exit_placement_mode(controller);
+        }
+      }
+      return true; // Consumed the click
+    }
+  }
+
+  return false; // No inventory interaction
+}
+
 bool game_controller_handle_placement_input(game_controller_t *controller,
                                             const input_state_t *input) {
-  if (!controller->placing_tile || !controller->held_piece) {
+  if (!controller->placing_tile) {
     return false;
   }
 
@@ -127,42 +123,20 @@ bool game_controller_handle_placement_input(game_controller_t *controller,
   if (ui_was_clicked(UI_ID_GAME_AREA)) {
     grid_cell_t target_position = controller->game->hovered_cell;
 
-    // Get the selected board from inventory
-    board_t *selected_board =
-      inventory_get_selected_board(controller->game->inventory);
-    if (!selected_board) {
-      printf("No board selected from inventory\n");
-      return false;
-    }
-
-    // Calculate placement position
-    grid_cell_t source_center = board_get_center_position(selected_board);
-
-    // Attempt to place tile using board's placement logic
-    if (board_place_board_at_position(controller->game->board, selected_board,
-                                      target_position, source_center)) {
-      printf("Successfully placed tile at (%d, %d)\n", target_position.q,
-             target_position.r);
-
-      // Clear selection and exit placement mode
-      inventory_set_index(controller->game->inventory, -1);
+    // Delegate placement logic to game
+    if (game_try_place_tile(controller->game, target_position)) {
+      // Placement successful - update controller state
       game_controller_exit_placement_mode(controller);
-
-      // Update game state if needed
-      controller->game->state = GAME_STATE_VIEW;
-
-      return true; // Consumed the click
-    } else {
-      printf("Cannot place tile at (%d, %d) - position blocked or invalid\n",
-             target_position.q, target_position.r);
+      return true;
     }
+    // Placement failed but we still consumed the click
+    return true;
   }
 
   // ESC key cancels placement
   if (input->key_escape_pressed) {
-    inventory_set_index(controller->game->inventory, -1);
+    game_exit_placement_mode(controller->game);
     game_controller_exit_placement_mode(controller);
-    printf("Cancelled placement mode\n");
     return true;
   }
 
@@ -181,13 +155,15 @@ bool game_controller_handle_board_input(game_controller_t *controller,
     grid_cell_t clicked_position = controller->game->hovered_cell;
 
     // For now, just log the click
-    printf("Board clicked at (%d, %d)\n", clicked_position.q,
-           clicked_position.r);
+    printf("Board clicked at (%d, %d)\n", clicked_position.coord.hex.q,
+           clicked_position.coord.hex.r);
 
     // Future: Check if there's a tile at this position for
-    // collection/interaction tile_t *tile =
-    // board_get_tile_at(controller->game->board, clicked_position); if (tile) {
-    // ... }
+    // collection/interaction
+    // tile_t *tile = board_get_tile_at(controller->game->board,
+    // clicked_position); if (tile) {
+    //   ...
+    // }
 
     return true;
   }
@@ -210,16 +186,16 @@ void game_controller_enter_placement_mode(game_controller_t *controller) {
   controller->placing_tile = true;
   controller->held_piece =
     inventory_get_selected_board(controller->game->inventory);
-  controller->game->state = GAME_STATE_PLACE;
-  printf("Entered placement mode\n");
+  controller->state = GAME_STATE_PLACE;
+  printf("Controller: Entered placement mode\n");
 }
 
 void game_controller_exit_placement_mode(game_controller_t *controller) {
   controller->placing_tile = false;
   controller->held_piece = NULL;
   controller->selected_inventory_index = -1;
-  controller->game->state = GAME_STATE_VIEW;
-  printf("Exited placement mode\n");
+  controller->state = GAME_STATE_VIEW;
+  printf("Controller: Exited placement mode\n");
 }
 
 void game_controller_toggle_inventory(game_controller_t *controller) {
@@ -235,4 +211,40 @@ game_controller_get_hovered_element_id(game_controller_t *controller) {
 void game_controller_set_hovered_element_id(game_controller_t *controller,
                                             Clay_ElementId elementId) {
   controller->hovered_element_id = elementId;
+}
+
+void game_controller_set_state(game_controller_t *controller,
+                               game_state_e new_state) {
+  controller->state = new_state;
+  printf("Game state changed to: %s\n",
+         game_controller_state_to_string(new_state));
+}
+
+game_state_e game_controller_get_state(game_controller_t *controller) {
+  return controller->state;
+}
+
+void game_controller_cycle_state(game_controller_t *controller) {
+  controller->state = (controller->state + 1) % GAME_STATE_COUNT;
+  printf("State cycled to: %s\n",
+         game_controller_state_to_string(controller->state));
+}
+
+const char *game_controller_state_to_string(game_state_e state) {
+  switch (state) {
+  case GAME_STATE_VIEW:
+    return "View";
+  case GAME_STATE_PLACE:
+    return "Place";
+  case GAME_STATE_COLLECT:
+    return "Collect";
+  case GAME_STATE_REWARD:
+    return "Reward";
+  case GAME_STATE_GAME_OVER:
+    return "Game Over";
+  case GAME_STATE_COUNT:
+    return "Count";
+  default:
+    return "Unknown";
+  }
 }

@@ -233,10 +233,12 @@ void add_tile(board_t *board, tile_t *tile) {
         // Move all tiles from merge_pool to target_pool
         tile_map_entry_t *tile_entry, *tmp;
         HASH_ITER(hh, merge_pool->tiles->root, tile_entry, tmp) {
-          tile_entry->tile->pool_id = target_pool->id;
+          // Save tile pointer before removing entry
+          tile_t *tile_to_move = tile_entry->tile;
+          tile_to_move->pool_id = target_pool->id;
           // Remove from source pool's tile map first
-          tile_map_remove(merge_pool->tiles, tile_entry->tile->cell);
-          pool_add_tile_to_pool(target_pool, tile_entry->tile,
+          tile_map_remove(merge_pool->tiles, tile_to_move->cell);
+          pool_add_tile_to_pool(target_pool, tile_to_move,
                                 board->geometry_type);
         }
 

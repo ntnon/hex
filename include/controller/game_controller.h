@@ -6,6 +6,16 @@
 #include "game/game.h"
 #include "ui_types.h"
 
+/* Game state enum - now managed by controller */
+typedef enum {
+    GAME_STATE_VIEW,
+    GAME_STATE_PLACE,
+    GAME_STATE_COLLECT,
+    GAME_STATE_REWARD,
+    GAME_STATE_GAME_OVER,
+    GAME_STATE_COUNT
+} game_state_e;
+
 /* Forward declaration to avoid circular dependency */
 typedef struct input_area_info input_area_info_t;
 
@@ -16,20 +26,23 @@ typedef struct game_controller {
     /* Input handling */
     input_handler_t input_handler;
 
-    /* Simple state flags instead of complex state enum */
+    /* State management */
+    game_state_e state;
+
+    /* Simple state flags for fine-grained control */
     bool inventory_open;
     bool placing_tile;
     bool camera_locked;
-    
+
     /* Currently selected/held data for coordination */
     int selected_inventory_index;
     board_t *held_piece;  /* What we're currently placing */
-    
+
     /* UI interaction data */
     Clay_ElementData hovered_element_data;
     Clay_ElementId last_clicked_element_id;
     Clay_ElementId hovered_element_id;
-    
+
     bool is_initialized;
 
 } game_controller_t;
@@ -52,6 +65,12 @@ bool game_controller_handle_camera_input(game_controller_t *controller, const in
 void game_controller_enter_placement_mode(game_controller_t *controller);
 void game_controller_exit_placement_mode(game_controller_t *controller);
 void game_controller_toggle_inventory(game_controller_t *controller);
+
+/* State management */
+void game_controller_set_state(game_controller_t *controller, game_state_e new_state);
+game_state_e game_controller_get_state(game_controller_t *controller);
+void game_controller_cycle_state(game_controller_t *controller);
+const char *game_controller_state_to_string(game_state_e state);
 
 /* UI element tracking */
 Clay_ElementId game_controller_get_hovered_element_id(game_controller_t *controller);

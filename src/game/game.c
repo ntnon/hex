@@ -34,7 +34,7 @@ void game_init(game_t *game) {
   game->preview.target_position = (grid_cell_t){0};
   game->preview.is_active = false;
 
-  game->state = GAME_STATE_VIEW;
+  // State is now managed by controller
   // board_randomize(game->board);
   // Use smaller radius for testing to avoid long load times
   printf("Board created with radius: %d\n", game->board->radius);
@@ -164,26 +164,71 @@ bool game_get_preview_conflicts(const game_t *game, grid_cell_t **out_conflicts,
                                        out_conflicts, out_count);
 }
 
-void game_state_cycle(game_t *game) {
-  game->state = (game->state + 1) % GAME_STATE_COUNT;
-  printf("State changed to %s\n", game_state_to_string(&game->state));
+/* Game-level business logic implementations */
+
+bool game_try_place_tile(game_t *game, grid_cell_t target_position) {
+  // Get the selected board from inventory
+  board_t *selected_board = inventory_get_selected_board(game->inventory);
+  if (!selected_board) {
+    printf("No inventory item selected for placement\n");
+    return false;
+  }
+
+  // Get the center position of the source board (origin for inventory boards)
+  grid_cell_t source_center =
+    grid_geometry_get_origin(selected_board->geometry_type);
+
+  // Attempt to merge the selected board onto the main board
+  if (merge_boards(game->board, selected_board, target_position,
+                   source_center)) {
+    printf("Successfully placed tile at (%d, %d)\n",
+           target_position.coord.hex.q, target_position.coord.hex.r);
+
+    // Consume the inventory item that was placed
+    // inventory_use_selected(game->inventory);
+
+    // TODO: Check for completed patterns, update score, etc.
+
+    return true;
+  } else {
+    printf("Cannot place tile at (%d, %d) - position blocked or invalid\n",
+           target_position.coord.hex.q, target_position.coord.hex.r);
+    return false;
+  }
 }
 
-const char *game_state_to_string(game_state_e *state) {
-  switch (*state) {
-  case GAME_STATE_VIEW:
-    return "Playing";
-  case GAME_STATE_PLACE:
-    return "Place";
-  case GAME_STATE_GAME_OVER:
-    return "Game Over";
-  case GAME_STATE_REWARD:
-    return "Reward";
-  case GAME_STATE_COLLECT:
-    return "Collect";
-  case GAME_STATE_COUNT:
-    return "Count";
-  default:
-    return "Unknown";
+bool game_try_select_inventory_item(game_t *game, int index) {
+  int inventory_size = inventory_get_size(game->inventory);
+
+  // Validate index
+  if (index < 0 || index >= inventory_size) {
+    printf("Invalid inventory index: %d\n", index);
+    return false;
   }
+
+  int currently_selected = game->inventory->selected_index;
+
+  if (index == currently_selected) {
+    // Deselecting current item - call set_index with the same index to trigger
+    // deselection
+    inventory_set_index(game->inventory, index);
+    printf("Deselected inventory item %d\n", index);
+  } else {
+    // Selecting new item
+    inventory_set_index(game->inventory, index);
+    printf("Selected inventory item %d for placement\n", index);
+  }
+
+  return true;
+}
+
+void game_add_random_inventory_item(game_t *game) {
+  inventory_add_random_item(game->inventory);
+  printf("Added random item to inventory (size: %d)\n",
+         inventory_get_size(game->inventory));
+}
+
+void game_exit_placement_mode(game_t *game) {
+  inventory_set_index(game->inventory, -1);
+  printf("Exited placement mode\n");
 }

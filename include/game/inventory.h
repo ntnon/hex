@@ -27,7 +27,7 @@ void free_inventory(inventory_t* inv);
 
 // --- Item Management ---
 
-inventory_item_t inventory_create_item(inventory_t *inv);
+inventory_item_t inventory_create_item(inventory_t *inv, int radius);
 void inventory_add_item(inventory_t *inv, inventory_item_t item);
 void inventory_add_random_item(inventory_t *inv);
 void inventory_destroy_item(inventory_t *inv, int index);
