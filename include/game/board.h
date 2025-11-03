@@ -5,7 +5,6 @@
 #include "tile/tile_map.h"
 #include "tile/pool_map.h"
 #include "utility/array_shuffle.h"
-#include "renderer/edge_render_list.h"
 #include "raylib.h"
 
 typedef enum {
@@ -25,9 +24,6 @@ typedef struct {
     tile_map_t *tiles;
     pool_map_t *pools;
     uint32_t next_pool_id;
-
-    edge_render_list_t *edge_list;  // Rendered edge list for pool boundaries
-
     Camera2D camera; // Camera for this board
 } board_t;
 
