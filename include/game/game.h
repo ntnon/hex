@@ -4,7 +4,7 @@
 #include "game/board.h"
 #include "game/inventory.h"
 #include "controller/input_state.h"
-#include "rule_manager.h"
+//#include "rule_manager.h"
 #include "tile/tile.h"
 
 
@@ -19,7 +19,7 @@ typedef struct game {
     board_t *board;
     inventory_t *inventory;
     int reward_count;
-    rule_manager_t *rule_manager;
+    //rule_manager_t *rule_manager;
     bool round_count;
     bool is_paused;
     // Hover system

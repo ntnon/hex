@@ -26,9 +26,6 @@ tile_data_t tile_data_create(tile_type_t type, int value) {
 
 tile_data_t tile_data_create_random(void) {
   tile_data_t data;
-  // Skip TILE_UNDEFINED and TILE_EMPTY, only use TILE_MAGENTA, TILE_CYAN,
-  // TILE_YELLOW Don't include TILE_GREEN in random generation as it's reserved
-  // for center tiles
   data.type = (tile_type_t)(rand() % 3 + 1); // 1, 2, 3 (MAGENTA, CYAN, YELLOW)
   data.value = rand() % 5 + 1;
   return data;

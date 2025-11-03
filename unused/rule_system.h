@@ -160,6 +160,25 @@ typedef struct rule {
 
 } rule_t;
 
+/**
+ * @brief Spatial cache for range-based lookups
+ */
+typedef struct {
+    grid_cell_t *cells[MAX_RULE_RANGE + 1];    // cells[r] = all cells at range r
+    uint16_t counts[MAX_RULE_RANGE + 1];       // counts[r] = number of cells at range r
+    bool dirty[MAX_RULE_RANGE + 1];            // dirty[r] = needs recalculation
+} spatial_cache_t;
+
+/**
+ * @brief Cached rule evaluation result
+ */
+typedef struct {
+    uint32_t rule_id;
+    grid_cell_t cell;
+    float result;
+    uint32_t cache_generation;          // For cache invalidation
+    bool valid;
+} rule_cache_entry_t;
 
 /**
  * @brief Per-tile rule tracking for fast updates
@@ -174,11 +193,13 @@ typedef struct {
     tile_type_t cached_type;           // Last calculated perceived type
 
     // Cache validity
+    uint32_t cache_generation;
     bool production_dirty;
     bool range_dirty;
     bool type_dirty;
 
     // Spatial cache for this tile
+    spatial_cache_t spatial_cache;
 
 } tile_rule_data_t;
 
@@ -195,6 +216,28 @@ typedef struct {
     // Spatial indexing for O(1) tile->rules lookup
     tile_rule_data_t *tile_data;        // tile_data[tile_index]
     uint32_t tile_data_capacity;
+
+    // Fast lookups by scope
+    uint32_t *self_rules;               // Rules with SCOPE_SELF
+    uint32_t *neighbor_rules;           // Rules with SCOPE_NEIGHBORS
+    uint32_t *range_rules;              // Rules with SCOPE_RANGE
+    uint32_t *pool_rules;               // Rules with SCOPE_POOL
+    uint32_t *global_rules;             // Rules with global scope
+    uint16_t self_count, neighbor_count, range_count, pool_count, global_count;
+
+    // Rule result cache
+    rule_cache_entry_t rule_cache[RULE_CACHE_SIZE];
+    uint32_t cache_generation;          // Incremented when cache invalidated
+
+    // Batch processing for performance
+    uint32_t *dirty_tiles;              // Tiles needing rule recalculation
+    uint32_t dirty_tile_count;
+    bool batch_mode;                    // Defer updates until batch_process()
+
+    // Performance tracking
+    uint64_t evaluations_total;
+    uint64_t cache_hits;
+    uint64_t cache_misses;
 
 } rule_registry_t;
 
@@ -217,6 +260,7 @@ typedef struct {
     uint32_t temp_capacity;
 
     // Performance optimization
+    bool skip_cache;                    // Force recalculation
     uint32_t evaluation_id;             // Unique ID for this evaluation cycle
 
 } rule_context_t;

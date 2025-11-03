@@ -166,6 +166,7 @@ static bool hex_rotate_cell(grid_cell_t cell, int rotations,
   if (!out_cell || cell.type != GRID_TYPE_HEXAGON) {
     return false;
   }
+  printf("rotations %d\n", rotations);
 
   hex_coord_t h = cell.coord.hex;
   rotations = ((rotations % 6) + 6) % 6; // Normalize to 0-5

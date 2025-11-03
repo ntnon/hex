@@ -51,9 +51,9 @@ static void ui_build_inventory_item(game_controller_t *controller,
         .aspectRatio = 1.0,
         .clip = true,
         .layout = {.layoutDirection = CLAY_TOP_TO_BOTTOM,
-                   .sizing =
-                     (Clay_Sizing){.height = CLAY_SIZING_FIXED(item_height),
-                                   .width = CLAY_SIZING_GROW()}}}) {
+
+                   .sizing = (Clay_Sizing){.height = CLAY_SIZING_GROW(),
+                                           .width = CLAY_SIZING_GROW()}}}) {
     Clay_OnHover(ui_hover_handler, 0);
   }
 }
@@ -63,6 +63,7 @@ static void ui_build_inventory_area(game_controller_t *controller){
         .cornerRadius = 0,
         .backgroundColor = M_GRAY,
         .layout = {.childGap = INVENTORY_GAP,
+                   .childAlignment = CLAY_ALIGN_X_CENTER,
                    .padding = CLAY_PADDING_ALL(INVENTORY_PADDING),
                    .layoutDirection = CLAY_TOP_TO_BOTTOM,
                    .sizing = (Clay_Sizing){.width = CLAY_SIZING_GROW(4, 200),
