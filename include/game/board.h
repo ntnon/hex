@@ -70,12 +70,6 @@ bool board_rotate(board_t *board, grid_cell_t center, int rotation_steps);
 tile_t *get_tile_at_cell(const board_t *board, grid_cell_t cell);
 
 /**
- * @brief Updates the edge render list for pool boundaries
- * @param board The board to update edges for
- */
-void board_update_edge_list(board_t *board);
-
-/**
  * @brief Test function to verify pool merging and singleton logic works correctly.
  * @param board The board to test on (will be cleared and modified).
  */

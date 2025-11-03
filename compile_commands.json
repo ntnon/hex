@@ -359,33 +359,6 @@
       "-fsanitize=undefined",
       "-c",
       "-o",
-      "obj/x64/Debug/hexhex/edge_render_list.o",
-      "../../src/renderer/edge_render_list.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/renderer/edge_render_list.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/edge_render_list.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-DDEBUG",
-      "-DPLATFORM_DESKTOP",
-      "-DGRAPHICS_API_OPENGL_33",
-      "-I../../src",
-      "-I../../include",
-      "-I../external/raylib-master/src",
-      "-I../external/raylib-master/src/external",
-      "-I../external/raylib-master/src/external/glfw/include",
-      "-m64",
-      "-Wshadow",
-      "-g",
-      "-std=c17",
-      "-Wno-deprecated-declarations",
-      "-fsanitize=address",
-      "-fsanitize=undefined",
-      "-c",
-      "-o",
       "obj/x64/Debug/hexhex/game.o",
       "../../src/game/game.c"
     ],
@@ -716,33 +689,6 @@
     "directory": "/Users/nydon/code/hexhex/build/build_files",
     "file": "/Users/nydon/code/hexhex/src/renderer/renderer.c",
     "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/renderer.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang",
-      "-DDEBUG",
-      "-DPLATFORM_DESKTOP",
-      "-DGRAPHICS_API_OPENGL_33",
-      "-I../../src",
-      "-I../../include",
-      "-I../external/raylib-master/src",
-      "-I../external/raylib-master/src/external",
-      "-I../external/raylib-master/src/external/glfw/include",
-      "-m64",
-      "-Wshadow",
-      "-g",
-      "-std=c17",
-      "-Wno-deprecated-declarations",
-      "-fsanitize=address",
-      "-fsanitize=undefined",
-      "-c",
-      "-o",
-      "obj/x64/Debug/hexhex/rule_manager.o",
-      "../../src/game/rule_manager.c"
-    ],
-    "directory": "/Users/nydon/code/hexhex/build/build_files",
-    "file": "/Users/nydon/code/hexhex/src/game/rule_manager.c",
-    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/rule_manager.o"
   },
   {
     "arguments": [

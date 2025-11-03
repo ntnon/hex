@@ -259,9 +259,6 @@ void add_tile(board_t *board, tile_t *tile) {
   // pool_update(target_pool, board->geometry_type, board->layout,
   //             board->radius);
 
-  // Note: Edge list update moved to batch operations for performance
-  // board_update_edge_list(board);
-
   // Mark chunk dirty for rendering updates - DISABLED
   // chunk_id_t chunk_id = grid_get_chunk_id(board->grid, tile->cell);
   // grid_mark_chunk_dirty(board->grid, chunk_id);
@@ -299,9 +296,6 @@ void remove_tile(board_t *board, tile_t *tile) {
 
   // Remove tile from board's tile map
   tile_map_remove(board->tiles, tile->cell);
-
-  // Update edge list after removing tile
-  board_update_edge_list(board);
 
   // Mark chunk dirty for rendering updates - DISABLED
   // chunk_id_t chunk_id = grid_get_chunk_id(board->grid, tile->cell);
@@ -377,9 +371,6 @@ void board_randomize(board_t *board, int radius, board_type_e board_type) {
   }
 
   free(all_coords);
-
-  // Update edge list after all tiles added
-  board_update_edge_list(board);
 }
 
 void board_fill(board_t *board, int radius, board_type_e board_type) {
@@ -551,9 +542,6 @@ void board_fill_batch(board_t *board, int radius, board_type_e board_type) {
   clock_t edges_start = clock();
   // Update edge list once at the end
   printf("Starting edge calculation for %zu tiles...\n", tile_count);
-  board_update_edge_list(board);
-  printf("Updated edges in %.3fs\n",
-         (double)(clock() - edges_start) / CLOCKS_PER_SEC);
 
   free(tiles);
   free(all_coords);

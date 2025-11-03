@@ -12,18 +12,6 @@ void game_init(game_t *game) {
   game->is_paused = false;
   game->round_count = 0;
 
-  // Initialize rule manager
-  game->rule_manager = malloc(sizeof(rule_manager_t));
-  if (game->rule_manager) {
-    if (!rule_manager_init(game->rule_manager, game->board, 2000)) {
-      free(game->rule_manager);
-      game->rule_manager = NULL;
-      printf("Failed to initialize rule manager\n");
-    } else {
-      printf("Rule manager initialized successfully\n");
-    }
-  }
-
   // Initialize hover system
   game->hovered_tile = NULL;
   game->hovered_cell = (grid_cell_t){0};
@@ -51,10 +39,7 @@ void free_game(game_t *game) {
     if (game->inventory) {
       free_inventory(game->inventory);
     }
-    if (game->rule_manager) {
-      rule_manager_cleanup(game->rule_manager);
-      free(game->rule_manager);
-    }
+
     // Clear preview (no memory to free in simplified system)
     game_clear_preview(game);
     free(game);

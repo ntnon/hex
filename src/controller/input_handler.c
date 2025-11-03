@@ -21,12 +21,6 @@ void input_handler_update(input_handler_t *handler, const input_state_t *input,
 
 void input_handler_process_keyboard(input_handler_t *handler,
                                     const input_state_t *input) {
-  // Handle rotation of currently selected/held inventory item
-  if (input->key_r_pressed) {
-    if (inventory_rotate_selected(handler->game->inventory, 1)) {
-      printf("Rotated inventory item clockwise\n");
-    }
-  }
 
   // State cycling is now handled by game_controller
 }

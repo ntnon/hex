@@ -19,7 +19,7 @@ typedef struct game {
     board_t *board;
     inventory_t *inventory;
     int reward_count;
-    //rule_manager_t *rule_manager;
+
     bool round_count;
     bool is_paused;
     // Hover system

@@ -5,7 +5,6 @@
 
 #include "../../include/grid/grid_cell_utils.h"
 #include "../../include/grid/grid_geometry.h"
-#include "../../include/renderer/edge_render_list.h"
 #include "../../include/renderer/renderer.h"
 #include "game/game.h"
 #include "raylib.h"
@@ -199,33 +198,6 @@ void render_board(const board_t *board) {
   // Uncomment below to use individual tile rendering instead:
   // tile_map_foreach_tile(board->tiles, draw_tile_wrapper, (void *)board);
   // render_board_edges(board);
-}
-
-void render_board_edges(const board_t *board) {
-  if (!board || !board->edge_list)
-    return;
-
-  // Get edges and render them
-  size_t edge_count;
-  const render_edge_t *edges =
-    edge_render_list_get_edges(board->edge_list, &edge_count);
-  if (edges) {
-    for (size_t i = 0; i < edge_count; i++) {
-      const render_edge_t *edge = &edges[i];
-      DrawLineEx(edge->start, edge->end, edge->thickness, edge->color);
-    }
-  }
-
-  // Get vertices and render them
-  size_t vertex_count;
-  const render_vertex_t *vertices =
-    edge_render_list_get_vertices(board->edge_list, &vertex_count);
-  if (vertices) {
-    for (size_t i = 0; i < vertex_count; i++) {
-      const render_vertex_t *vertex = &vertices[i];
-      DrawCircleV(vertex->position, vertex->radius, vertex->color);
-    }
-  }
 }
 
 void render_game_previews(const game_t *game) {
