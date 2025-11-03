@@ -219,3 +219,21 @@ void tile_get_tiles_in_range(grid_type_e grid_type, const tile_t *tile,
   *out_count = tile_count;
   free(coords_in_range);
 }
+
+int tile_map_get_cells(tile_map_t *map, grid_cell_t *out_cells, int max_out) {
+  if (!map || !out_cells || max_out <= 0)
+    return 0;
+
+  int count = 0;
+  tile_map_entry_t *entry, *tmp;
+
+  HASH_ITER(hh, map->root, entry, tmp) {
+    if (count < max_out) {
+      out_cells[count++] = entry->cell;
+    } else {
+      break;
+    }
+  }
+
+  return count;
+}

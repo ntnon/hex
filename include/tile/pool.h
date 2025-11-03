@@ -11,6 +11,7 @@
 #include "../grid/edge_map.h"
 #include "tile.h"
 #include <stdlib.h>
+#include "third_party/kvec.h"
 
 // --- Enums ---
 /**
@@ -24,10 +25,12 @@
      edge_map_entry_t *edges;
      tile_map_t *tiles;
      tile_type_t accepted_tile_type;
-     
+
+     kvec_t(grid_cell_t) neighbor_cells;
+
      // Pool modifier (can be negative/positive)
      float modifier;
-     
+
      // Geometric properties
      int diameter;              // Farthest distance between any two tiles
      int edge_count;           // External edges
@@ -52,14 +55,6 @@ void pool_free(pool_t* pool);
 int pool_tile_score(const pool_t *pool);
 
 // --- Pool Membership Functions ---
-
-/**
- * @brief Adds a tile to a pool.
- * @param pool A pointer to the pool to add the tile to.
- * @param tile_ptr A pointer to the tile_t to add.
- */
-
-bool pool_add_tile_to_pool (pool_t *pool, const tile_t *tile, grid_type_e geometry_type);
 
 /**
  * @brief Removes a tile from a pool.
@@ -96,7 +91,13 @@ pool_find_max_tile_neighbors_in_pool (pool_t *pool, grid_type_e grid_type);
 void
 pool_calculate_score (pool_t *pool, grid_type_e grid_type);
 
-void
+/**
+ * @brief Adds a tile to a pool.
+ * @param pool A pointer to the pool to add the tile to.
+ * @param tile_ptr A pointer to the tile_t to add.
+ * @return True if the tile was added successfully, false otherwise.
+ */
+ bool
 pool_add_tile (pool_t *pool, const tile_t *tile_ptr, grid_type_e geometry_type);
 
 // --- Modifier Functions ---
@@ -147,8 +148,15 @@ int pool_calculate_diameter(const pool_t *pool, grid_type_e geometry_type);
  */
 grid_cell_t pool_calculate_center(const pool_t *pool, grid_type_e geometry_type);
 
-
-
+/**
+ * @brief Retrieve all neighbor grid cells of a pool.
+ * @param pool Pointer to the pool.
+ * @param geometry_type The grid geometry type for calculations.
+ * @param out_cells Pointer to an array to store the neighbor grid cells.
+ * @return The number of neighbor grid cells retrieved.
+ */
+int pool_get_neighbor_cells(const pool_t *pool, grid_type_e geometry_type,
+                         grid_cell_t *out_cells);
 /**
  * @brief Calculates the number of external edges of a pool.
  * @param pool Pointer to the pool.
@@ -163,6 +171,8 @@ int pool_calculate_edge_count(const pool_t *pool, grid_type_e geometry_type);
  * @return The compactness score (0.0-1.0, where 1.0 represents perfect compactness).
  */
 float pool_calculate_compactness_score(const pool_t *pool);
+
+
 
 /**
  * @brief Prints all easily printable properties of a pool.

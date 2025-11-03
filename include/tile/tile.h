@@ -141,6 +141,25 @@ void tile_get_coordinates_in_range(grid_type_e grid_type, const tile_t *tile,
                                   grid_cell_t **out_cells, size_t *out_count);
 
 
+/**
+ * @brief Gets all cells within range of a tile (regardless of whether tiles exist there).
+ * @param tile The center tile to calculate range from.
+ * @param grid The grid system for coordinate calculations.
+ * @param out_cells Pointer to store array of cells within range.
+ * @param out_count Pointer to store the number of cells.
+ * @note Caller is responsible for freeing the allocated array.
+ */
+void tile_get_cells_in_range(grid_type_e grid_type, const tile_t *tile,
+                             grid_cell_t **out_cells, size_t *out_count);
 
+
+/**
+ * @brief Gets all cells within range of a tile (regardless of whether tiles exist there).
+ * @param map The tile map to search for cells.
+ * @param out_cells Pointer to store array of cells within range.
+ * @param max_out Maximum number of cells to return.
+ * @return The number of cells returned.
+ */
+int tile_map_get_cells(tile_map_t *map, grid_cell_t *out_cells, int max_out);
 
 #endif // TILE_H

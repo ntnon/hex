@@ -200,8 +200,7 @@ void add_tile(board_t *board, tile_t *tile) {
         if (neighbor_tile && neighbor_tile->data.type == tile->data.type &&
             neighbor_tile->pool_id == 0) {
           neighbor_tile->pool_id = target_pool->id;
-          pool_add_tile_to_pool(target_pool, neighbor_tile,
-                                board->geometry_type);
+          pool_add_tile(target_pool, neighbor_tile, board->geometry_type);
         }
       }
     } else {
@@ -228,8 +227,7 @@ void add_tile(board_t *board, tile_t *tile) {
           tile_to_move->pool_id = target_pool->id;
           // Remove from source pool's tile map first
           tile_map_remove(merge_pool->tiles, tile_to_move->cell);
-          pool_add_tile_to_pool(target_pool, tile_to_move,
-                                board->geometry_type);
+          pool_add_tile(target_pool, tile_to_move, board->geometry_type);
         }
 
         // Remove the merged pool
@@ -245,7 +243,7 @@ void add_tile(board_t *board, tile_t *tile) {
           neighbor_tile->pool_id == 0) {
         // Found a singleton neighbor - add it to the target pool
         neighbor_tile->pool_id = target_pool->id;
-        pool_add_tile_to_pool(target_pool, neighbor_tile, board->geometry_type);
+        pool_add_tile(target_pool, neighbor_tile, board->geometry_type);
       }
     }
   }
@@ -253,7 +251,7 @@ void add_tile(board_t *board, tile_t *tile) {
   // Add tile to board's tile map and pool (if pool exists)
   tile_map_add(board->tiles, tile);
   if (target_pool != NULL) {
-    pool_add_tile_to_pool(target_pool, tile, board->geometry_type);
+    pool_add_tile(target_pool, tile, board->geometry_type);
   }
   // TODO: Fix pool_update to work without grid instance
   // pool_update(target_pool, board->geometry_type, board->layout,
@@ -644,7 +642,7 @@ void flood_fill_assign_pool(board_t *board, tile_t *start_tile, pool_t *pool) {
 
     // Assign to pool
     current_tile->pool_id = pool->id;
-    pool_add_tile_to_pool(pool, current_tile, board->geometry_type);
+    pool_add_tile(pool, current_tile, board->geometry_type);
 
     // Check all 6 neighbors
     for (int dir = 0; dir < 6; dir++) {

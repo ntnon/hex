@@ -2,7 +2,9 @@
 #include "../../include/grid/grid_cell_utils.h"
 #include "../../include/grid/grid_geometry.h"
 #include "../../include/third_party/uthash.h"
+#include "third_party/kvec.h"
 #include "tile/tile_map.h"
+#include <complex.h>
 #include <stdio.h>
 
 // LIFECYCLE
@@ -25,6 +27,9 @@ pool_t *pool_create() {
   pool->edge_count = 0;
   pool->compactness_score = 0.0f;
 
+  // Initialize neighbor cells
+  kv_init(pool->neighbor_cells);
+
   return pool;
 }
 
@@ -45,8 +50,8 @@ void pool_update_center(pool_t *pool) {
   }
 
   if (count > 0) {
-    center_cell.coord.square.x = total_x / count;
     center_cell.coord.square.y = total_y / count;
+    center_cell.coord.square.x = total_x / count;
     pool->center = center_cell;
   }
 }
@@ -219,6 +224,7 @@ void pool_print(const pool_t *pool) {
   printf("Diameter: %d\n", pool->diameter);
   printf("Edge count: %d\n", pool->edge_count);
   printf("Compactness score: %.3f\n", pool->compactness_score);
+  printf("Neighbor cell count: %d\n", pool->neighbor_cells.n);
   printf("========================\n");
 }
 
@@ -244,9 +250,50 @@ void pool_remove_tile(const pool_t *pool, const tile_t *tile_ptr) {
   tile_map_remove(pool->tiles, tile_ptr->cell);
 }
 
+static bool is_cell_in_neighbor_list(const pool_t *pool, grid_cell_t cell,
+                                     grid_type_e geometry_type) {
+  for (size_t i = 0; i < kv_size(pool->neighbor_cells); i++) {
+    if (grid_geometry_cells_equal(geometry_type, kv_A(pool->neighbor_cells, i),
+                                  cell)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static void add_tile_neighbors_to_pool(pool_t *pool, tile_t *tile,
+                                       grid_type_e geometry_type) {
+  int num_neighbors = grid_geometry_get_neighbor_count(geometry_type);
+  grid_cell_t neighbors[num_neighbors];
+  grid_geometry_get_all_neighbors(geometry_type, tile->cell, neighbors);
+
+  for (int i = 0; i < num_neighbors; i++) {
+    if (tile_map_contains(pool->tiles, neighbors[i]))
+      continue;
+    if (is_cell_in_neighbor_list(pool, neighbors[i], geometry_type))
+      continue;
+
+    kv_push(grid_cell_t, pool->neighbor_cells, neighbors[i]);
+  }
+}
+
+void pool_update_neighbor_cells(pool_t *pool, tile_t *tile,
+                                grid_type_e geometry_type) {
+  kv_destroy(pool->neighbor_cells);
+  kv_init(pool->neighbor_cells);
+
+  tile_map_entry_t *entry, *tmp;
+  HASH_ITER(hh, pool->tiles->root, entry, tmp) {
+    add_tile_neighbors_to_pool(pool, entry->tile, geometry_type);
+  }
+
+  printf("Pool %d has %zu neighbor cells\n", pool->id,
+         kv_size(pool->neighbor_cells));
+}
+
 // Main function: Adds a tile to a pool if it passes validations.
-bool pool_add_tile_to_pool(pool_t *pool, const tile_t *tile,
-                           grid_type_e geometry_type) {
+bool pool_add_tile(pool_t *pool, const tile_t *tile,
+                   grid_type_e geometry_type) {
 
   if (!pool || !tile)
     return false;
@@ -260,7 +307,7 @@ bool pool_add_tile_to_pool(pool_t *pool, const tile_t *tile,
   }
 
   // Add the tile to the pool's internal tile map.
-  tile_map_add_unchecked(pool->tiles, (tile_t *)tile);
+  tile_map_add(pool->tiles, (tile_t *)tile);
 
   if (pool->accepted_tile_type == TILE_UNDEFINED) {
     // If the pool has no accepted tile type, set it to the tile's type.
@@ -270,6 +317,9 @@ bool pool_add_tile_to_pool(pool_t *pool, const tile_t *tile,
   // Update geometric properties after adding tile
   pool_update_geometric_properties(pool, geometry_type);
 
+  // Update pool's neighbor cells
+  pool_update_neighbor_cells(pool, (tile_t *)tile, geometry_type);
+
   return true;
 }
 
@@ -278,16 +328,6 @@ void pool_free(pool_t *pool) {
   edge_map_free(&pool->edges);
   free(pool);
 };
-
-void pool_add_tile(pool_t *pool, const tile_t *tile_ptr,
-                   grid_type_e geometry_type) {
-  printf("DEBUG: pool_add_tile - adding tile type %d to pool %d\n",
-         tile_ptr->data.type, pool->id);
-  tile_map_add_unchecked(pool->tiles, (tile_t *)tile_ptr);
-
-  // Update geometric properties after adding tile
-  pool_update_geometric_properties(pool, geometry_type);
-}
 
 // UTILITY
 int pool_compatibility_score(const pool_t *pool) {

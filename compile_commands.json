@@ -440,6 +440,33 @@
       "-fsanitize=undefined",
       "-c",
       "-o",
+      "obj/x64/Debug/hexhex/grid_cell_map.o",
+      "../../src/grid/grid_cell_map.c"
+    ],
+    "directory": "/Users/nydon/code/hexhex/build/build_files",
+    "file": "/Users/nydon/code/hexhex/src/grid/grid_cell_map.c",
+    "output": "/Users/nydon/code/hexhex/build/build_files/obj/x64/Debug/hexhex/grid_cell_map.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-DDEBUG",
+      "-DPLATFORM_DESKTOP",
+      "-DGRAPHICS_API_OPENGL_33",
+      "-I../../src",
+      "-I../../include",
+      "-I../external/raylib-master/src",
+      "-I../external/raylib-master/src/external",
+      "-I../external/raylib-master/src/external/glfw/include",
+      "-m64",
+      "-Wshadow",
+      "-g",
+      "-std=c17",
+      "-Wno-deprecated-declarations",
+      "-fsanitize=address",
+      "-fsanitize=undefined",
+      "-c",
+      "-o",
       "obj/x64/Debug/hexhex/grid_cell_utils.o",
       "../../src/grid/grid_cell_utils.c"
     ],
