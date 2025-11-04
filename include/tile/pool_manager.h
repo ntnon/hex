@@ -46,4 +46,66 @@ pool_manager_entry_t *pool_manager_find_by_tile(pool_manager_t *map, tile_t* til
 
 bool pool_manager_contains_tile(pool_manager_t *map, tile_t* tile);
 
+// --- New Pool Management Functions ---
+
+/**
+ * @brief Merges source pool into target pool, moving all tiles and updating neighbors.
+ * @param manager The pool manager.
+ * @param target_id ID of the pool to merge into.
+ * @param source_id ID of the pool to merge from (will be removed).
+ * @param geometry_type Grid geometry for neighbor calculations.
+ * @param board_tiles All tiles on the board for neighbor lookups.
+ */
+void pool_manager_merge_pools(pool_manager_t *manager, int target_id, int source_id,
+                              grid_type_e geometry_type, tile_map_t *board_tiles);
+
+/**
+ * @brief Finds all pools compatible with the given tile based on its neighbors.
+ * @param manager The pool manager.
+ * @param tile The tile to find compatible pools for.
+ * @param neighbor_tiles Array of neighbor tiles.
+ * @param neighbor_count Number of neighbors.
+ * @param out_pool_ids Output array for compatible pool IDs.
+ * @param out_count Output for number of compatible pools found.
+ */
+void pool_manager_find_compatible_pools(pool_manager_t *manager, tile_t *tile, 
+                                        tile_t **neighbor_tiles, int neighbor_count,
+                                        uint32_t *out_pool_ids, size_t *out_count);
+
+/**
+ * @brief Assigns a tile to the appropriate pool or creates a new one.
+ * @param manager The pool manager.
+ * @param tile The tile to assign.
+ * @param geometry_type Grid geometry for neighbor calculations.
+ * @param board_tiles All tiles on the board.
+ * @return The pool the tile was assigned to, or NULL if singleton.
+ */
+pool_t *pool_manager_assign_tile(pool_manager_t *manager, tile_t *tile,
+                                 grid_type_e geometry_type, tile_map_t *board_tiles);
+
+/**
+ * @brief Updates neighbor information for all pools affected by recent changes.
+ * @param manager The pool manager.
+ * @param affected_cells Array of cells where changes occurred.
+ * @param num_affected Number of affected cells.
+ * @param geometry_type Grid geometry for neighbor calculations.
+ * @param board_tiles All tiles on the board.
+ */
+void pool_manager_update_affected_pools(pool_manager_t *manager, grid_cell_t *affected_cells,
+                                        size_t num_affected, grid_type_e geometry_type,
+                                        tile_map_t *board_tiles);
+
+/**
+ * @brief Gets all neighboring pools for a given cell.
+ * @param manager The pool manager.
+ * @param cell The cell to check neighbors for.
+ * @param geometry_type Grid geometry for neighbor calculations.
+ * @param board_tiles All tiles on the board.
+ * @param out_pool_ids Output array for neighbor pool IDs.
+ * @param out_count Output for number of neighbor pools found.
+ */
+void pool_manager_get_neighbor_pools(pool_manager_t *manager, grid_cell_t cell,
+                                     grid_type_e geometry_type, tile_map_t *board_tiles,
+                                     uint32_t *out_pool_ids, size_t *out_count);
+
 #endif /* pool_manager_H */

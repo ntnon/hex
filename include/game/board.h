@@ -28,44 +28,28 @@ typedef struct {
 } board_t;
 
 board_t *board_create(grid_type_e grid_type, int radius, board_type_e board_type);
-
 void clear_board(board_t *board);
-
 void free_board(board_t *board);
 
 void board_randomize(board_t *board, int radius, board_type_e board_type);
-void board_fill(board_t *board, int radius, board_type_e board_type);
-void board_fill_batch(board_t *board, int radius, board_type_e board_type);
-void board_fill_fast(board_t *board, int radius, board_type_e board_type);
 
 void board_add_tile(board_t *board, tile_t* tile);
+void remove_tile(board_t *board, tile_t* tile);
+void board_fill(board_t *board, int radius, board_type_e board_type);
+void get_neighbor_pools(board_t *board, tile_t *tile, pool_t **out_pools, size_t max_neighbors);
+bool board_rotate(board_t *board, grid_cell_t center, int rotation_steps);
+void cycle_tile_type(board_t *board, tile_t *tile);
+
 void board_add_tiles_batch(board_t *board, tile_t **tiles, size_t count);
 void assign_pools_batch(board_t *board);
 void flood_fill_assign_pool(board_t *board, tile_t *start_tile, pool_t *pool);
+void board_fill_batch(board_t *board, int radius, board_type_e board_type);
+void board_fill_fast(board_t *board, int radius, board_type_e board_type);
 
-void get_neighbor_pools(board_t *board, tile_t *tile, pool_t **out_pools,
-                        size_t max_neighbors);
+bool is_merge_valid(board_t *target_board, board_t *source_board, grid_cell_t target_center, grid_cell_t source_center);
 
-void remove_tile(board_t *board, tile_t* tile);
+bool merge_boards(board_t *target_board, board_t *source_board, grid_cell_t target_center, grid_cell_t source_center);
 
-void cycle_tile_type(board_t *board, tile_t *tile);
-
-/**
- * @brief Grows the board's grid by the specified amount.
- * @param board The board to grow.
- * @param growth_amount Amount to increase the grid radius by.
- * @return true if growth was successful, false otherwise.
- */
-
-//static pool_t* find_new_tile_pool_candidates(board_t *board, tile_t *tile);
-
-bool is_merge_valid(board_t *target_board, board_t *source_board,
-                    grid_cell_t target_center, grid_cell_t source_center);
-
-bool merge_boards(board_t *target_board, board_t *source_board,
-                  grid_cell_t target_center, grid_cell_t source_center);
-
-bool board_rotate(board_t *board, grid_cell_t center, int rotation_steps);
 
 tile_t *get_tile_at_cell(const board_t *board, grid_cell_t cell);
 
@@ -92,7 +76,6 @@ bool board_validate_tile_map_bounds(const board_t *board, const tile_map_t *tile
  * @param out_max_y Output for maximum y coordinate.
  * @return True if bounds were calculated successfully, false otherwise.
  */
-bool board_calculate_bounds(const board_t *board, float *out_min_x, float *out_min_y,
-                            float *out_max_x, float *out_max_y);
+bool board_calculate_bounds(const board_t *board, float *out_min_x, float *out_min_y, float *out_max_x, float *out_max_y);
 
 #endif /* BOARD_H */
