@@ -46,7 +46,7 @@ static void create_center_cluster(board_t *board) {
 
   tile_t *center_tile = tile_create_ptr(center, magenta_data);
   center_tile->pool_id = 0;
-  add_tile(board, center_tile);
+  board_add_tile(board, center_tile);
 
   // Get the first two neighbors for the other colors
   int neighbor_count = grid_geometry_get_neighbor_count(board->geometry_type);
@@ -56,11 +56,11 @@ static void create_center_cluster(board_t *board) {
 
   tile_t *neighbor1_tile = tile_create_ptr(neighbor_cells[0], cyan_data);
   neighbor1_tile->pool_id = 0;
-  add_tile(board, neighbor1_tile);
+  board_add_tile(board, neighbor1_tile);
 
   tile_t *neighbor2_tile = tile_create_ptr(neighbor_cells[1], yellow_data);
   neighbor2_tile->pool_id = 0;
-  add_tile(board, neighbor2_tile);
+  board_add_tile(board, neighbor2_tile);
 }
 
 board_t *board_create(grid_type_e grid_type, int radius,
@@ -93,7 +93,7 @@ board_t *board_create(grid_type_e grid_type, int radius,
   }
 
   board->tiles = tile_map_create();
-  board->pools = pool_map_create();
+  board->pools = pool_manager_create();
   board->next_pool_id = 1;
 
   camera_init(&board->camera);
@@ -107,15 +107,15 @@ board_t *board_create(grid_type_e grid_type, int radius,
 
 void clear_board(board_t *board) {
   tile_map_free(board->tiles);
-  pool_map_free(board->pools);
+  pool_manager_free(board->pools);
   board->tiles = tile_map_create();
-  board->pools = pool_map_create();
+  board->pools = pool_manager_create();
   board->next_pool_id = 1;
 }
 
 void free_board(board_t *board) {
   tile_map_free(board->tiles);
-  pool_map_free(board->pools);
+  pool_manager_free(board->pools);
 
   free(board);
 }
@@ -137,8 +137,8 @@ void get_neighbor_pools(board_t *board, tile_t *tile, pool_t **out_pools,
   for (size_t i = 0; i < max_neighbors; ++i) {
     tile_t *neighbor_tile = get_tile_at_cell(board, neighbor_cells[i]);
     if (neighbor_tile) {
-      pool_map_entry_t *pool_entry =
-        pool_map_find_by_id(board->pools, neighbor_tile->pool_id);
+      pool_manager_entry_t *pool_entry =
+        pool_manager_find_by_id(board->pools, neighbor_tile->pool_id);
       out_pools[i] = pool_entry ? pool_entry->pool : NULL;
 
       if (!out_pools[i]) {
@@ -151,7 +151,7 @@ void get_neighbor_pools(board_t *board, tile_t *tile, pool_t **out_pools,
   }
 }
 
-void add_tile(board_t *board, tile_t *tile) {
+void board_add_tile(board_t *board, tile_t *tile) {
   pool_t *target_pool = NULL;
   uint32_t compatible_pool_ids[MAX_POOL_CANDIDATES];
   size_t num_compatible_pools = 0;
@@ -169,7 +169,7 @@ void add_tile(board_t *board, tile_t *tile) {
       has_same_color_neighbors = true;
 
       pool_t *neighbor_pool =
-        pool_map_get_pool(board->pools, neighbor_tile->pool_id);
+        pool_manager_get_pool(board->pools, neighbor_tile->pool_id);
       if (neighbor_pool) {
         // Check if this pool is already in our list
         bool already_added = false;
@@ -190,7 +190,7 @@ void add_tile(board_t *board, tile_t *tile) {
   if (num_compatible_pools == 0) {
     // Check if we have same-color neighbors that are singletons
     if (has_same_color_neighbors) {
-      target_pool = pool_map_create_pool(board->pools);
+      target_pool = pool_manager_create_pool(board->pools);
       target_pool->accepted_tile_type = tile->data.type;
       tile->pool_id = target_pool->id;
 
@@ -200,7 +200,8 @@ void add_tile(board_t *board, tile_t *tile) {
         if (neighbor_tile && neighbor_tile->data.type == tile->data.type &&
             neighbor_tile->pool_id == 0) {
           neighbor_tile->pool_id = target_pool->id;
-          pool_add_tile(target_pool, neighbor_tile, board->geometry_type);
+          pool_add_tile(target_pool, neighbor_tile, board->geometry_type,
+                        board->tiles);
         }
       }
     } else {
@@ -210,13 +211,13 @@ void add_tile(board_t *board, tile_t *tile) {
     }
   } else {
     // Use the first compatible pool (could implement scoring here later)
-    target_pool = pool_map_get_pool(board->pools, compatible_pool_ids[0]);
+    target_pool = pool_manager_get_pool(board->pools, compatible_pool_ids[0]);
     tile->pool_id = target_pool->id;
 
     // If multiple pools, merge them into the target pool
     for (size_t i = 1; i < num_compatible_pools; i++) {
       pool_t *merge_pool =
-        pool_map_get_pool(board->pools, compatible_pool_ids[i]);
+        pool_manager_get_pool(board->pools, compatible_pool_ids[i]);
       if (merge_pool) {
 
         // Move all tiles from merge_pool to target_pool
@@ -227,11 +228,12 @@ void add_tile(board_t *board, tile_t *tile) {
           tile_to_move->pool_id = target_pool->id;
           // Remove from source pool's tile map first
           tile_map_remove(merge_pool->tiles, tile_to_move->cell);
-          pool_add_tile(target_pool, tile_to_move, board->geometry_type);
+          pool_add_tile(target_pool, tile_to_move, board->geometry_type,
+                        board->tiles);
         }
 
         // Remove the merged pool
-        pool_map_remove(board->pools, compatible_pool_ids[i]);
+        pool_manager_remove(board->pools, compatible_pool_ids[i]);
       }
     }
 
@@ -243,7 +245,8 @@ void add_tile(board_t *board, tile_t *tile) {
           neighbor_tile->pool_id == 0) {
         // Found a singleton neighbor - add it to the target pool
         neighbor_tile->pool_id = target_pool->id;
-        pool_add_tile(target_pool, neighbor_tile, board->geometry_type);
+        pool_add_tile(target_pool, neighbor_tile, board->geometry_type,
+                      board->tiles);
       }
     }
   }
@@ -251,23 +254,16 @@ void add_tile(board_t *board, tile_t *tile) {
   // Add tile to board's tile map and pool (if pool exists)
   tile_map_add(board->tiles, tile);
   if (target_pool != NULL) {
-    pool_add_tile(target_pool, tile, board->geometry_type);
+    pool_add_tile(target_pool, tile, board->geometry_type, board->tiles);
   }
-  // TODO: Fix pool_update to work without grid instance
-  // pool_update(target_pool, board->geometry_type, board->layout,
-  //             board->radius);
-
-  // Mark chunk dirty for rendering updates - DISABLED
-  // chunk_id_t chunk_id = grid_get_chunk_id(board->grid, tile->cell);
-  // grid_mark_chunk_dirty(board->grid, chunk_id);
 }
 
 void remove_tile(board_t *board, tile_t *tile) {
 
   // Get the pool this tile belongs to (only if tile has a pool)
   if (tile->pool_id != 0) {
-    pool_map_entry_t *pool_entry =
-      pool_map_find_by_id(board->pools, tile->pool_id);
+    pool_manager_entry_t *pool_entry =
+      pool_manager_find_by_id(board->pools, tile->pool_id);
     if (pool_entry) {
       // Remove tile from pool
       pool_remove_tile(pool_entry->pool, tile);
@@ -281,7 +277,7 @@ void remove_tile(board_t *board, tile_t *tile) {
           remaining_entry->tile->pool_id = 0; // Convert to singleton
         }
         // Remove the now-empty pool
-        pool_map_remove(board->pools, tile->pool_id);
+        pool_manager_remove(board->pools, tile->pool_id);
 
       } else {
 
@@ -360,8 +356,8 @@ void board_randomize(board_t *board, int radius, board_type_e board_type) {
     grid_cell_t cell = all_coords[i];
     tile_t *tile = tile_create_random_ptr(cell);
     if (tile->data.type != TILE_EMPTY) {
-      tile->pool_id = 0; // Will be assigned in add_tile
-      add_tile(board, tile);
+      tile->pool_id = 0; // Will be assigned in board_add_tile
+      board_add_tile(board, tile);
       created_tiles++;
     } else {
       free(tile); // Free empty tiles
@@ -442,7 +438,7 @@ void board_fill_fast(board_t *board, int radius, board_type_e board_type) {
 
   clock_t batch_start = clock();
   // Add all tiles to board at once (no pool logic)
-  add_tiles_batch(board, tiles, tile_count);
+  board_add_tiles_batch(board, tiles, tile_count);
   printf("Added %zu tiles in %.3fs\n", tile_count,
          (double)(clock() - batch_start) / CLOCKS_PER_SEC);
 
@@ -527,7 +523,7 @@ void board_fill_batch(board_t *board, int radius, board_type_e board_type) {
 
   clock_t batch_start = clock();
   // Add all tiles to board at once (no pool logic)
-  add_tiles_batch(board, tiles, tile_count);
+  board_add_tiles_batch(board, tiles, tile_count);
   printf("Added %zu tiles in %.3fs\n", tile_count,
          (double)(clock() - batch_start) / CLOCKS_PER_SEC);
 
@@ -547,7 +543,7 @@ void board_fill_batch(board_t *board, int radius, board_type_e board_type) {
          (double)(clock() - start_time) / CLOCKS_PER_SEC);
 }
 
-void add_tiles_batch(board_t *board, tile_t **tiles, size_t count) {
+void board_add_tiles_batch(board_t *board, tile_t **tiles, size_t count) {
   if (!board || !tiles || count == 0)
     return;
 
@@ -574,7 +570,7 @@ void assign_pools_batch(board_t *board) {
     entry->tile->pool_id = 0; // 0 means unassigned
   }
 
-  // next_pool_id removed - pool_map manages IDs automatically
+  // next_pool_id removed - pool_manager manages IDs automatically
 
   // Second pass: flood-fill to assign pools (only for groups of 2+ tiles)
   printf("Starting pool assignment for %zu tiles...\n",
@@ -601,7 +597,7 @@ void assign_pools_batch(board_t *board) {
 
       if (has_same_color_neighbors) {
         // Create new pool and flood-fill only if part of a group
-        pool_t *new_pool = pool_map_create_pool(board->pools);
+        pool_t *new_pool = pool_manager_create_pool(board->pools);
         new_pool->accepted_tile_type = tile->data.type;
 
         // Flood-fill all connected tiles of same type
@@ -642,7 +638,7 @@ void flood_fill_assign_pool(board_t *board, tile_t *start_tile, pool_t *pool) {
 
     // Assign to pool
     current_tile->pool_id = pool->id;
-    pool_add_tile(pool, current_tile, board->geometry_type);
+    pool_add_tile(pool, current_tile, board->geometry_type, board->tiles);
 
     // Check all 6 neighbors
     for (int dir = 0; dir < 6; dir++) {
@@ -751,10 +747,10 @@ bool merge_boards(board_t *target_board, board_t *source_board,
 
     new_tile->cell = target_position;
     new_tile->data = source_tile->data; // Copy tile data
-    new_tile->pool_id = 0;              // Will be assigned in add_tile
+    new_tile->pool_id = 0;              // Will be assigned in board_add_tile
 
     // Add the tile to the target board
-    add_tile(target_board, new_tile);
+    board_add_tile(target_board, new_tile);
     tiles_added++;
   }
 
@@ -773,7 +769,7 @@ void test_pool_logic(board_t *board) {
   grid_cell_t center = grid_geometry_get_origin(board->geometry_type);
   tile_data_t red_data = tile_data_create(TILE_MAGENTA, 1);
   tile_t *single_tile = tile_create_ptr(center, red_data);
-  add_tile(board, single_tile);
+  board_add_tile(board, single_tile);
 
   printf(
     "  Result: pool_id = %d (expected: 0), pools count = %zu (expected: 0)\n",
@@ -787,7 +783,7 @@ void test_pool_logic(board_t *board) {
   grid_cell_t neighbor_cells[6];
   grid_geometry_get_all_neighbors(board->geometry_type, center, neighbor_cells);
   tile_t *adjacent_tile = tile_create_ptr(neighbor_cells[0], red_data);
-  add_tile(board, adjacent_tile);
+  board_add_tile(board, adjacent_tile);
 
   printf(
     "  Result: tile1_pool_id = %d, tile2_pool_id = %d, pools count = %zu\n",
@@ -798,7 +794,7 @@ void test_pool_logic(board_t *board) {
   printf("  Status: %s\n", test2_passed ? "PASSED" : "FAILED");
 
   if (test2_passed) {
-    pool_t *pool = pool_map_get_pool(board->pools, single_tile->pool_id);
+    pool_t *pool = pool_manager_get_pool(board->pools, single_tile->pool_id);
     if (pool) {
       printf("  Pool details: %d tiles, diameter: %d, edge_count: %d\n",
              (int)pool->tiles->num_tiles, pool->diameter, pool->edge_count);
@@ -809,7 +805,7 @@ void test_pool_logic(board_t *board) {
   // Test 3: Add third tile to create larger pool
   printf("Test 3: Pool expansion\n");
   tile_t *third_tile = tile_create_ptr(neighbor_cells[1], red_data);
-  add_tile(board, third_tile);
+  board_add_tile(board, third_tile);
 
   printf("  Result: all tiles pool_id = %d, pools count = %zu\n",
          third_tile->pool_id, board->pools->num_pools);
@@ -820,7 +816,7 @@ void test_pool_logic(board_t *board) {
   bool test4_passed = false; // Declare here for scope
 
   if (test3_passed) {
-    pool_t *pool = pool_map_get_pool(board->pools, third_tile->pool_id);
+    pool_t *pool = pool_manager_get_pool(board->pools, third_tile->pool_id);
     if (pool) {
       printf("  Pool details: %d tiles, diameter: %d, edge_count: %d\n",
              (int)pool->tiles->num_tiles, pool->diameter, pool->edge_count);
@@ -843,8 +839,8 @@ void test_pool_logic(board_t *board) {
 
   tile_t *pool_tile1 = tile_create_ptr(center_pos, red_data);
   tile_t *pool_tile2 = tile_create_ptr(center_neighbors[0], red_data);
-  add_tile(board, pool_tile1);
-  add_tile(board, pool_tile2);
+  board_add_tile(board, pool_tile1);
+  board_add_tile(board, pool_tile2);
 
   // Create singleton at a position that requires multiple steps to reach pool
   // Get neighbors of center_neighbors[3] to ensure real isolation
@@ -853,7 +849,7 @@ void test_pool_logic(board_t *board) {
                                   far_neighbors);
 
   tile_t *singleton_tile = tile_create_ptr(far_neighbors[1], red_data);
-  add_tile(board, singleton_tile);
+  board_add_tile(board, singleton_tile);
 
   printf("  Setup: pool has %d tiles, singleton pool_id = %d (expected: 0), "
          "pools count = %zu\n",
@@ -872,7 +868,7 @@ void test_pool_logic(board_t *board) {
 
     // Add bridge tile that connects singleton to existing pool
     bridge_tile = tile_create_ptr(center_neighbors[3], red_data);
-    add_tile(board, bridge_tile);
+    board_add_tile(board, bridge_tile);
 
     printf(
       "  After bridge: singleton pool_id = %d, all tiles in same pool = %s\n",

@@ -84,8 +84,6 @@ typedef enum {
     RULE_EFFECT_MODIFY_RANGE    // Modify range
 } rule_effect_type_t;
 
-// --- Optimized Data Structures ---
-
 /**
  * @brief Compact rule condition parameters
  */

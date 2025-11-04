@@ -22,11 +22,11 @@
      int id;
      int highest_n;
      grid_cell_t center;
-     edge_map_entry_t *edges;
      tile_map_t *tiles;
      tile_type_t accepted_tile_type;
 
      kvec_t(grid_cell_t) neighbor_cells;
+     kvec_t(tile_t*) neighbor_tiles;
 
      // Pool modifier (can be negative/positive)
      float modifier;
@@ -91,6 +91,14 @@ pool_find_max_tile_neighbors_in_pool (pool_t *pool, grid_type_e grid_type);
 void
 pool_calculate_score (pool_t *pool, grid_type_e grid_type);
 
+
+/**
+ * @brief Updates the neighbors of a pool. First cells then tiles.
+ * @param pool Pointer to the pool.
+ * @param board_tiles Pointer to the tile map.
+ * @param grid_type Type of grid.
+ */
+void pool_update_neighbors(pool_t *pool, const tile_map_t *board_tiles, grid_type_e grid_type);
 /**
  * @brief Adds a tile to a pool.
  * @param pool A pointer to the pool to add the tile to.
@@ -98,7 +106,7 @@ pool_calculate_score (pool_t *pool, grid_type_e grid_type);
  * @return True if the tile was added successfully, false otherwise.
  */
  bool
-pool_add_tile (pool_t *pool, const tile_t *tile_ptr, grid_type_e geometry_type);
+pool_add_tile (pool_t *pool, const tile_t *tile_ptr, grid_type_e geometry_type, const tile_map_t *board_tiles);
 
 // --- Modifier Functions ---
 
@@ -149,7 +157,7 @@ int pool_calculate_diameter(const pool_t *pool, grid_type_e geometry_type);
 grid_cell_t pool_calculate_center(const pool_t *pool, grid_type_e geometry_type);
 
 /**
- * @brief Retrieve all neighbor grid cells of a pool.
+ * @brief Retrieve all neighbor grid cells of a pool. No duplicats, and no cells inside the pool.
  * @param pool Pointer to the pool.
  * @param geometry_type The grid geometry type for calculations.
  * @param out_cells Pointer to an array to store the neighbor grid cells.

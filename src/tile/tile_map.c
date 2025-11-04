@@ -461,3 +461,5 @@ bool tile_map_can_merge_with_offset(const tile_map_t *source,
 
   return true; // No conflicts found
 }
+
+

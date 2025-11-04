@@ -22,7 +22,7 @@ $(BIN_DIR)/pool_logic_test: $(SRC_DIR)/pool_logic_test.c \
 	../src/game/board.c \
 	../src/game/camera.c \
 	../src/tile/tile_map.c \
-	../src/tile/pool_map.c \
+	../src/tile/pool_manager.c \
 	../src/tile/pool.c \
 	../src/tile/tile.c \
 	../src/grid/hex_geometry.c \

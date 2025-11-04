@@ -2,6 +2,7 @@
 #include "../../include/grid/grid_cell_utils.h"
 #include "../../include/grid/grid_geometry.h"
 #include "../../include/third_party/uthash.h"
+#include "grid/grid_types.h"
 #include "third_party/kvec.h"
 #include "tile/tile_map.h"
 #include <complex.h>
@@ -17,7 +18,6 @@ pool_t *pool_create() {
   // Since we're not given a tile here, we don't set accepted_tile_types.
   // Create the pool's internal tile map container.
   pool->tiles = tile_map_create();
-  pool->edges = NULL; // Initialize to NULL, edges will be added as needed
   pool->highest_n = 0;
   pool->accepted_tile_type = TILE_UNDEFINED; // Default to empty type.
   pool->modifier = 0.0f;                     // Initialize modifier to 0
@@ -27,8 +27,9 @@ pool_t *pool_create() {
   pool->edge_count = 0;
   pool->compactness_score = 0.0f;
 
-  // Initialize neighbor cells
+  // Initialize neighbor cells and tiles
   kv_init(pool->neighbor_cells);
+  kv_init(pool->neighbor_tiles);
 
   return pool;
 }
@@ -225,6 +226,7 @@ void pool_print(const pool_t *pool) {
   printf("Edge count: %d\n", pool->edge_count);
   printf("Compactness score: %.3f\n", pool->compactness_score);
   printf("Neighbor cell count: %d\n", pool->neighbor_cells.n);
+  printf("Neighbor tile count: %d\n", pool->neighbor_tiles.n);
   printf("========================\n");
 }
 
@@ -261,39 +263,64 @@ static bool is_cell_in_neighbor_list(const pool_t *pool, grid_cell_t cell,
   return false;
 }
 
-static void add_tile_neighbors_to_pool(pool_t *pool, tile_t *tile,
-                                       grid_type_e geometry_type) {
-  int num_neighbors = grid_geometry_get_neighbor_count(geometry_type);
-  grid_cell_t neighbors[num_neighbors];
-  grid_geometry_get_all_neighbors(geometry_type, tile->cell, neighbors);
+void pool_update_neighbors(pool_t *pool, const tile_map_t *board_tiles,
+                           grid_type_e geometry_type) {
+  if (!pool || !board_tiles)
+    return;
 
-  for (int i = 0; i < num_neighbors; i++) {
-    if (tile_map_contains(pool->tiles, neighbors[i]))
-      continue;
-    if (is_cell_in_neighbor_list(pool, neighbors[i], geometry_type))
-      continue;
-
-    kv_push(grid_cell_t, pool->neighbor_cells, neighbors[i]);
-  }
-}
-
-void pool_update_neighbor_cells(pool_t *pool, tile_t *tile,
-                                grid_type_e geometry_type) {
+  // --- 1. Update neighbor cells ---
   kv_destroy(pool->neighbor_cells);
   kv_init(pool->neighbor_cells);
 
   tile_map_entry_t *entry, *tmp;
   HASH_ITER(hh, pool->tiles->root, entry, tmp) {
-    add_tile_neighbors_to_pool(pool, entry->tile, geometry_type);
+    int num_neighbors = grid_geometry_get_neighbor_count(geometry_type);
+    grid_cell_t neighbors[num_neighbors];
+    grid_geometry_get_all_neighbors(geometry_type, entry->tile->cell,
+                                    neighbors);
+
+    for (int i = 0; i < num_neighbors; i++) {
+      grid_cell_t n = neighbors[i];
+
+      // Skip if already in pool or already added to neighbor_cells
+      if (tile_map_contains(pool->tiles, n))
+        continue;
+
+      bool duplicate = false;
+      for (size_t j = 0; j < kv_size(pool->neighbor_cells); j++) {
+        if (grid_geometry_cells_equal(geometry_type,
+                                      kv_A(pool->neighbor_cells, j), n)) {
+          duplicate = true;
+          break;
+        }
+      }
+
+      if (!duplicate) {
+        kv_push(grid_cell_t, pool->neighbor_cells, n);
+      }
+    }
   }
 
-  printf("Pool %d has %zu neighbor cells\n", pool->id,
-         kv_size(pool->neighbor_cells));
+  // --- 2. Update neighbor tiles ---
+  kv_destroy(pool->neighbor_tiles);
+  kv_init(pool->neighbor_tiles);
+
+  for (size_t i = 0; i < kv_size(pool->neighbor_cells); i++) {
+    grid_cell_t cell = kv_A(pool->neighbor_cells, i);
+
+    tile_map_entry_t *neighbor_entry = tile_map_find(board_tiles, cell);
+    if (neighbor_entry) {
+      kv_push(tile_t *, pool->neighbor_tiles, neighbor_entry->tile);
+    }
+  }
+
+  printf("Pool %d: %zu neighbor cells, %zu neighbor tiles\n", pool->id,
+         kv_size(pool->neighbor_cells), kv_size(pool->neighbor_tiles));
 }
 
 // Main function: Adds a tile to a pool if it passes validations.
-bool pool_add_tile(pool_t *pool, const tile_t *tile,
-                   grid_type_e geometry_type) {
+bool pool_add_tile(pool_t *pool, const tile_t *tile, grid_type_e geometry_type,
+                   const tile_map_t *board_tiles) {
 
   if (!pool || !tile)
     return false;
@@ -317,15 +344,15 @@ bool pool_add_tile(pool_t *pool, const tile_t *tile,
   // Update geometric properties after adding tile
   pool_update_geometric_properties(pool, geometry_type);
 
-  // Update pool's neighbor cells
-  pool_update_neighbor_cells(pool, (tile_t *)tile, geometry_type);
-
+  // Update neighbors after adding tile
+  pool_update_neighbors(pool, board_tiles, geometry_type);
   return true;
 }
 
 void pool_free(pool_t *pool) {
   tile_map_free(pool->tiles);
-  edge_map_free(&pool->edges);
+  kv_destroy(pool->neighbor_cells);
+  kv_destroy(pool->neighbor_tiles);
   free(pool);
 };
 
@@ -342,19 +369,6 @@ int compare_pools_by_score(const void *a, const void *b) {
   int score_b = pool_compatibility_score(pool_b);
   return score_b - score_a;
 }
-
-void pool_update_edges(grid_type_e grid_type, const layout_t *layout,
-                       pool_t *pool) {
-  edge_map_entry_t *collected_edges = NULL; // Initialize to NULL
-
-  tile_map_entry_t *tile_entry, *tmp;
-  HASH_ITER(hh, pool->tiles->root, tile_entry, tmp) {
-    edge_map_add_cell_edges(grid_type, layout, tile_entry->tile->cell,
-                            &collected_edges);
-  }
-  edge_map_free(&pool->edges);   // Free old edges if needed
-  pool->edges = collected_edges; // Assign the new set
-};
 
 int pool_find_tile_friendly_neighbor_count(tile_map_t *tile_map,
                                            const tile_t *tile,

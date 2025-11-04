@@ -4,6 +4,7 @@
 #include "third_party/uthash.h"
 #include "grid/grid_types.h"
 #include "tile.h"
+#include "third_party/kvec.h"
 
 /**
  * @brief Individual Hash Table Entry
@@ -123,5 +124,24 @@ bool tile_map_find_merge_conflicts(const tile_map_t *source, const tile_map_t *d
  */
 bool tile_map_can_merge_with_offset(const tile_map_t *source, const tile_map_t *dest,
                                     grid_cell_t offset);
+
+/**
+ * @brief Collects tiles from a set of cells within a tile map.
+ *
+ * This function searches for tiles in the tile map that correspond to the given
+ * cells and appends them to the provided output vector.
+ *
+ * @param tiles The tile map to search.
+ * @param cells Array of grid cells to collect tiles from.
+ * @param cell_count Number of cells in the array.
+ * @param out_vec Pre-initialized vector to append tiles to.
+ * @return Number of tiles added to out_vec.
+ */
+size_t tile_map_collect_tiles_from_cells(
+    const tile_map_t *tiles,
+    const grid_cell_t *cells,
+    size_t cell_count,
+    kvec_t(tile_t*) *out_vec
+);
 
 #endif // TILE_MAP_H

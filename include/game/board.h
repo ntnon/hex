@@ -3,7 +3,7 @@
 
 #include "grid/grid_geometry.h"
 #include "tile/tile_map.h"
-#include "tile/pool_map.h"
+#include "tile/pool_manager.h"
 #include "utility/array_shuffle.h"
 #include "raylib.h"
 
@@ -22,7 +22,7 @@ typedef struct {
 
     // Game data
     tile_map_t *tiles;
-    pool_map_t *pools;
+    pool_manager_t *pools;
     uint32_t next_pool_id;
     Camera2D camera; // Camera for this board
 } board_t;
@@ -38,8 +38,8 @@ void board_fill(board_t *board, int radius, board_type_e board_type);
 void board_fill_batch(board_t *board, int radius, board_type_e board_type);
 void board_fill_fast(board_t *board, int radius, board_type_e board_type);
 
-void add_tile(board_t *board, tile_t* tile);
-void add_tiles_batch(board_t *board, tile_t **tiles, size_t count);
+void board_add_tile(board_t *board, tile_t* tile);
+void board_add_tiles_batch(board_t *board, tile_t **tiles, size_t count);
 void assign_pools_batch(board_t *board);
 void flood_fill_assign_pool(board_t *board, tile_t *start_tile, pool_t *pool);
 

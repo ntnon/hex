@@ -1,8 +1,8 @@
-#include "../../include/tile/pool_map.h"
+#include "../../include/tile/pool_manager.h"
 #include <stdio.h>
 
-pool_map_t *pool_map_create(void) {
-  pool_map_t *map = malloc(sizeof(pool_map_t));
+pool_manager_t *pool_manager_create(void) {
+  pool_manager_t *map = malloc(sizeof(pool_manager_t));
   if (!map) {
     fprintf(stderr, "Out of memory!\n");
     return NULL;
@@ -13,10 +13,10 @@ pool_map_t *pool_map_create(void) {
   return map;
 }
 
-void pool_map_free(pool_map_t *map) {
+void pool_manager_free(pool_manager_t *map) {
   if (!map)
     return;
-  pool_map_entry_t *el, *tmp;
+  pool_manager_entry_t *el, *tmp;
   HASH_ITER(hh, map->root, el, tmp) {
     HASH_DEL(map->root, el);
     free(el);
@@ -26,7 +26,7 @@ void pool_map_free(pool_map_t *map) {
   free(map);
 }
 
-pool_t *pool_map_create_pool(pool_map_t *map) {
+pool_t *pool_manager_create_pool(pool_manager_t *map) {
   if (!map)
     return NULL;
 
@@ -36,18 +36,18 @@ pool_t *pool_map_create_pool(pool_map_t *map) {
     return NULL;
 
   // Add it to the map (this function will assign a unique id).
-  pool_map_add(map, pool);
+  pool_manager_add(map, pool);
 
   // Return the registered pool to the caller.
   return pool;
 }
 
-void pool_map_add(pool_map_t *map, pool_t *pool) {
+void pool_manager_add(pool_manager_t *map, pool_t *pool) {
   if (!map || !pool)
     return;
 
   // Remove any existing entry with the same pool id to prevent duplicates.
-  pool_map_entry_t *existing = pool_map_find_by_id(map, pool->id);
+  pool_manager_entry_t *existing = pool_manager_find_by_id(map, pool->id);
   if (existing) {
     fprintf(stderr, "ERROR: Duplicate pool ID %d\n", pool->id);
     HASH_DEL(map->root, existing);
@@ -58,7 +58,7 @@ void pool_map_add(pool_map_t *map, pool_t *pool) {
   // Assign a new unique ID to the pool.
   pool->id = map->next_id++;
 
-  pool_map_entry_t *entry = malloc(sizeof(pool_map_entry_t));
+  pool_manager_entry_t *entry = malloc(sizeof(pool_manager_entry_t));
   if (!entry) {
     fprintf(stderr, "Out of memory!\n");
     return;
@@ -70,8 +70,9 @@ void pool_map_add(pool_map_t *map, pool_t *pool) {
   map->num_pools++;
 }
 
-pool_map_entry_t *pool_map_find_by_tile(pool_map_t *map, tile_t *tile) {
-  pool_map_entry_t *entry = NULL;
+pool_manager_entry_t *pool_manager_find_by_tile(pool_manager_t *map,
+                                                tile_t *tile) {
+  pool_manager_entry_t *entry = NULL;
   for (entry = map->root; entry != NULL; entry = entry->hh.next) {
     if (pool_contains_tile(entry->pool, tile))
       return entry;
@@ -79,17 +80,17 @@ pool_map_entry_t *pool_map_find_by_tile(pool_map_t *map, tile_t *tile) {
   return NULL;
 }
 
-bool pool_map_contains_tile(pool_map_t *map, tile_t *tile) {
+bool pool_manager_contains_tile(pool_manager_t *map, tile_t *tile) {
   if (!map || !tile)
     return false;
-  pool_map_entry_t *entry = pool_map_find_by_tile(map, tile);
+  pool_manager_entry_t *entry = pool_manager_find_by_tile(map, tile);
   return entry != NULL;
 }
 
-void pool_map_remove(pool_map_t *map, int id) {
+void pool_manager_remove(pool_manager_t *map, int id) {
   if (!map)
     return;
-  pool_map_entry_t *entry_to_remove = NULL;
+  pool_manager_entry_t *entry_to_remove = NULL;
   HASH_FIND_INT(map->root, &id, entry_to_remove);
   if (entry_to_remove) {
     HASH_DEL(map->root, entry_to_remove);
@@ -98,19 +99,20 @@ void pool_map_remove(pool_map_t *map, int id) {
   }
 }
 
-pool_map_entry_t *pool_map_find_by_id(pool_map_t *map, int pool_id) {
-  pool_map_entry_t *entry = NULL;
+pool_manager_entry_t *pool_manager_find_by_id(pool_manager_t *map,
+                                              int pool_id) {
+  pool_manager_entry_t *entry = NULL;
   HASH_FIND_INT(map->root, &pool_id, entry);
   return entry;
 }
 
 // Direct pool access functions (better ergonomics)
-pool_t *pool_map_get_pool(pool_map_t *map, int pool_id) {
-  pool_map_entry_t *entry = pool_map_find_by_id(map, pool_id);
+pool_t *pool_manager_get_pool(pool_manager_t *map, int pool_id) {
+  pool_manager_entry_t *entry = pool_manager_find_by_id(map, pool_id);
   return entry ? entry->pool : NULL;
 }
 
-pool_t *pool_map_get_pool_by_tile(pool_map_t *map, tile_t *tile) {
-  pool_map_entry_t *entry = pool_map_find_by_tile(map, tile);
+pool_t *pool_manager_get_pool_by_tile(pool_manager_t *map, tile_t *tile) {
+  pool_manager_entry_t *entry = pool_manager_find_by_tile(map, tile);
   return entry ? entry->pool : NULL;
 }

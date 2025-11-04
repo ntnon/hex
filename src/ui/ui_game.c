@@ -120,7 +120,7 @@ void ui_build_tile_info_card(game_t *game, Vector2 mouse_pos) {
   }
 
   tile_t *tile = game->hovered_tile;
-  pool_t *pool = pool_map_get_pool_by_tile(game->board->pools, tile);
+  pool_t *pool = pool_manager_get_pool_by_tile(game->board->pools, tile);
   int score = pool ? pool_tile_score(pool) : 0;
   if (pool) {
     pool_print(pool);
