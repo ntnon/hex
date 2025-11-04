@@ -74,113 +74,107 @@ upgrade menu. Pay for this. This is like "reducing" your deck.
 Pay with inventory slots
 */
 
-int main(int argc, char *argv[]) {
-  // Check for test mode
-  if (argc > 1 && strcmp(argv[1], "--test-pools") == 0) {
-    printf("Running pool logic tests...\n");
-    board_t *test_board = board_create(GRID_TYPE_HEXAGON, 10, BOARD_TYPE_MAIN);
-    test_pool_logic(test_board);
-    free(test_board);
+int main() {
+
+    const int initial_width = 1300;
+    const int initial_height = 700;
+
+    // Initialize app controller
+    app_controller_t app_controller;
+    app_controller_init(&app_controller);
+    printf("App controller initialized successfully\n");
+
+    // Validate app controller state
+    if (!app_controller.is_initialized) {
+        printf("ERROR: App controller failed to initialize properly\n");
+        return 1;
+    }
+    printf("App controller validation passed\n");
+
+    // Initialize UI system (this will create the window)
+    UI_Context ui = ui_init(initial_width, initial_height);
+
+    // Set FPS after window is created
+    SetTargetFPS(60);
+
+    printf("Starting main game loop\n");
+    // Main game loop
+    while (!WindowShouldClose() &&
+           !app_controller_should_quit(&app_controller)) {
+        input_state_t input;
+        input_state_init(&input); // Initialize before getting state
+        get_input_state(&input);
+
+        // Build UI layout based on current app state with error handling
+        Clay_RenderCommandArray renderCommands;
+
+        renderCommands = ui_build_root(&app_controller, &input);
+
+        // Get the hovered element from our tracking system
+        input.hovered_element_id = ui_get_hovered_element();
+
+        // Set drag bounds if we're in game and hovering over game area
+        if (app_controller_get_state(&app_controller) == APP_STATE_GAME) {
+            if (input.hovered_element_id.id == UI_ID_GAME_AREA.id) {
+                Clay_BoundingBox game_bounds =
+                  Clay_GetElementData(UI_ID_GAME_AREA).boundingBox;
+                input.drag_bounds = game_bounds;
+            }
+        }
+
+        // Update app controller (after UI build so click state is available)
+        app_controller_update(&app_controller, &input);
+
+        // Validate render commands before passing to Clay
+        if (renderCommands.length == 0 || !renderCommands.internalArray) {
+            printf(
+              "Error: Invalid render commands (length=%d, array=%p), skipping "
+              "frame\n",
+              renderCommands.length, renderCommands.internalArray);
+            BeginDrawing();
+            ClearBackground(BROWN);
+            EndDrawing();
+            continue;
+        }
+
+        BeginDrawing();
+        ClearBackground(BROWN);
+
+        // Render game world if in playing state
+        if (app_controller_get_state(&app_controller) == APP_STATE_GAME) {
+            if (app_controller.game) {
+                Clay_BoundingBox game_bounds =
+                  Clay_GetElementData(UI_ID_GAME_AREA).boundingBox;
+
+                camera_set_offset(&app_controller.game->board->camera,
+                                  game_bounds.width, game_bounds.height);
+                BeginMode2D(app_controller.game->board->camera);
+                render_game(app_controller.game);
+
+                EndMode2D();
+            }
+        }
+
+        // Render UI
+        Clay_Raylib_Render(renderCommands, UI_FONTS);
+
+        // Render inventory overlay if in game
+        if (app_controller_get_state(&app_controller) == APP_STATE_GAME) {
+            if (app_controller.game) {
+                render_inventory(app_controller.game->inventory);
+            }
+        }
+
+        EndDrawing();
+
+        // Clear click state at the very end of frame, after all processing
+        ui_clear_click();
+    }
+
+    // Cleanup - simplified order
+    app_controller_cleanup(&app_controller);
+    ui_shutdown(&ui);
+    CloseWindow();
+
     return 0;
-  }
-
-  const int initial_width = 1300;
-  const int initial_height = 700;
-
-  // Initialize app controller
-  app_controller_t app_controller;
-  app_controller_init(&app_controller);
-  printf("App controller initialized successfully\n");
-
-  // Validate app controller state
-  if (!app_controller.is_initialized) {
-    printf("ERROR: App controller failed to initialize properly\n");
-    return 1;
-  }
-  printf("App controller validation passed\n");
-
-  // Initialize UI system (this will create the window)
-  UI_Context ui = ui_init(initial_width, initial_height);
-
-  // Set FPS after window is created
-  SetTargetFPS(60);
-
-  printf("Starting main game loop\n");
-  // Main game loop
-  while (!WindowShouldClose() && !app_controller_should_quit(&app_controller)) {
-    input_state_t input;
-    input_state_init(&input); // Initialize before getting state
-    get_input_state(&input);
-
-    // Build UI layout based on current app state with error handling
-    Clay_RenderCommandArray renderCommands;
-
-    renderCommands = ui_build_root(&app_controller, &input);
-
-    // Get the hovered element from our tracking system
-    input.hovered_element_id = ui_get_hovered_element();
-
-    // Set drag bounds if we're in game and hovering over game area
-    if (app_controller_get_state(&app_controller) == APP_STATE_GAME) {
-      if (input.hovered_element_id.id == UI_ID_GAME_AREA.id) {
-        Clay_BoundingBox game_bounds =
-          Clay_GetElementData(UI_ID_GAME_AREA).boundingBox;
-        input.drag_bounds = game_bounds;
-      }
-    }
-
-    // Update app controller (after UI build so click state is available)
-    app_controller_update(&app_controller, &input);
-
-    // Validate render commands before passing to Clay
-    if (renderCommands.length == 0 || !renderCommands.internalArray) {
-      printf("Error: Invalid render commands (length=%d, array=%p), skipping "
-             "frame\n",
-             renderCommands.length, renderCommands.internalArray);
-      BeginDrawing();
-      ClearBackground(BROWN);
-      EndDrawing();
-      continue;
-    }
-
-    BeginDrawing();
-    ClearBackground(BROWN);
-
-    // Render game world if in playing state
-    if (app_controller_get_state(&app_controller) == APP_STATE_GAME) {
-      if (app_controller.game) {
-        Clay_BoundingBox game_bounds =
-          Clay_GetElementData(UI_ID_GAME_AREA).boundingBox;
-
-        camera_set_offset(&app_controller.game->board->camera,
-                          game_bounds.width, game_bounds.height);
-        BeginMode2D(app_controller.game->board->camera);
-        render_game(app_controller.game);
-
-        EndMode2D();
-      }
-    }
-
-    // Render UI
-    Clay_Raylib_Render(renderCommands, UI_FONTS);
-
-    // Render inventory overlay if in game
-    if (app_controller_get_state(&app_controller) == APP_STATE_GAME) {
-      if (app_controller.game) {
-        render_inventory(app_controller.game->inventory);
-      }
-    }
-
-    EndDrawing();
-
-    // Clear click state at the very end of frame, after all processing
-    ui_clear_click();
-  }
-
-  // Cleanup - simplified order
-  app_controller_cleanup(&app_controller);
-  ui_shutdown(&ui);
-  CloseWindow();
-
-  return 0;
 }

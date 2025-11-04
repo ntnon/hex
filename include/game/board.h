@@ -54,12 +54,6 @@ bool merge_boards(board_t *target_board, board_t *source_board, grid_cell_t targ
 tile_t *get_tile_at_cell(const board_t *board, grid_cell_t cell);
 
 /**
- * @brief Test function to verify pool merging and singleton logic works correctly.
- * @param board The board to test on (will be cleared and modified).
- */
-void test_pool_logic(board_t *board);
-
-/**
  * @brief Validates that all tiles in a tile map are within the board's grid bounds.
  * @param board The board that defines the valid bounds.
  * @param tile_map The tile map to validate.

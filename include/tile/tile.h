@@ -29,6 +29,7 @@ typedef enum {
 typedef struct {
     tile_type_t type;
     int value;
+    float modifier;
 } tile_data_t;
 
 /**
@@ -38,13 +39,6 @@ typedef struct {
     grid_cell_t cell;    // The cell this tile occupies. Crucially, this will be our hash key.
     tile_data_t data;    // Any specific value for the tile (e.g., resource amount).
     uint32_t pool_id;    // ID of the pool this tile belongs to
-
-    // 3-bit range (0-7), stored efficiently
-    uint8_t range : 3;
-    uint8_t _padding : 5;  // Reserved for future use
-
-    // Per-tile modifier (can be negative/positive)
-    float modifier;
 } tile_t;
 
 /**
@@ -56,7 +50,8 @@ typedef struct {
  */
 tile_t* tile_create_ptr(grid_cell_t cell, tile_data_t data);
 
-tile_data_t tile_data_create(tile_type_t type, int value);
+tile_data_t tile_data_create(tile_type_t type, int value, float modifier);
+tile_data_t tile_data_create_default(tile_type_t type, int value);
 tile_data_t tile_data_create_random(void);
 
 tile_t* tile_create_random_ptr(grid_cell_t cell);
@@ -83,11 +78,7 @@ void tile_set_range(tile_t *tile, uint8_t range);
 /**
  * @brief Gets the range value for a tile.
  * @param tile Pointer to the tile.
- * @return The tile's range (0-7).
- */
-uint8_t tile_get_range(const tile_t *tile);
 
-/**
  * @brief Sets the modifier value for a tile.
  * @param tile Pointer to the tile.
  * @param modifier Modifier value (can be negative or positive).
