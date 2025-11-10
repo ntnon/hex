@@ -32,7 +32,7 @@ inventory_item_t inventory_create_item(inventory_t *inv, int radius) {
     board_fill(item_board, radius, BOARD_TYPE_INVENTORY);
     return (inventory_item_t){
       .quantity = 1,
-      .id = CLAY_IDI(UI_ID_INVENTORY_ITEM_BASE_STRING, next_id),
+      .id = CLAY_IDI(ID_INVENTORY_ITEM_BASE_STRING, next_id),
       .board = item_board};
 }
 
@@ -41,8 +41,7 @@ int inventory_get_size(const inventory_t *inv) { return inv->items.n; }
 inventory_item_t inventory_get_item(const inventory_t *inv, int index) {
     if (index < 0 || index >= inventory_get_size(inv)) {
         printf("Invalid index: %d\n", index);
-        return (inventory_item_t){
-          .quantity = 0, .id = UI_ID_NONE, .board = NULL};
+        return (inventory_item_t){.quantity = 0, .id = ID_NONE, .board = NULL};
     }
     return kv_A(inv->items, index);
 }

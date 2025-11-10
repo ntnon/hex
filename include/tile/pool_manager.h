@@ -3,6 +3,7 @@
 
 #include "pool.h"
 #include "../third_party/uthash.h"
+#include "grid/grid_geometry.h"
 
 // --- Pool Hash Table Entry ---
 // This struct is managed by UTHash.
@@ -68,7 +69,7 @@ void pool_manager_merge_pools(pool_manager_t *manager, int target_id, int source
  * @param out_pool_ids Output array for compatible pool IDs.
  * @param out_count Output for number of compatible pools found.
  */
-void pool_manager_find_compatible_pools(pool_manager_t *manager, tile_t *tile, 
+void pool_manager_find_compatible_pools(pool_manager_t *manager, tile_t *tile,
                                         tile_t **neighbor_tiles, int neighbor_count,
                                         uint32_t *out_pool_ids, size_t *out_count);
 

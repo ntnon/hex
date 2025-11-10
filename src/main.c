@@ -108,16 +108,16 @@ int main() {
         // Build UI layout based on current app state with error handling
         Clay_RenderCommandArray renderCommands;
 
-        renderCommands = ui_build_root(&app_controller, &input);
+        renderCommands = ui_root(&app_controller, &input);
 
         // Get the hovered element from our tracking system
         input.hovered_element_id = ui_get_hovered_element();
 
         // Set drag bounds if we're in game and hovering over game area
         if (app_controller_get_state(&app_controller) == APP_STATE_GAME) {
-            if (input.hovered_element_id.id == UI_ID_GAME_AREA.id) {
+            if (input.hovered_element_id.id == ID_GAME_AREA.id) {
                 Clay_BoundingBox game_bounds =
-                  Clay_GetElementData(UI_ID_GAME_AREA).boundingBox;
+                  Clay_GetElementData(ID_GAME_AREA).boundingBox;
                 input.drag_bounds = game_bounds;
             }
         }
@@ -144,7 +144,7 @@ int main() {
         if (app_controller_get_state(&app_controller) == APP_STATE_GAME) {
             if (app_controller.game) {
                 Clay_BoundingBox game_bounds =
-                  Clay_GetElementData(UI_ID_GAME_AREA).boundingBox;
+                  Clay_GetElementData(ID_GAME_AREA).boundingBox;
 
                 camera_set_offset(&app_controller.game->board->camera,
                                   game_bounds.width, game_bounds.height);

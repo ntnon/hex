@@ -22,10 +22,6 @@ typedef struct game {
 
     bool round_count;
     bool is_paused;
-    // Hover system
-    tile_t *hovered_tile;
-    grid_cell_t hovered_cell;
-    bool should_show_tile_info;
 
     // Simplified preview system
     simple_preview_t preview;
@@ -37,6 +33,7 @@ void game_init(game_t *game);
 void free_game(game_t *game);
 void update_game(game_t *game, const input_state_t *input);
 void update_board_preview(game_t *game);
+void game_update_preview_at_position(game_t *game, grid_cell_t position);
 void game_render(game_t *game, const input_state_t *input);
 
 /* Game-level business logic */

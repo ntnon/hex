@@ -8,7 +8,6 @@
 
 #include "../grid/grid_types.h" // For grid_cell_t
 #include "../tile/tile_map.h"
-#include "../grid/edge_map.h"
 #include "tile.h"
 #include <stdlib.h>
 #include "third_party/kvec.h"

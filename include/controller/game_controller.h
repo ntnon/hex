@@ -10,7 +10,8 @@
 typedef enum {
     GAME_STATE_VIEW,
     GAME_STATE_PLACE,
-    GAME_STATE_COLLECT,
+    GAME_STATE_INSPECT,
+    GAME_STATE_INVENTORY,
     GAME_STATE_REWARD,
     GAME_STATE_GAME_OVER,
     GAME_STATE_COUNT
@@ -45,6 +46,15 @@ typedef struct game_controller {
 
     bool is_initialized;
 
+    input_state_t *input;
+
+    /* Derived UI state - computed from input for UI consumption */
+    Vector2 screen_mouse_pos;     /* Mouse in screen coordinates */
+    Vector2 world_mouse_pos;      /* Mouse in world coordinates */
+    tile_t *hovered_tile;         /* Currently hovered tile (moved from game_t) */
+    grid_cell_t hovered_cell;     /* Currently hovered cell (moved from game_t) */
+    bool should_show_tile_info;   /* Whether UI should show tooltip (moved from game_t) */
+
 } game_controller_t;
 
 /* Function declarations */
@@ -54,6 +64,10 @@ void game_controller_init(game_controller_t *controller, game_t *game);
 
 /* Main update - orchestrates input to subsystems */
 void game_controller_update(game_controller_t *controller, const input_state_t *input);
+
+/* Derived state updates - called internally by game_controller_update */
+void game_controller_update_hover_state(game_controller_t *controller, const input_state_t *input);
+void game_controller_update_mouse_positions(game_controller_t *controller, const input_state_t *input);
 
 /* Input orchestration - returns true if input was consumed */
 bool game_controller_handle_inventory_input(game_controller_t *controller, const input_state_t *input);
