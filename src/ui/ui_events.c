@@ -18,6 +18,7 @@ void ui_hover_handler(Clay_ElementId elementId, Clay_PointerData pointerData,
         g_last_clicked_element = elementId;
         g_click_occurred = true;
     }
+    printf("Hovered element: %d\n", ui_get_hovered_element().id);
 }
 
 // Get current hover

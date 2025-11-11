@@ -9,6 +9,7 @@
 #define ID_GAME_AREA CLAY_ID("game_area")
 #define ID_TOOL_BAR CLAY_ID("tool_bar")
 #define ID_GAME_SCREEN CLAY_ID("game_screen")
+#define ID_GENERATION_INCREASE_BUTTON CLAY_ID("generation_increase_button")
 
 #define ID_INVENTORY_AREA CLAY_ID("inventory_area")
 #define ID_INVENTORY_ITEM_BASE_STRING "inventory_item_base_"

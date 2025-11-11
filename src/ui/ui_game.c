@@ -16,9 +16,18 @@ static void ui_reward_area(game_controller_t *controller);
 static void ui_reward(game_controller_t *controller);
 static void ui_tool_bar(game_controller_t *controller);
 
+void ButtonComponent(Clay_String buttonText, Clay_ElementId id) {
+    // Red box button with 8px of padding
+    CLAY_AUTO_ID(
+      {.layout = {.padding = CLAY_PADDING_ALL(8)}, .backgroundColor = M_RED}) {
+        CLAY_TEXT(buttonText, &TEXT_CONFIG_MEDIUM);
+        Clay_OnHover(ui_hover_handler, 0);
+    }
+}
+
 static void ui_game_area(game_controller_t *game_controller) {
-    CLAY({.id = ID_GAME_AREA,
-          .cornerRadius = 0,
+    CLAY(ID_GAME_AREA,
+         {.cornerRadius = 0,
           .backgroundColor = {0, 0, 0, 1}, // Very faint black to make it "real"
           // .clip = {.horizontal = true, .vertical = true},  // Disabled for
           // testing
@@ -27,14 +36,15 @@ static void ui_game_area(game_controller_t *game_controller) {
         Clay_OnHover(ui_hover_handler, 0);
         ui_tool_bar(game_controller);
         // Add a tiny invisible child to ensure the element has content
-        CLAY({.layout = {.sizing = {.width = CLAY_SIZING_FIXED(1),
-                                    .height = CLAY_SIZING_FIXED(1)}}}) {}
+        CLAY_AUTO_ID({.layout = {.sizing = {.width = CLAY_SIZING_FIXED(1),
+                                            .height = CLAY_SIZING_FIXED(1)}}}) {
+        }
     }
 }
 
 static void ui_add_inventory_button(game_controller_t *controller) {
-    CLAY({.id = UI_BUTTON_ADD_INVENTORY_ITEM,
-          .backgroundColor = M_ORANGE,
+    CLAY(UI_BUTTON_ADD_INVENTORY_ITEM,
+         {.backgroundColor = M_ORANGE,
           .layout = {.sizing = (Clay_Sizing){.width = CLAY_SIZING_FIT(),
                                              .height = CLAY_SIZING_FIT()}}}) {
         CLAY_TEXT(CLAY_STRING("Add to inventory"), &TEXT_CONFIG_MEDIUM);
@@ -48,8 +58,8 @@ static void ui_inventory_item(game_controller_t *controller,
     bool is_selected = (controller->game->inventory->selected_index == index);
     Clay_Color bg_color = is_selected ? M_ORANGE : M_BEIGE;
 
-    CLAY({.id = item.id,
-          .backgroundColor = bg_color,
+    CLAY(item.id,
+         {.backgroundColor = bg_color,
           .aspectRatio = 1.0,
           .clip = true,
           .layout = {.layoutDirection = CLAY_TOP_TO_BOTTOM,
@@ -61,8 +71,8 @@ static void ui_inventory_item(game_controller_t *controller,
 }
 
 void ui_inventory_area(game_controller_t *controller){
-  CLAY({.id = ID_INVENTORY_AREA,
-        .cornerRadius = 0,
+  CLAY(ID_INVENTORY_AREA,
+       {.cornerRadius = 0,
         .backgroundColor = M_GRAY,
         .layout = {.childGap = INVENTORY_GAP,
                    .childAlignment = CLAY_ALIGN_X_CENTER,
@@ -88,8 +98,8 @@ for (int i = 0; i < inventory_size; i++) {
 ;
 
 static void ui_reward_area(game_controller_t *controller) {
-    CLAY({.id = ID_REWARDS,
-          .backgroundColor = M_GRAY,
+    CLAY(ID_REWARDS,
+         {.backgroundColor = M_GRAY,
 
           .layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT,
                      .childAlignment.y = CLAY_ALIGN_Y_CENTER,
@@ -103,8 +113,8 @@ static void ui_reward_area(game_controller_t *controller) {
 
 static void ui_reward(game_controller_t *controller) {
     for (int i = 0; i < controller->game->reward_count; i++) {
-        CLAY({.id = CLAY_IDI(ID_REWARD_BASE_STRING, i),
-              .backgroundColor = M_BEIGE,
+        CLAY(CLAY_IDI(ID_REWARD_BASE_STRING, i),
+             {.backgroundColor = M_BEIGE,
               .aspectRatio = 1.0,
               .layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT,
                          .sizing = (Clay_Sizing){.width = CLAY_SIZING_GROW(),
@@ -150,29 +160,31 @@ void ui_tile_info_card(game_controller_t *controller) {
         card_y = screen_height - card_height - 10;
     }
 
-    CLAY({
-      .id = ID_TILE_INFO_CARD,
-      .floating = {.attachTo = CLAY_ATTACH_TO_ROOT,
-                   .offset = {.x = (int)card_x, .y = (int)card_y},
-                   .zIndex = 1000,
-                   .pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH},
-      .layout = {.sizing = {.width = CLAY_SIZING_FIT(),
-                            .height = CLAY_SIZING_FIT()},
-                 .padding = CLAY_PADDING_ALL(12),
-                 .childGap = 8,
-                 .layoutDirection = CLAY_TOP_TO_BOTTOM},
-    }) {
+    CLAY(ID_TILE_INFO_CARD,
+         {
+           .floating = {.attachTo = CLAY_ATTACH_TO_ROOT,
+                        .offset = {.x = (int)card_x, .y = (int)card_y},
+                        .zIndex = 1000,
+                        .pointerCaptureMode =
+                          CLAY_POINTER_CAPTURE_MODE_PASSTHROUGH},
+           .layout = {.sizing = {.width = CLAY_SIZING_FIT(),
+                                 .height = CLAY_SIZING_FIT()},
+                      .padding = CLAY_PADDING_ALL(12),
+                      .childGap = 8,
+                      .layoutDirection = CLAY_TOP_TO_BOTTOM},
+         }) {
 
         // Tile card
-        CLAY({.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
-                                    .height = CLAY_SIZING_GROW()},
-                         .padding = CLAY_PADDING_ALL(12),
-                         .childGap = 8,
-                         .layoutDirection = CLAY_TOP_TO_BOTTOM},
+        CLAY_AUTO_ID(
+          {.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
+                                 .height = CLAY_SIZING_GROW()},
+                      .padding = CLAY_PADDING_ALL(12),
+                      .childGap = 8,
+                      .layoutDirection = CLAY_TOP_TO_BOTTOM},
 
-              .backgroundColor = (Clay_Color){40, 40, 40, 240},
-              .cornerRadius = CLAY_CORNER_RADIUS(6),
-              .border = {.color = (Clay_Color){80, 80, 80, 255}, .width = 1}}) {
+           .backgroundColor = (Clay_Color){40, 40, 40, 240},
+           .cornerRadius = CLAY_CORNER_RADIUS(6),
+           .border = {.color = (Clay_Color){80, 80, 80, 255}, .width = 1}}) {
             switch (tile->data.type) {
             case TILE_MAGENTA:
                 CLAY_TEXT(CLAY_STRING("Magenta tile"), &TEXT_CONFIG_MEDIUM);
@@ -208,16 +220,16 @@ void ui_tile_info_card(game_controller_t *controller) {
 
         // Pool card
         if (pool) {
-            CLAY({.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
-                                        .height = CLAY_SIZING_GROW()},
-                             .padding = CLAY_PADDING_ALL(12),
-                             .childGap = 8,
-                             .layoutDirection = CLAY_TOP_TO_BOTTOM},
+            CLAY_AUTO_ID({.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
+                                                .height = CLAY_SIZING_GROW()},
+                                     .padding = CLAY_PADDING_ALL(12),
+                                     .childGap = 8,
+                                     .layoutDirection = CLAY_TOP_TO_BOTTOM},
 
-                  .backgroundColor = (Clay_Color){40, 40, 40, 240},
-                  .cornerRadius = CLAY_CORNER_RADIUS(6),
-                  .border = {.color = (Clay_Color){80, 80, 80, 255},
-                             .width = 1}}) {
+                          .backgroundColor = (Clay_Color){40, 40, 40, 240},
+                          .cornerRadius = CLAY_CORNER_RADIUS(6),
+                          .border = {.color = (Clay_Color){80, 80, 80, 255},
+                                     .width = 1}}) {
                 CLAY_TEXT(CLAY_STRING("Pool"), &TEXT_CONFIG_MEDIUM);
 
                 static char pool_text[32];
@@ -271,34 +283,32 @@ void ui_tile_info_card(game_controller_t *controller) {
 
 void ui_tool_bar(game_controller_t *game_controller) {
 
-    CLAY({.id = ID_TOOL_BAR,
-          .backgroundColor = M_BLACK,
-          .layout = {
-            .layoutDirection = CLAY_LEFT_TO_RIGHT,
-            .sizing = (Clay_Sizing){.width = CLAY_SIZING_GROW(),
-                                    .height = CLAY_SIZING_FIT()},
-          }}) {
-
-        CLAY_TEXT(CLAY_STRING("Tool Bar"), &TEXT_CONFIG_MEDIUM);
-        CLAY({
-          .id = CLAY_ID("HI"),
+    CLAY(ID_TOOL_BAR, {.backgroundColor = M_BLACK,
+                       .layout = {
+                         .layoutDirection = CLAY_LEFT_TO_RIGHT,
+                         .sizing = (Clay_Sizing){.width = CLAY_SIZING_GROW(),
+                                                 .height = CLAY_SIZING_FIT()},
+                       }}) {
+        ButtonComponent(CLAY_STRING("Calculate"),
+                        ID_GENERATION_INCREASE_BUTTON);
+        CLAY_AUTO_ID({
           .backgroundColor = M_BLUE,
         }) {}
     }
 }
 
 void ui_game_screen(game_controller_t *game_controller) {
-    CLAY({
-      .id = ID_GAME_SCREEN,
-      .layout =
-        {
-          .childGap = 10,
-          .layoutDirection = CLAY_TOP_TO_BOTTOM,
-          .sizing = (Clay_Sizing){.width = CLAY_SIZING_GROW(),
-                                  .height = CLAY_SIZING_GROW()},
-        },
+    CLAY(ID_GAME_SCREEN,
+         {
+           .layout =
+             {
+               .childGap = 10,
+               .layoutDirection = CLAY_TOP_TO_BOTTOM,
+               .sizing = (Clay_Sizing){.width = CLAY_SIZING_GROW(),
+                                       .height = CLAY_SIZING_GROW()},
+             },
 
-    });
+         });
     {
         ui_tool_bar(game_controller);
         ui_game(game_controller);
@@ -307,13 +317,12 @@ void ui_game_screen(game_controller_t *game_controller) {
 
 void ui_game(game_controller_t *game_controller) {
 
-    CLAY({.id = ID_GAME,
-          .backgroundColor = M_BLANK,
-          .layout = {
-            .layoutDirection = CLAY_LEFT_TO_RIGHT,
-            .sizing = (Clay_Sizing){.width = CLAY_SIZING_GROW(),
-                                    .height = CLAY_SIZING_GROW()},
-          }}) {
+    CLAY(ID_GAME, {.backgroundColor = M_BLANK,
+                   .layout = {
+                     .layoutDirection = CLAY_LEFT_TO_RIGHT,
+                     .sizing = (Clay_Sizing){.width = CLAY_SIZING_GROW(),
+                                             .height = CLAY_SIZING_GROW()},
+                   }}) {
 
         if (true) {
             ui_game_area(game_controller);

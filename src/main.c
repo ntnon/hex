@@ -1,13 +1,12 @@
+#include "raylib.h"
+#define CLAY_IMPLEMENTATION
+#include "../include/third_party/clay.h"
+#include "third_party/clay_renderer_raylib.inc"
+
 #include "controller/app_controller.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-
-#define CLAY_IMPLEMENTATION
-#include "../include/third_party/clay.h" // UI system
-#include "raylib.h"
-
-#include "third_party/clay_renderer_raylib.h"
 
 #include "game/board.h"
 #include "game/camera.h"
@@ -73,6 +72,13 @@ upgrade menu. Pay for this. This is like "reducing" your deck.
 
 Pay with inventory slots
 */
+void HandleClayErrors(Clay_ErrorData errorData) {
+    // See the Clay_ErrorData struct for more information
+    printf("%s", errorData.errorText.chars);
+    switch (errorData.errorType) {
+        // etc
+    }
+}
 
 int main() {
 
@@ -89,10 +95,22 @@ int main() {
         printf("ERROR: App controller failed to initialize properly\n");
         return 1;
     }
-    printf("App controller validation passed\n");
 
-    // Initialize UI system (this will create the window)
-    UI_Context ui = ui_init(initial_width, initial_height);
+    uint64_t totalMemorySize = Clay_MinMemorySize();
+    Clay_Arena arena = Clay_CreateArenaWithCapacityAndMemory(
+      totalMemorySize, malloc(totalMemorySize));
+    ui_load_fonts();
+    ui_init_text_configs();
+    // After Clay_Initialize...
+    Clay_Raylib_Initialize(initial_width, initial_height, "HexHex Game",
+                           FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT |
+                             FLAG_WINDOW_HIGHDPI | FLAG_MSAA_4X_HINT);
+    // Note: screenWidth and screenHeight will need to come from your
+    // environment, Clay doesn't handle window related tasks
+
+    Clay_Initialize(arena, (Clay_Dimensions){initial_width, initial_height},
+                    (Clay_ErrorHandler){HandleClayErrors});
+    Clay_SetMeasureTextFunction(Raylib_MeasureText, UI_FONTS);
 
     // Set FPS after window is created
     SetTargetFPS(60);
@@ -173,7 +191,7 @@ int main() {
 
     // Cleanup - simplified order
     app_controller_cleanup(&app_controller);
-    ui_shutdown(&ui);
+    // ui_shutdown(&ui);
     CloseWindow();
 
     return 0;
