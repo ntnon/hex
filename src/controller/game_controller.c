@@ -1,7 +1,7 @@
 #include "controller/game_controller.h"
 #include "controller/input_state.h"
-#include "game/inventory.h"
 #include "game/board.h"
+#include "game/inventory.h"
 #include "grid/grid_geometry.h"
 #include "raylib.h"
 #include "ui.h"
@@ -36,110 +36,73 @@ void game_controller_init(game_controller_t *controller, game_t *game) {
 
 void game_controller_update(game_controller_t *controller,
                             const input_state_t *input) {
-    if (!controller->is_initialized) {
-        printf("Warning: Controller not initialized\n");
-        return;
-    }
-    if (!input) {
-        printf("Warning: Input state not provided\n");
+    if (!controller->is_initialized || !input) {
         return;
     }
 
-    // Store input reference for derived state calculations
-    controller->input = (input_state_t*)input;
-
-    // Update derived states for UI consumption
-    game_controller_update_mouse_positions(controller, input);
+    // Update hover state for UI tooltip display
     game_controller_update_hover_state(controller, input);
 
-    // Get game area bounds for input processing
-    Clay_BoundingBox game_bounds =
-      Clay_GetElementData(ID_GAME_AREA).boundingBox;
-
-    // Process input in priority order (UI elements first, then game world)
-
-    // 1. Check inventory interactions (if open)
-    if (controller->inventory_open) {
-        if (game_controller_handle_inventory_input(controller, input)) {
-            return; // Input consumed by inventory
-        }
+    // Process inputs by priority
+    if (controller->inventory_open &&
+        game_controller_handle_inventory_input(controller, input)) {
+        return;
     }
 
-    // 2. Check placement mode interactions
-    if (controller->placing_tile) {
-        if (game_controller_handle_placement_input(controller, input)) {
-            return; // Input consumed by placement
-        }
+    if (controller->placing_tile &&
+        game_controller_handle_placement_input(controller, input)) {
+        return;
     }
 
-    // 3. Process keyboard shortcuts (these don't consume mouse input)
+    // Keyboard shortcuts
     if (input->key_r_pressed && controller->placing_tile) {
-        // Rotate held piece
-        if (inventory_rotate_selected(controller->game->inventory, 1)) {
-            printf("Rotated held piece\n");
-        }
+        inventory_rotate_selected(controller->game->inventory, 1);
     }
 
     if (input->key_m_pressed) {
-        // Cycle game state for debugging
         game_controller_cycle_state(controller);
     }
 
-    // 4. Default camera/board interaction
+    // Camera and game updates
+    Clay_BoundingBox game_bounds =
+      Clay_GetElementData(ID_GAME_AREA).boundingBox;
     input_handler_update(&controller->input_handler, input, game_bounds);
-
-    // Update the game with processed input
     update_game(controller->game, input);
 
-    // Update preview if in placement mode
+    // Update preview if placing
     if (controller->placing_tile) {
-        game_update_preview_at_position(controller->game, controller->hovered_cell);
-    }
-}
-
-void game_controller_update_mouse_positions(game_controller_t *controller,
-                                           const input_state_t *input) {
-    // Store screen mouse position directly from input
-    controller->screen_mouse_pos = (Vector2){input->mouse.x, input->mouse.y};
-
-    // Calculate world mouse position using camera transformation
-    if (controller->game && controller->game->board) {
-        controller->world_mouse_pos = GetScreenToWorld2D(
-            controller->screen_mouse_pos,
-            controller->game->board->camera
-        );
-    } else {
-        controller->world_mouse_pos = controller->screen_mouse_pos;
+        game_update_preview_at_position(controller->game,
+                                        controller->hovered_cell);
     }
 }
 
 void game_controller_update_hover_state(game_controller_t *controller,
-                                       const input_state_t *input) {
+                                        const input_state_t *input) {
     if (!controller->game || !controller->game->board) {
         controller->hovered_tile = NULL;
         controller->should_show_tile_info = false;
         return;
     }
 
-    // Update hovered cell based on world mouse position
+    // Get world mouse position from camera
+    Vector2 world_mouse =
+      GetScreenToWorld2D((Vector2){input->mouse.x, input->mouse.y},
+                         controller->game->board->camera);
+
+    // Update hovered cell
     controller->hovered_cell = grid_geometry_pixel_to_cell(
-        controller->game->board->geometry_type,
-        &controller->game->board->layout,
-        (point_t){controller->world_mouse_pos.x, controller->world_mouse_pos.y}
-    );
+      controller->game->board->geometry_type, &controller->game->board->layout,
+      (point_t){world_mouse.x, world_mouse.y});
 
-    // Check if there's a tile at the hovered position
-    controller->hovered_tile = get_tile_at_cell(
-        controller->game->board,
-        controller->hovered_cell
-    );
+    // Get tile at position
+    controller->hovered_tile =
+      get_tile_at_cell(controller->game->board, controller->hovered_cell);
 
-    // Determine if we should show tile info
-    // Show when hovering over a tile and not in placement mode
+    // Show tooltip when hovering tile and not placing
     controller->should_show_tile_info =
-        (controller->hovered_tile != NULL) &&
-        (!controller->placing_tile) &&
-        (controller->state == GAME_STATE_VIEW || controller->state == GAME_STATE_INSPECT);
+      controller->hovered_tile && !controller->placing_tile &&
+      (controller->state == GAME_STATE_VIEW ||
+       controller->state == GAME_STATE_INSPECT);
 }
 
 bool game_controller_handle_inventory_input(game_controller_t *controller,

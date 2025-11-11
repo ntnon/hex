@@ -126,14 +126,13 @@ static void ui_reward(game_controller_t *controller) {
     }
 };
 
-void ui_tile_info_card(game_controller_t *controller) {
+void ui_tile_info_card(game_controller_t *controller, Vector2 mouse_pos) {
     if (!controller->should_show_tile_info || !controller->hovered_tile) {
         return;
     }
 
     tile_t *tile = controller->hovered_tile;
     game_t *game = controller->game;
-    Vector2 mouse_pos = controller->screen_mouse_pos;
     pool_t *pool = pool_manager_get_pool_by_tile(game->board->pools, tile);
     int score = pool ? pool_tile_score(pool) : 0;
     if (pool) {
@@ -297,25 +296,26 @@ void ui_tool_bar(game_controller_t *game_controller) {
     }
 }
 
-void ui_game_screen(game_controller_t *game_controller) {
-    CLAY(ID_GAME_SCREEN,
-         {
-           .layout =
-             {
-               .childGap = 10,
-               .layoutDirection = CLAY_TOP_TO_BOTTOM,
-               .sizing = (Clay_Sizing){.width = CLAY_SIZING_GROW(),
-                                       .height = CLAY_SIZING_GROW()},
-             },
+void ui_game_screen(game_controller_t *game_controller,
+                    const input_state_t *input) {
+    CLAY({
+      .id = ID_GAME_SCREEN,
+      .layout =
+        {
+          .childGap = 10,
+          .layoutDirection = CLAY_TOP_TO_BOTTOM,
+          .sizing = (Clay_Sizing){.width = CLAY_SIZING_GROW(),
+                                  .height = CLAY_SIZING_GROW()},
+        },
 
-         });
+    });
     {
         ui_tool_bar(game_controller);
-        ui_game(game_controller);
+        ui_game(game_controller, input);
     }
 }
 
-void ui_game(game_controller_t *game_controller) {
+void ui_game(game_controller_t *game_controller, const input_state_t *input) {
 
     CLAY(ID_GAME, {.backgroundColor = M_BLANK,
                    .layout = {
@@ -327,14 +327,16 @@ void ui_game(game_controller_t *game_controller) {
         if (true) {
             ui_game_area(game_controller);
             ui_inventory_area(game_controller);
-            ui_tile_info_card(game_controller);
+            ui_tile_info_card(game_controller,
+                              (Vector2){input->mouse.x, input->mouse.y});
         } else { // PREVENTS CONDITIONAL RENDERING
 
             switch (game_controller->state) {
             case GAME_STATE_VIEW:
                 ui_game_area(game_controller);
                 ui_inventory_area(game_controller);
-                ui_tile_info_card(game_controller);
+                ui_tile_info_card(game_controller,
+                                  (Vector2){input->mouse.x, input->mouse.y});
                 break;
             case GAME_STATE_PLACE:
                 ui_game_area(game_controller);
@@ -349,7 +351,8 @@ void ui_game(game_controller_t *game_controller) {
                 ui_game_area(game_controller);
                 ui_inventory_area(game_controller);
                 // Add tile info card overlay
-                ui_tile_info_card(game_controller);
+                ui_tile_info_card(game_controller,
+                                  (Vector2){input->mouse.x, input->mouse.y});
                 break;
             default:
                 break;

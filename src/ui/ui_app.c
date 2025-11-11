@@ -255,7 +255,7 @@ Clay_RenderCommandArray ui_root(app_controller_t *app_controller,
             break;
         case APP_STATE_GAME:
             if (app_controller->game) {
-                ui_game(&app_controller->game_controller);
+                ui_game(&app_controller->game_controller, input);
             }
             break;
         case APP_STATE_SETTINGS:

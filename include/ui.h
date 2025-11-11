@@ -16,8 +16,8 @@
 
 
 bool is_id_valid(const Clay_ElementId id);
-void ui_game_screen(game_controller_t *game_controller);
-void ui_game(game_controller_t *game_controller);
+void ui_game_screen(game_controller_t *game_controller, const input_state_t *input);
+void ui_game(game_controller_t *game_controller, const input_state_t *input);
 
 
 
@@ -93,8 +93,8 @@ void game_screen(game_controller_t *controller);
 void ui_main_menu(app_controller_t *app_controller);
 void ui_settings_menu(app_controller_t *app_controller);
 void ui_pause_menu(app_controller_t *app_controller);
-void ui_tile_info_card(game_controller_t *controller);
-void ui_game(game_controller_t *game_controller);
+void ui_tile_info_card(game_controller_t *controller, Vector2 mouse_pos);
+void ui_game(game_controller_t *game_controller, const input_state_t *input);
 
 Clay_RenderCommandArray ui_root(app_controller_t *app_controller, const input_state_t *input);
 #endif // UI_H
