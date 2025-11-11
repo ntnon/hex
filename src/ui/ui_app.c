@@ -16,32 +16,31 @@
 // Helper functions
 
 void ui_main_menu(app_controller_t *app_controller) {
-    CLAY({.id = ID_MAIN_MENU,
-          .layout = {.sizing = {.width = CLAY_SIZING_GROW(),
-                                .height = CLAY_SIZING_GROW()},
-                     .childAlignment = {.x = CLAY_ALIGN_X_CENTER,
-                                        .y = CLAY_ALIGN_Y_CENTER},
-                     .layoutDirection = CLAY_TOP_TO_BOTTOM,
-                     .childGap = MENU_BUTTON_GAP},
-          .backgroundColor = M_DARKBLUE}) {
+    CLAY(ID_MAIN_MENU, {.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
+                                              .height = CLAY_SIZING_GROW()},
+                                   .childAlignment = {.x = CLAY_ALIGN_X_CENTER,
+                                                      .y = CLAY_ALIGN_Y_CENTER},
+                                   .layoutDirection = CLAY_TOP_TO_BOTTOM,
+                                   .childGap = MENU_BUTTON_GAP},
+                        .backgroundColor = M_DARKBLUE}) {
 
         // Game title
-        CLAY({.layout = {.sizing = {.width = CLAY_SIZING_FIT(),
-                                    .height = CLAY_SIZING_FIT()},
-                         .padding = {0, 0, 50, 0}}}) {
+        CLAY_AUTO_ID({.layout = {.sizing = {.width = CLAY_SIZING_FIT(),
+                                            .height = CLAY_SIZING_FIT()},
+                                 .padding = {0, 0, 50, 0}}}) {
             CLAY_TEXT(CLAY_STRING("HexHex Game"), &TEXT_CONFIG_LARGE);
         }
 
         // Menu buttons container
-        CLAY(
+        CLAY_AUTO_ID(
           {.layout = {.layoutDirection = CLAY_TOP_TO_BOTTOM,
                       .childGap = MENU_BUTTON_GAP,
                       .sizing = {.width = CLAY_SIZING_FIXED(MENU_BUTTON_WIDTH),
                                  .height = CLAY_SIZING_FIT()}}}) {
 
             // New Game button
-            CLAY({.id = ID_MENU_ITEM_NEW_GAME,
-                  .layout = {.sizing = {.width = CLAY_SIZING_GROW(),
+            CLAY(ID_MENU_ITEM_NEW_GAME,
+                 {.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
                                         .height = CLAY_SIZING_FIXED(
                                           MENU_BUTTON_HEIGHT)},
                              .childAlignment = {.x = CLAY_ALIGN_X_CENTER,
@@ -55,8 +54,8 @@ void ui_main_menu(app_controller_t *app_controller) {
             }
 
             // Settings button
-            CLAY({.id = ID_MENU_ITEM_SETTINGS,
-                  .layout = {.sizing = {.width = CLAY_SIZING_GROW(),
+            CLAY(ID_MENU_ITEM_SETTINGS,
+                 {.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
                                         .height = CLAY_SIZING_FIXED(
                                           MENU_BUTTON_HEIGHT)},
                              .childAlignment = {.x = CLAY_ALIGN_X_CENTER,
@@ -70,8 +69,8 @@ void ui_main_menu(app_controller_t *app_controller) {
             }
 
             // Quit button
-            CLAY({.id = ID_MENU_ITEM_QUIT,
-                  .layout = {.sizing = {.width = CLAY_SIZING_GROW(),
+            CLAY(ID_MENU_ITEM_QUIT,
+                 {.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
                                         .height = CLAY_SIZING_FIXED(
                                           MENU_BUTTON_HEIGHT)},
                              .childAlignment = {.x = CLAY_ALIGN_X_CENTER,
@@ -86,9 +85,9 @@ void ui_main_menu(app_controller_t *app_controller) {
         }
 
         // Instructions
-        CLAY({.layout = {.sizing = {.width = CLAY_SIZING_FIT(),
-                                    .height = CLAY_SIZING_FIT()},
-                         .padding = {0, 50, 0, 0}}}) {
+        CLAY_AUTO_ID({.layout = {.sizing = {.width = CLAY_SIZING_FIT(),
+                                            .height = CLAY_SIZING_FIT()},
+                                 .padding = {0, 50, 0, 0}}}) {
             CLAY_TEXT(
               CLAY_STRING("Use arrow keys or mouse to navigate, Enter/Click "
                           "to select, ESC to quit"),
@@ -98,8 +97,8 @@ void ui_main_menu(app_controller_t *app_controller) {
 }
 
 void ui_settings_menu(app_controller_t *app_controller) {
-    CLAY({.id = ID_SETTINGS_MENU,
-          .layout = {.sizing = {.width = CLAY_SIZING_GROW(),
+    CLAY(ID_SETTINGS_MENU,
+         {.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
                                 .height = CLAY_SIZING_GROW()},
                      .childAlignment = {.x = CLAY_ALIGN_X_CENTER,
                                         .y = CLAY_ALIGN_Y_CENTER},
@@ -108,25 +107,26 @@ void ui_settings_menu(app_controller_t *app_controller) {
           .backgroundColor = M_DARKGRAY}) {
 
         // Settings title
-        CLAY({.layout = {.sizing = {.width = CLAY_SIZING_FIT(),
-                                    .height = CLAY_SIZING_FIT()},
-                         .padding = {0, 0, 30, 0}}}) {
+        CLAY_AUTO_ID({.layout = {.sizing = {.width = CLAY_SIZING_FIT(),
+                                            .height = CLAY_SIZING_FIT()},
+                                 .padding = {0, 0, 30, 0}}}) {
             CLAY_TEXT(CLAY_STRING("Settings"), &TEXT_CONFIG_LARGE);
         }
 
         // Settings content placeholder
-        CLAY({.layout = {.sizing = {.width = CLAY_SIZING_FIXED(400),
-                                    .height = CLAY_SIZING_FIT()},
-                         .layoutDirection = CLAY_TOP_TO_BOTTOM,
-                         .childGap = 15,
-                         .padding = CLAY_PADDING_ALL(20)},
-              .backgroundColor = M_LIGHTGRAY,
-              .cornerRadius = CLAY_CORNER_RADIUS(5)}) {
+        CLAY_AUTO_ID({.layout = {.sizing = {.width = CLAY_SIZING_FIXED(400),
+                                            .height = CLAY_SIZING_FIT()},
+                                 .layoutDirection = CLAY_TOP_TO_BOTTOM,
+                                 .childGap = 15,
+                                 .padding = CLAY_PADDING_ALL(20)},
+                      .backgroundColor = M_LIGHTGRAY,
+                      .cornerRadius = CLAY_CORNER_RADIUS(5)}) {
 
-            CLAY({.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
-                                        .height = CLAY_SIZING_FIT()},
-                             .childAlignment = {.x = CLAY_ALIGN_X_CENTER},
-                             .padding = {10, 0, 0, 0}}}) {
+            CLAY_AUTO_ID(
+              {.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
+                                     .height = CLAY_SIZING_FIT()},
+                          .childAlignment = {.x = CLAY_ALIGN_X_CENTER},
+                          .padding = {10, 0, 0, 0}}}) {
                 CLAY_TEXT(CLAY_STRING("Settings functionality coming soon!"),
                           &TEXT_CONFIG_MEDIUM);
             }
@@ -134,8 +134,8 @@ void ui_settings_menu(app_controller_t *app_controller) {
 
         // Back button
         CLAY(
-          {.id = ID_SETTINGS_BACK_BUTTON,
-           .layout = {.sizing = {.width = CLAY_SIZING_FIXED(MENU_BUTTON_WIDTH),
+          ID_SETTINGS_BACK_BUTTON,
+          {.layout = {.sizing = {.width = CLAY_SIZING_FIXED(MENU_BUTTON_WIDTH),
                                  .height =
                                    CLAY_SIZING_FIXED(MENU_BUTTON_HEIGHT)},
                       .childAlignment = {.x = CLAY_ALIGN_X_CENTER,
@@ -147,9 +147,9 @@ void ui_settings_menu(app_controller_t *app_controller) {
         }
 
         // Instructions
-        CLAY({.layout = {.sizing = {.width = CLAY_SIZING_FIT(),
-                                    .height = CLAY_SIZING_FIT()},
-                         .padding = {30, 0, 0, 0}}}) {
+        CLAY_AUTO_ID({.layout = {.sizing = {.width = CLAY_SIZING_FIT(),
+                                            .height = CLAY_SIZING_FIT()},
+                                 .padding = {30, 0, 0, 0}}}) {
             CLAY_TEXT(CLAY_STRING("ESC to return to main menu"),
                       &TEXT_CONFIG_MEDIUM);
         }
@@ -157,8 +157,8 @@ void ui_settings_menu(app_controller_t *app_controller) {
 }
 
 void ui_pause_menu(app_controller_t *app_controller) {
-    CLAY({.id = ID_PAUSE_MENU,
-          .layout = {.sizing = {.width = CLAY_SIZING_GROW(),
+    CLAY(ID_PAUSE_MENU,
+         {.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
                                 .height = CLAY_SIZING_GROW()},
                      .childAlignment = {.x = CLAY_ALIGN_X_CENTER,
                                         .y = CLAY_ALIGN_Y_CENTER},
@@ -167,24 +167,24 @@ void ui_pause_menu(app_controller_t *app_controller) {
           .backgroundColor = {0, 0, 0, 180}}) {
 
         // Pause menu container
-        CLAY({.layout = {.sizing = {.width = CLAY_SIZING_FIXED(300),
-                                    .height = CLAY_SIZING_FIT()},
-                         .layoutDirection = CLAY_TOP_TO_BOTTOM,
-                         .childGap = MENU_BUTTON_GAP,
-                         .padding = CLAY_PADDING_ALL(30)},
-              .backgroundColor = M_DARKGRAY,
-              .cornerRadius = CLAY_CORNER_RADIUS(10)}) {
+        CLAY_AUTO_ID({.layout = {.sizing = {.width = CLAY_SIZING_FIXED(300),
+                                            .height = CLAY_SIZING_FIT()},
+                                 .layoutDirection = CLAY_TOP_TO_BOTTOM,
+                                 .childGap = MENU_BUTTON_GAP,
+                                 .padding = CLAY_PADDING_ALL(30)},
+                      .backgroundColor = M_DARKGRAY,
+                      .cornerRadius = CLAY_CORNER_RADIUS(10)}) {
 
             // Pause title
-            CLAY({.layout = {.sizing = {.width = CLAY_SIZING_FIT(),
-                                        .height = CLAY_SIZING_FIT()},
-                             .padding = {0, 0, 20, 0}}}) {
+            CLAY_AUTO_ID({.layout = {.sizing = {.width = CLAY_SIZING_FIT(),
+                                                .height = CLAY_SIZING_FIT()},
+                                     .padding = {0, 0, 20, 0}}}) {
                 CLAY_TEXT(CLAY_STRING("Game Paused"), &TEXT_CONFIG_LARGE);
             }
 
             // Resume button
-            CLAY({.id = ID_PAUSE_RESUME_BUTTON,
-                  .layout = {.sizing = {.width = CLAY_SIZING_GROW(),
+            CLAY(ID_PAUSE_RESUME_BUTTON,
+                 {.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
                                         .height = CLAY_SIZING_FIXED(
                                           MENU_BUTTON_HEIGHT)},
                              .childAlignment = {.x = CLAY_ALIGN_X_CENTER,
@@ -197,8 +197,8 @@ void ui_pause_menu(app_controller_t *app_controller) {
             }
 
             // Settings button
-            CLAY({.id = ID_PAUSE_SETTINGS_BUTTON,
-                  .layout = {.sizing = {.width = CLAY_SIZING_GROW(),
+            CLAY(ID_PAUSE_SETTINGS_BUTTON,
+                 {.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
                                         .height = CLAY_SIZING_FIXED(
                                           MENU_BUTTON_HEIGHT)},
                              .childAlignment = {.x = CLAY_ALIGN_X_CENTER,
@@ -211,8 +211,8 @@ void ui_pause_menu(app_controller_t *app_controller) {
             }
 
             // Quit to menu button
-            CLAY({.id = ID_PAUSE_QUIT_BUTTON,
-                  .layout = {.sizing = {.width = CLAY_SIZING_GROW(),
+            CLAY(ID_PAUSE_QUIT_BUTTON,
+                 {.layout = {.sizing = {.width = CLAY_SIZING_GROW(),
                                         .height = CLAY_SIZING_FIXED(
                                           MENU_BUTTON_HEIGHT)},
                              .childAlignment = {.x = CLAY_ALIGN_X_CENTER,
@@ -225,9 +225,9 @@ void ui_pause_menu(app_controller_t *app_controller) {
             }
 
             // Instructions
-            CLAY({.layout = {.sizing = {.width = CLAY_SIZING_FIT(),
-                                        .height = CLAY_SIZING_FIT()},
-                             .padding = {30, 0, 0, 0}}}) {
+            CLAY_AUTO_ID({.layout = {.sizing = {.width = CLAY_SIZING_FIT(),
+                                                .height = CLAY_SIZING_FIT()},
+                                     .padding = {30, 0, 0, 0}}}) {
                 CLAY_TEXT(CLAY_STRING("ESC to return to main menu"),
                           &TEXT_CONFIG_MEDIUM);
             }
@@ -245,11 +245,10 @@ Clay_RenderCommandArray ui_root(app_controller_t *app_controller,
                                                .height = GetScreenHeight()});
     Clay_BeginLayout();
 
-    CLAY({.id = ID_ROOT,
-          .layout = {
-            .sizing = (Clay_Sizing){.width = CLAY_SIZING_GROW(),
-                                    .height = CLAY_SIZING_GROW()},
-          }}) {
+    CLAY(ID_ROOT, {.layout = {
+                     .sizing = (Clay_Sizing){.width = CLAY_SIZING_GROW(),
+                                             .height = CLAY_SIZING_GROW()},
+                   }}) {
         switch (app_controller->current_state) {
         case APP_STATE_MAIN_MENU:
             ui_main_menu(app_controller);
