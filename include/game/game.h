@@ -5,8 +5,6 @@
 #include "game/inventory.h"
 #include "controller/input_state.h"
 //#include "rule_manager.h"
-#include "tile/tile.h"
-
 
 typedef struct simple_preview_t {
     board_t *source_board;           /* Board being previewed for placement */

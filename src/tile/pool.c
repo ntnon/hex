@@ -214,20 +214,22 @@ void pool_print(const pool_t *pool) {
     if (!pool) {
         return;
     }
+    if (false) {
 
-    printf("=== Pool Properties ===\n");
-    printf("ID: %d\n", pool->id);
-    printf("Tile count: %d\n", pool->tiles ? pool->tiles->num_tiles : 0);
-    printf("Accepted tile type: %d\n", pool->accepted_tile_type);
-    printf("Highest N: %d\n", pool->highest_n);
-    printf("Modifier: %.2f\n", pool->modifier);
-    printf("--- Geometric Properties ---\n");
-    printf("Diameter: %d\n", pool->diameter);
-    printf("Edge count: %d\n", pool->edge_count);
-    printf("Compactness score: %.3f\n", pool->compactness_score);
-    printf("Neighbor cell count: %zu\n", pool->neighbor_cells.n);
-    printf("Neighbor tile count: %zu\n", pool->neighbor_tiles.n);
-    printf("========================\n");
+        printf("=== Pool Properties ===\n");
+        printf("ID: %d\n", pool->id);
+        printf("Tile count: %d\n", pool->tiles ? pool->tiles->num_tiles : 0);
+        printf("Accepted tile type: %d\n", pool->accepted_tile_type);
+        printf("Highest N: %d\n", pool->highest_n);
+        printf("Modifier: %.2f\n", pool->modifier);
+        printf("--- Geometric Properties ---\n");
+        printf("Diameter: %d\n", pool->diameter);
+        printf("Edge count: %d\n", pool->edge_count);
+        printf("Compactness score: %.3f\n", pool->compactness_score);
+        printf("Neighbor cell count: %zu\n", pool->neighbor_cells.n);
+        printf("Neighbor tile count: %zu\n", pool->neighbor_tiles.n);
+        printf("========================\n");
+    }
 }
 
 // Helper: Returns true if the tile's type is allowed in the pool.

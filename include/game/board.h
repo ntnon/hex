@@ -50,9 +50,9 @@ bool is_merge_valid(board_t *target_board, board_t *source_board, grid_cell_t ta
 
 bool merge_boards(board_t *target_board, board_t *source_board, grid_cell_t target_center, grid_cell_t source_center);
 
+grid_cell_t board_pixel_to_cell(const board_t *board, point_t point);
 
-tile_t *get_tile_at_cell(const board_t *board, grid_cell_t cell);
-
+tile_t *board_tile_at_cell(const board_t *board, grid_cell_t cell);
 /**
  * @brief Validates that all tiles in a tile map are within the board's grid bounds.
  * @param board The board that defines the valid bounds.

@@ -26,7 +26,7 @@ typedef struct {
     bool key_ctrl;
     bool key_r_pressed;
     bool key_m_pressed;
-    
+
     // Navigation keys
     bool key_up_pressed;
     bool key_down_pressed;
@@ -35,7 +35,7 @@ typedef struct {
     bool key_enter_pressed;
     bool key_space_pressed;
     bool key_tab_pressed;
-    
+
     // Function keys
     bool key_f1_pressed;
 
@@ -46,6 +46,9 @@ typedef struct {
     bool cancel_drag;
     Clay_BoundingBox drag_bounds;
     Clay_ElementId hovered_element_id;
+
+    // Derived state for game actions
+    bool should_place_tile; // True when left-click should place tile (not dragging)
 } input_state_t;
 
 void input_state_init(input_state_t* state);

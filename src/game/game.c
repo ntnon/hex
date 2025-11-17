@@ -1,13 +1,12 @@
 #include "game/game.h"
 #include "game/board.h"
+#include "game/inventory.h"
 #include "grid/grid_geometry.h"
-#include "raylib.h"
 #include "stdio.h"
-#include "ui.h"
 
 void game_init(game_t *game) {
     game->board = board_create(GRID_TYPE_HEXAGON, 30, BOARD_TYPE_MAIN);
-    game->inventory = inventory_create();
+    game->inventory = inventory_create(GRID_TYPE_HEXAGON);
     game->reward_count = 3;
     game->is_paused = false;
     game->round_count = 0;
@@ -25,7 +24,8 @@ void game_init(game_t *game) {
     printf("Board created with radius: %d\n", game->board->radius);
     // board_fill_batch(game->board, 30, BOARD_TYPE_MAIN); // Small radius for
     //   fast loading
-    inventory_fill(game->inventory, 3);
+    // inventory_fill_random(game->inventory, 3);
+    inventory_fill_single_tiles(game->inventory);
 }
 
 void free_game(game_t *game) {
@@ -74,21 +74,7 @@ void game_update_preview_at_position(game_t *game, grid_cell_t position) {
     }
 }
 
-void update_game(game_t *game, const input_state_t *input) {
-    // Hover state is now managed by game_controller
-    // This function focuses on game logic updates only
-
-    // UI state is now handled by game_controller
-    bool in_placement_mode =
-      (inventory_get_selected_board(game->inventory) != NULL);
-    if (in_placement_mode && ui_was_clicked(ID_GAME_AREA)) {
-        printf("in placement mode: %d", in_placement_mode);
-    }
-    // Update board preview based on selected inventory item
-    update_board_preview(game);
-
-    // Removed excessive coordinate printing that was happening every frame
-}
+void update_game(game_t *game, const input_state_t *input) {}
 
 // Simplified preview system functions
 void game_set_preview(game_t *game, board_t *source_board,
@@ -152,12 +138,6 @@ bool game_try_place_tile(game_t *game, grid_cell_t target_position) {
                      source_center)) {
         printf("Successfully placed tile at (%d, %d)\n",
                target_position.coord.hex.q, target_position.coord.hex.r);
-
-        // Consume the inventory item that was placed
-        // inventory_use_selected(game->inventory);
-
-        // TODO: Check for completed patterns, update score, etc.
-
         return true;
     } else {
         printf("Cannot place tile at (%d, %d) - position blocked or invalid\n",

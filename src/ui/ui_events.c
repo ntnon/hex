@@ -17,8 +17,12 @@ void ui_hover_handler(Clay_ElementId elementId, Clay_PointerData pointerData,
     if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
         g_last_clicked_element = elementId;
         g_click_occurred = true;
+        printf("element clicked: %d\n", elementId.id);
     }
-    printf("Hovered element: %d\n", ui_get_hovered_element().id);
+}
+
+bool ui_is_hovered(Clay_ElementId elementId) {
+    return g_current_hovered_element.id == elementId.id;
 }
 
 // Get current hover
@@ -34,12 +38,14 @@ bool ui_was_clicked(Clay_ElementId elementId) {
     return false;
 }
 
+// Check if something was clicked this frame
+bool ui_was_clicked_any(void) { return g_click_occurred; }
+
 // Clear click state (call this at end of frame)
 void ui_clear_click(void) {
     if (g_click_occurred) {
         g_click_occurred = false;
         g_last_clicked_element = (Clay_ElementId){0};
-        printf("click unclicked\n");
     }
 }
 

@@ -127,7 +127,7 @@ static void ui_reward(game_controller_t *controller) {
 };
 
 void ui_tile_info_card(game_controller_t *controller, Vector2 mouse_pos) {
-    if (!controller->should_show_tile_info || !controller->hovered_tile) {
+    if (!controller->hovered_tile) {
         return;
     }
 
@@ -290,25 +290,28 @@ void ui_tool_bar(game_controller_t *game_controller) {
                        }}) {
         ButtonComponent(CLAY_STRING("Calculate"),
                         ID_GENERATION_INCREASE_BUTTON);
-        CLAY_AUTO_ID({
-          .backgroundColor = M_BLUE,
-        }) {}
+        static char state_text[32];
+        snprintf(state_text, sizeof(state_text), "State: %s",
+                 game_controller_state_to_string(game_controller->state));
+        Clay_String game_state = {.chars = state_text,
+                                  .length = strlen(state_text)};
+        CLAY_TEXT(game_state, &TEXT_CONFIG_MEDIUM);
     }
 }
 
 void ui_game_screen(game_controller_t *game_controller,
                     const input_state_t *input) {
-    CLAY({
-      .id = ID_GAME_SCREEN,
-      .layout =
-        {
-          .childGap = 10,
-          .layoutDirection = CLAY_TOP_TO_BOTTOM,
-          .sizing = (Clay_Sizing){.width = CLAY_SIZING_GROW(),
-                                  .height = CLAY_SIZING_GROW()},
-        },
+    CLAY(ID_GAME_SCREEN,
+         {
+           .layout =
+             {
+               .childGap = 10,
+               .layoutDirection = CLAY_TOP_TO_BOTTOM,
+               .sizing = (Clay_Sizing){.width = CLAY_SIZING_GROW(),
+                                       .height = CLAY_SIZING_GROW()},
+             },
 
-    });
+         });
     {
         ui_tool_bar(game_controller);
         ui_game(game_controller, input);
@@ -359,4 +362,12 @@ void ui_game(game_controller_t *game_controller, const input_state_t *input) {
             }
         }
     }
+}
+
+bounds_t ui_get_element_bounds(Clay_ElementId elementId) {
+    Clay_BoundingBox clay_bounds = Clay_GetElementData(elementId).boundingBox;
+    return (bounds_t){.x = clay_bounds.x,
+                      .y = clay_bounds.y,
+                      .width = clay_bounds.width,
+                      .height = clay_bounds.height};
 }

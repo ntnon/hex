@@ -164,7 +164,6 @@ void app_controller_set_state(app_controller_t *app_controller,
             game_init(app_controller->game);
             game_controller_init(&app_controller->game_controller,
                                  app_controller->game);
-            printf("Game initialized for PLAYING state\n");
         }
         break;
 

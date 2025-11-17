@@ -114,6 +114,7 @@ int main() {
 
     // Set FPS after window is created
     SetTargetFPS(60);
+    // SetExitKey(0);
 
     printf("Starting main game loop\n");
     // Main game loop
@@ -128,7 +129,7 @@ int main() {
 
         renderCommands = ui_root(&app_controller, &input);
 
-        // Get the hovered element from our tracking system
+        // Get the hovered element from the tracking system
         input.hovered_element_id = ui_get_hovered_element();
 
         // Set drag bounds if we're in game and hovering over game area

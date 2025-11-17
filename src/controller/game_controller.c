@@ -1,19 +1,19 @@
 #include "controller/game_controller.h"
 #include "controller/input_state.h"
 #include "game/board.h"
+#include "game/camera.h"
+#include "game/game.h"
 #include "game/inventory.h"
 #include "grid/grid_geometry.h"
 #include "raylib.h"
 #include "ui.h"
+#include "ui_types.h"
+#include "utility/geometry.h"
 #include <stdio.h>
 
 void game_controller_init(game_controller_t *controller, game_t *game) {
     controller->game = game;
-    controller->generation = 0;
     controller->is_initialized = true;
-
-    // Initialize input handler for camera/keyboard
-    input_handler_init(&controller->input_handler, game);
 
     // Initialize state management
     controller->state = GAME_STATE_VIEW;
@@ -23,15 +23,10 @@ void game_controller_init(game_controller_t *controller, game_t *game) {
     controller->placing_tile = false;
     controller->camera_locked = false;
 
-    controller->selected_inventory_index = -1;
-    controller->held_piece = NULL;
-
-    // Initialize UI element tracking
-    controller->hovered_element_id = ID_NONE;
-    controller->last_clicked_element_id = ID_NONE;
-    controller->hovered_element_data = (Clay_ElementData){0};
-
-    printf("Game controller initialized as orchestrator\n");
+    controller->hovered_cell =
+      grid_geometry_get_origin(controller->game->board->geometry_type);
+    controller->hovered_tile = NULL;
+    controller->game_board_hovered = false;
 }
 
 void game_controller_update(game_controller_t *controller,
@@ -40,39 +35,68 @@ void game_controller_update(game_controller_t *controller,
         return;
     }
 
-    // Update hover state for UI tooltip display
+    // Update the game bounds, in case something changed.
+    bounds_t game_bounds = ui_get_element_bounds(ID_GAME_AREA);
+
+    // update camera
+    update_camera(&controller->game->board->camera, input);
+
+    // Update hover state (calculates hovered_cell and hovered_tile)
     game_controller_update_hover_state(controller, input);
 
-    // Process inputs by priority
-    if (controller->inventory_open &&
-        game_controller_handle_inventory_input(controller, input)) {
-        return;
-    }
-
-    if (controller->placing_tile &&
-        game_controller_handle_placement_input(controller, input)) {
-        return;
-    }
-
-    // Keyboard shortcuts
-    if (input->key_r_pressed && controller->placing_tile) {
-        inventory_rotate_selected(controller->game->inventory, 1);
-    }
-
+    // Handle state-agnostic interactions
     if (input->key_m_pressed) {
         game_controller_cycle_state(controller);
     }
 
-    // Camera and game updates
-    Clay_BoundingBox game_bounds =
-      Clay_GetElementData(ID_GAME_AREA).boundingBox;
-    input_handler_update(&controller->input_handler, input, game_bounds);
-    update_game(controller->game, input);
+    // Handle state-specific interactions
+    switch (controller->state) {
 
-    // Update preview if placing
-    if (controller->placing_tile) {
-        game_update_preview_at_position(controller->game,
-                                        controller->hovered_cell);
+    case GAME_STATE_VIEW:
+        break;
+    case GAME_STATE_INVENTORY:
+        // Waiting for the user to select an inventory item
+        if (game_controller_handle_inventory_input(controller, input)) {
+            game_controller_set_state(controller, GAME_STATE_HOLDING_ITEM);
+            return;
+        }
+        break;
+    case GAME_STATE_HOLDING_ITEM:
+        if (ui_is_hovered(ID_GAME_AREA)) {
+            game_update_preview_at_position(controller->game,
+                                            controller->hovered_cell);
+        }
+
+        if (!ui_is_hovered(ID_GAME_AREA)) {
+            game_clear_preview(controller->game);
+        }
+
+        if (input->key_r_pressed) {
+            inventory_rotate_selected(controller->game->inventory, 1);
+        }
+
+        // Only place if the input wasn't already consumed by inventory
+        // selection
+        if (input->should_place_tile && ui_is_hovered(ID_GAME_AREA)) {
+            game_controller_set_state(controller, GAME_STATE_PLACE);
+            printf("ui is hovered, %d, should place: %d",
+                   ui_is_hovered(ID_INVENTORY_AREA), input->should_place_tile);
+        };
+
+        break;
+    case GAME_STATE_PLACE:
+
+        game_try_place_tile(controller->game, controller->hovered_cell);
+        game_controller_set_state(controller, GAME_STATE_VIEW);
+        inventory_clear_selected_index(controller->game->inventory);
+        game_clear_preview(controller->game);
+
+        break;
+
+    case GAME_STATE_COLLECTING:
+
+    default:
+        break;
     }
 }
 
@@ -80,7 +104,7 @@ void game_controller_update_hover_state(game_controller_t *controller,
                                         const input_state_t *input) {
     if (!controller->game || !controller->game->board) {
         controller->hovered_tile = NULL;
-        controller->should_show_tile_info = false;
+
         return;
     }
 
@@ -96,13 +120,7 @@ void game_controller_update_hover_state(game_controller_t *controller,
 
     // Get tile at position
     controller->hovered_tile =
-      get_tile_at_cell(controller->game->board, controller->hovered_cell);
-
-    // Show tooltip when hovering tile and not placing
-    controller->should_show_tile_info =
-      controller->hovered_tile && !controller->placing_tile &&
-      (controller->state == GAME_STATE_VIEW ||
-       controller->state == GAME_STATE_INSPECT);
+      board_tile_at_cell(controller->game->board, controller->hovered_cell);
 }
 
 bool game_controller_handle_inventory_input(game_controller_t *controller,
@@ -125,126 +143,17 @@ bool game_controller_handle_inventory_input(game_controller_t *controller,
           inventory_get_item(controller->game->inventory, i);
 
         if (ui_was_clicked(item.id)) {
-            // Delegate selection logic to game
-            if (game_try_select_inventory_item(controller->game, i)) {
-                // Update controller's placement state based on selection
-                if (controller->game->inventory->selected_index >= 0) {
-                    game_controller_enter_placement_mode(controller);
-                } else {
-                    game_controller_exit_placement_mode(controller);
-                }
-            }
-            return true; // Consumed the click
-        }
-    }
-
-    return false; // No inventory interaction
-}
-
-bool game_controller_handle_placement_input(game_controller_t *controller,
-                                            const input_state_t *input) {
-    if (!controller->placing_tile) {
-        return false;
-    }
-
-    // Check if clicked on game area
-    if (ui_was_clicked(ID_GAME_AREA)) {
-        // Use controller's hovered cell instead of game's
-        grid_cell_t target_position = controller->hovered_cell;
-
-        // Delegate placement logic to game
-        if (game_try_place_tile(controller->game, target_position)) {
-            // Placement successful - update controller state
-            game_controller_exit_placement_mode(controller);
-            return true;
-        }
-        // Placement failed but we still consumed the click
-        return true;
-    }
-
-    // ESC key cancels placement
-    if (input->key_escape_pressed) {
-        game_exit_placement_mode(controller->game);
-        game_controller_exit_placement_mode(controller);
-        return true;
-    }
-
-    return false; // Didn't consume input
-}
-
-bool game_controller_handle_board_input(game_controller_t *controller,
-                                        const input_state_t *input) {
-    // Handle direct board interactions when not in placement mode
-    if (controller->placing_tile) {
-        return false; // Let placement handler deal with board clicks
-    }
-
-    if (ui_was_clicked(ID_GAME_AREA)) {
-        // Could handle tile selection, collection, etc. here
-        // Use controller's hovered cell instead of game's
-        grid_cell_t clicked_position = controller->hovered_cell;
-
-        // For now, just log the click
-        printf("Board clicked at (%d, %d)\n", clicked_position.coord.hex.q,
-               clicked_position.coord.hex.r);
-
-        // Future: Check if there's a tile at this position for
-        // collection/interaction
-        // tile_t *tile = board_get_tile_at(controller->game->board,
-        // clicked_position); if (tile) {
-        //   ...
-        // }
-
-        return true;
+            return inventory_set_selected(controller->game->inventory, i);
+        };
     }
 
     return false;
-}
-
-bool game_controller_handle_camera_input(game_controller_t *controller,
-                                         const input_state_t *input) {
-    if (controller->camera_locked) {
-        return false;
-    }
-
-    // Camera input is handled by input_handler in the update function
-    // This function is here for completeness and future expansion
-    return false;
-}
-
-void game_controller_enter_placement_mode(game_controller_t *controller) {
-    controller->placing_tile = true;
-    controller->held_piece =
-      inventory_get_selected_board(controller->game->inventory);
-    controller->state = GAME_STATE_PLACE;
-    printf("Controller: Entered placement mode\n");
-}
-
-void game_controller_exit_placement_mode(game_controller_t *controller) {
-    controller->placing_tile = false;
-    controller->held_piece = NULL;
-    controller->selected_inventory_index = -1;
-    controller->state = GAME_STATE_VIEW;
-    printf("Controller: Exited placement mode\n");
-}
-
-void game_controller_toggle_inventory(game_controller_t *controller) {
-    controller->inventory_open = !controller->inventory_open;
-    printf("Inventory %s\n", controller->inventory_open ? "opened" : "closed");
-}
-
-Clay_ElementId
-game_controller_get_hovered_element_id(game_controller_t *controller) {
-    return controller->hovered_element_id;
-}
-
-void game_controller_set_hovered_element_id(game_controller_t *controller,
-                                            Clay_ElementId elementId) {
-    controller->hovered_element_id = elementId;
 }
 
 void game_controller_set_state(game_controller_t *controller,
                                game_state_e new_state) {
+
+    controller->previous_state = controller->state;
     controller->state = new_state;
     printf("Game state changed to: %s\n",
            game_controller_state_to_string(new_state));
@@ -254,20 +163,32 @@ game_state_e game_controller_get_state(game_controller_t *controller) {
     return controller->state;
 }
 
+game_state_e game_controller_get_previous_state(game_controller_t *controller) {
+    return controller->previous_state;
+}
+
 void game_controller_cycle_state(game_controller_t *controller) {
     controller->state = (controller->state + 1) % GAME_STATE_COUNT;
-    printf("State cycled to: %s\n",
-           game_controller_state_to_string(controller->state));
+}
+
+void game_controller_revert_state(game_controller_t *controller) {
+    controller->state = controller->previous_state;
 }
 
 const char *game_controller_state_to_string(game_state_e state) {
     switch (state) {
     case GAME_STATE_VIEW:
         return "View";
-    case GAME_STATE_PLACE:
-        return "Place";
     case GAME_STATE_INSPECT:
         return "Inspect";
+    case GAME_STATE_INVENTORY:
+        return "Inventory";
+    case GAME_STATE_HOLDING_ITEM:
+        return "Holding Item";
+    case GAME_STATE_PLACE:
+        return "Place";
+    case GAME_STATE_COLLECTING:
+        return "Collection";
     case GAME_STATE_REWARD:
         return "Reward";
     case GAME_STATE_GAME_OVER:

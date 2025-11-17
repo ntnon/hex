@@ -116,12 +116,16 @@ void clear_board(board_t *board) {
 void free_board(board_t *board) {
     tile_map_free(board->tiles);
     pool_manager_free(board->pools);
-
     free(board);
 }
 
 // Helper function to get tile from cell
-tile_t *get_tile_at_cell(const board_t *board, grid_cell_t cell) {
+grid_cell_t board_pixel_to_cell(const board_t *board, point_t point) {
+    return grid_geometry_pixel_to_cell(board->geometry_type, &board->layout,
+                                       point);
+}
+
+tile_t *board_tile_at_cell(const board_t *board, grid_cell_t cell) {
     tile_map_entry_t *entry = tile_map_find(board->tiles, cell);
     return entry ? entry->tile : NULL;
 }
@@ -135,7 +139,7 @@ void get_neighbor_pools(board_t *board, tile_t *tile, pool_t **out_pools,
                                     neighbor_cells);
 
     for (size_t i = 0; i < max_neighbors; ++i) {
-        tile_t *neighbor_tile = get_tile_at_cell(board, neighbor_cells[i]);
+        tile_t *neighbor_tile = board_tile_at_cell(board, neighbor_cells[i]);
         if (neighbor_tile) {
             pool_manager_entry_t *pool_entry =
               pool_manager_find_by_id(board->pools, neighbor_tile->pool_id);
@@ -511,7 +515,7 @@ void assign_pools_batch(board_t *board) {
             bool has_same_color_neighbors = false;
 
             for (int i = 0; i < neighbor_count; i++) {
-                tile_t *neighbor = get_tile_at_cell(board, neighbor_cells[i]);
+                tile_t *neighbor = board_tile_at_cell(board, neighbor_cells[i]);
                 if (neighbor && neighbor->data.type == tile->data.type) {
                     has_same_color_neighbors = true;
                     break;
@@ -568,7 +572,7 @@ void flood_fill_assign_pool(board_t *board, tile_t *start_tile, pool_t *pool) {
             grid_cell_t neighbor_cell;
             grid_geometry_get_neighbor(board->geometry_type, current_tile->cell,
                                        dir, &neighbor_cell);
-            tile_t *neighbor = get_tile_at_cell(board, neighbor_cell);
+            tile_t *neighbor = board_tile_at_cell(board, neighbor_cell);
 
             if (neighbor && neighbor->pool_id == 0 &&             // Unassigned
                 neighbor->data.type == current_tile->data.type) { // Same type
@@ -626,7 +630,7 @@ bool is_merge_valid(board_t *target_board, board_t *source_board,
         }
 
         // Check if this position is occupied in the target board
-        tile_t *target_tile = get_tile_at_cell(target_board, target_position);
+        tile_t *target_tile = board_tile_at_cell(target_board, target_position);
         if (target_tile) {
             return false; // Position already occupied
         }

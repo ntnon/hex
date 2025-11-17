@@ -39,60 +39,60 @@ Clay_TextElementConfig TEXT_CONFIG_MEDIUM = {0};
 
 // Function to safely initialize text configs after fonts are loaded
 void ui_init_text_configs(void) {
-  TEXT_CONFIG_LARGE =
-    (Clay_TextElementConfig){.userData = NULL,
-                             .textColor = M_BLACK,
-                             .fontId = FONT_ID_LATO,
-                             .fontSize = 24,
-                             .letterSpacing = FONT_DEFAULT_SPACING,
-                             .lineHeight = 0, // 0 means use measured height
-                             .wrapMode = CLAY_TEXT_WRAP_WORDS};
+    TEXT_CONFIG_LARGE =
+      (Clay_TextElementConfig){.userData = NULL,
+                               .textColor = M_BLACK,
+                               .fontId = FONT_ID_LATO,
+                               .fontSize = 24,
+                               .letterSpacing = FONT_DEFAULT_SPACING,
+                               .lineHeight = 0, // 0 means use measured height
+                               .wrapMode = CLAY_TEXT_WRAP_WORDS};
 
-  TEXT_CONFIG_MEDIUM =
-    (Clay_TextElementConfig){.userData = NULL,
-                             .textColor = M_WHITE,
-                             .fontId = FONT_ID_LATO,
-                             .fontSize = 20,
-                             .letterSpacing = FONT_DEFAULT_SPACING,
-                             .lineHeight = 0, // 0 means use measured height
-                             .wrapMode = CLAY_TEXT_WRAP_WORDS};
+    TEXT_CONFIG_MEDIUM =
+      (Clay_TextElementConfig){.userData = NULL,
+                               .textColor = M_WHITE,
+                               .fontId = FONT_ID_LATO,
+                               .fontSize = 20,
+                               .letterSpacing = FONT_DEFAULT_SPACING,
+                               .lineHeight = 0, // 0 means use measured height
+                               .wrapMode = CLAY_TEXT_WRAP_WORDS};
 
-  printf("Text configs initialized safely\n");
+    printf("Text configs initialized safely\n");
 }
 
 Font UI_FONTS[MAX_FONTS] = {0};
 
 void ui_load_fonts(void) {
-  // Initialize all fonts to default font first
-  Font defaultFont = GetFontDefault();
-  for (int i = 0; i < MAX_FONTS; i++) {
-    UI_FONTS[i] = defaultFont;
-  }
-
-  // Load custom fonts with error checking
-  const char *font_paths[MAX_FONTS - 1] = {
-    "resources/sprite_fonts/pixelplay.png",
-    "resources/sprite_fonts/mecha.png",
-    "resources/sprite_fonts/setback.png",
-    "resources/sprite_fonts/romulus.png",
-    "resources/sprite_fonts/pixantiqua.png",
-    "resources/sprite_fonts/alpha_beta.png",
-    "resources/sprite_fonts/jupiter_crash.png",
-    "resources/sprite_fonts/alagard.png"};
-
-  for (int i = 1; i < MAX_FONTS; i++) {
-    Font loadedFont = LoadFont(font_paths[i - 1]);
-    // Validate font loaded properly
-    if (loadedFont.glyphs != NULL && loadedFont.baseSize > 0) {
-      UI_FONTS[i] = loadedFont;
-      printf("Successfully loaded font %d: %s\n", i, font_paths[i - 1]);
-    } else {
-      printf("Warning: Failed to load font %s, using default font\n",
-             font_paths[i - 1]);
-      // Font already initialized to default above
+    // Initialize all fonts to default font first
+    Font defaultFont = GetFontDefault();
+    for (int i = 0; i < MAX_FONTS; i++) {
+        UI_FONTS[i] = defaultFont;
     }
-  }
 
-  printf("Font loading completed. Default font baseSize: %d, glyphs: %p\n",
-         UI_FONTS[0].baseSize, UI_FONTS[0].glyphs);
+    // Load custom fonts with error checking
+    const char *font_paths[MAX_FONTS - 1] = {
+      "resources/sprite_fonts/pixelplay.png",
+      "resources/sprite_fonts/mecha.png",
+      "resources/sprite_fonts/setback.png",
+      "resources/sprite_fonts/romulus.png",
+      "resources/sprite_fonts/pixantiqua.png",
+      "resources/sprite_fonts/alpha_beta.png",
+      "resources/sprite_fonts/jupiter_crash.png",
+      "resources/sprite_fonts/alagard.png"};
+
+    for (int i = 1; i < MAX_FONTS; i++) {
+        Font loadedFont = LoadFont(font_paths[i - 1]);
+        // Validate font loaded properly
+        if (loadedFont.glyphs != NULL && loadedFont.baseSize > 0) {
+            UI_FONTS[i] = loadedFont;
+            printf("Successfully loaded font %d: %s\n", i, font_paths[i - 1]);
+        } else {
+            printf("Warning: Failed to load font %s, using default font\n",
+                   font_paths[i - 1]);
+            // Font already initialized to default above
+        }
+    }
+
+    printf("Font loading completed. Default font baseSize: %d, glyphs: %p\n",
+           UI_FONTS[0].baseSize, UI_FONTS[0].glyphs);
 }
