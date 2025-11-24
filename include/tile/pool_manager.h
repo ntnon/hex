@@ -3,7 +3,6 @@
 
 #include "pool.h"
 #include "../third_party/uthash.h"
-#include "grid/grid_geometry.h"
 
 // --- Pool Hash Table Entry ---
 // This struct is managed by UTHash.

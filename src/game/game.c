@@ -1,7 +1,4 @@
 #include "game/game.h"
-#include "game/board.h"
-#include "game/inventory.h"
-#include "grid/grid_geometry.h"
 #include "stdio.h"
 
 void game_init(game_t *game) {
@@ -10,6 +7,12 @@ void game_init(game_t *game) {
     game->reward_count = 3;
     game->is_paused = false;
     game->round_count = 0;
+
+    game->resources = malloc(sizeof(resources_t) * TILE_TYPE_COUNT);
+    if (!game->resources) {
+        fprintf(stderr, "Failed to allocate memory for resources\n");
+    }
+    resources_init(game->resources);
 
     // Hover system moved to game_controller
 

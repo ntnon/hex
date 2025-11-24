@@ -19,7 +19,7 @@ void game_controller_init(game_controller_t *controller, game_t *game) {
     controller->state = GAME_STATE_VIEW;
 
     // Initialize state flags
-    controller->inventory_open = true; // Inventory visible by default
+    controller->inventory_open = true;
     controller->placing_tile = false;
     controller->camera_locked = false;
 
@@ -51,7 +51,6 @@ void game_controller_update(game_controller_t *controller,
 
     // Handle state-specific interactions
     switch (controller->state) {
-
     case GAME_STATE_VIEW:
         break;
     case GAME_STATE_INVENTORY:

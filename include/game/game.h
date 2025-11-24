@@ -4,6 +4,7 @@
 #include "game/board.h"
 #include "game/inventory.h"
 #include "controller/input_state.h"
+#include "game/resources.h"
 //#include "rule_manager.h"
 
 typedef struct simple_preview_t {
@@ -16,8 +17,9 @@ typedef struct simple_preview_t {
 typedef struct game {
     board_t *board;
     inventory_t *inventory;
-    int reward_count;
+    resources_t *resources;
 
+    int reward_count;
     bool round_count;
     bool is_paused;
 
